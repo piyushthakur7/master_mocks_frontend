@@ -1,52 +1,29 @@
 export interface StudentDashboard {
-  overview: {
-    totalTestsAttempted: number;
-    averageScore: number;
-    totalEarned: number;
-    activeEnrollments: number;
-  };
+  totalAttempts: number;
+  avgScore: string;
   recentActivity: Array<{
-    type: "TEST_ATTEMPT" | "COURSE_ENROLLMENT" | "REWARD_EARNED";
-    title: string;
-    date: string;
-    meta?: any;
+    _id: string;
+    mock_test: string;
+    score: number;
+    percentage: number;
+    status: string;
+    completed_at: string;
+    // adding missing properties that dashboard might use based on UI
+    type?: string;
+    title?: string;
+    date?: string;
   }>;
-  upcomingTests: Array<{
+  upcomingTests?: Array<{
     _id: string;
     title: string;
     courseName: string;
     availableFrom?: string;
   }>;
-  performanceChart: Array<{
-    date: string;
-    score: number;
-    testTitle: string;
-  }>;
 }
 
 export interface AdminDashboard {
-  overview: {
-    totalStudents: number;
-    totalCourses: number;
-    totalMockTests: number;
-    totalRevenue: number;
-    activeSuspensions: number;
-  };
-  revenueChart: Array<{
-    date: string;
-    revenue: number;
-  }>;
-  recentUsers: Array<{
-    _id: string;
-    name: string;
-    email: string;
-    joinedAt: string;
-  }>;
-  recentTransactions: Array<{
-    _id: string;
-    studentName: string;
-    amount: number;
-    status: string;
-    date: string;
-  }>;
+  totalStudents: number;
+  totalCourses: number;
+  totalTests: number;
+  revenue: number;
 }

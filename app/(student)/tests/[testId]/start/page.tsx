@@ -39,7 +39,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
         }
         
         setTest(testRes.data);
-        setTimeLeft(testRes.data.settings.duration * 60);
+        setTimeLeft(testRes.data.durationMinutes * 60);
 
         // Start attempt
         const attemptRes = await attemptService.start(unwrappedParams.testId);
@@ -60,7 +60,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             const startTime = new Date(attemptRes.data.startTime).getTime();
             const now = new Date().getTime();
             const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remaining = (testRes.data.settings.duration * 60) - elapsedSeconds;
+            const remaining = (testRes.data.durationMinutes * 60) - elapsedSeconds;
             setTimeLeft(remaining > 0 ? remaining : 0);
           }
         }
@@ -150,7 +150,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       <header className="h-14 bg-[#1A1A1A] text-white px-6 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
           <span className="text-xs font-black tracking-wider bg-[#D00113] px-2.5 py-1 rounded">LIVE RUNTIME</span>
-          <span className="text-xs font-bold text-slate-300">{test.title} // Section: {test.course?.title || "General"}</span>
+          <span className="text-xs font-bold text-slate-300">{test.title} // Section: {typeof test.course === 'object' && test.course?.title ? test.course.title : "General"}</span>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
@@ -181,11 +181,11 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             {/* Question Identity Indicator */}
             <div className="border-b border-slate-100 pb-4 flex justify-between items-center">
               <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Question Reference {currentQuestion + 1} of {test.questions.length}</h2>
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Marks: +{test.settings.marksPerQuestion} / -{test.settings.negativeMarking}</span>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Marks: +{currentQObj.marks || 1} / -{currentQObj.negativeMarks || 0}</span>
             </div>
 
             {/* Prompt String Description */}
-            <div className="text-slate-800 font-semibold text-base leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentQObj.questionText }} />
+            <div className="text-slate-800 font-semibold text-base leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentQObj.text || "" }} />
 
             {/* Multiple Choice Radio List */}
             <div className="space-y-3 pt-2">
@@ -228,9 +228,9 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
               ← Previous MCQ
             </button>
             
-            {currentQuestion < test.questions.length - 1 ? (
+            {currentQuestion < (test.questions?.length || 1) - 1 ? (
               <button
-                onClick={() => setCurrentQuestion((prev) => Math.min(test.questions.length - 1, prev + 1))}
+                onClick={() => setCurrentQuestion((prev) => Math.min((test.questions?.length || 1) - 1, prev + 1))}
                 className="px-6 py-2.5 bg-[#1A1A1A] hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all"
               >
                 Save & Next →

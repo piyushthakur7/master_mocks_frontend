@@ -17,8 +17,8 @@ export default function StudentTestsPage() {
     const fetchTests = async () => {
       try {
         const response = await mockTestService.getAll({ limit: 50, status: "PUBLISHED" });
-        if (response.success && response.data) {
-          setTests(response.data.data);
+        if (response.success) {
+          setTests(Array.isArray(response.data) ? response.data : response.data?.data || []);
         }
       } catch (error) {
         toast.error("Failed to load mock tests");
@@ -75,9 +75,9 @@ export default function StudentTestsPage() {
                 {/* Badge row */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md truncate max-w-[150px]">
-                    {test.course?.title || "General"}
+                    {typeof test.category === 'object' && test.category?.name ? test.category.name : "General Assessment"}
                   </span>
-                  {test.isPremium ? (
+                  {test.rewardPool?.isActive ? (
                     <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-red-50 text-[#D00113] border border-red-100 rounded-md">
                       💎 Premium
                     </span>
@@ -94,20 +94,20 @@ export default function StudentTestsPage() {
                     {test.title}
                   </h3>
                   <div className="flex items-center gap-4 text-xs text-slate-400 font-medium mt-2">
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.settings.duration} Mins</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes} Mins</span>
                     <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.questions?.length || 0} MCQs</span>
                   </div>
                 </div>
 
                 {/* Target Reward Ledger Metric Box */}
-                {test.isPremium && test.rewardTiers && test.rewardTiers.length > 0 && (
+                {test.rewardPool?.isActive && test.rewardPool.tiers && test.rewardPool.tiers.length > 0 && (
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col gap-1.5">
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Performance Wallet Prizes:</span>
                     <div className="flex flex-col gap-1">
-                      {test.rewardTiers.map((tier, idx) => (
+                      {test.rewardPool.tiers.map((tier: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center text-xs">
                           <span className="text-slate-500">Rank {tier.minRank}-{tier.maxRank}</span>
-                          <span className="font-bold text-emerald-600">{formatCurrency(tier.amount)}</span>
+                          <span className="font-bold text-emerald-600">{formatCurrency(tier.rewardAmount)}</span>
                         </div>
                       ))}
                     </div>

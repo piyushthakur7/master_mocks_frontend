@@ -121,7 +121,7 @@ export default function AdminReportsPage() {
                     <td className="py-4 px-6 text-right">
                       {attempt.status === "COMPLETED" ? (
                         <span className="font-black text-slate-900 text-sm">
-                          {attempt.score?.toFixed(1)} / {attempt.total_marks}
+                          {attempt.score?.toFixed(1)} / {(attempt.test as any)?.totalMarks || 100}
                         </span>
                       ) : (
                         <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">

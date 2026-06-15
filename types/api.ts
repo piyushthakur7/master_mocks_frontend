@@ -7,12 +7,14 @@ export interface ApiResponse<T> {
 export interface PaginatedResponse<T> {
   success: boolean;
   message?: string;
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
+  data: {
+    data: T[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    };
   };
 }
 

@@ -7,9 +7,7 @@ export const userService = {
   
   updateAccount: (data: any) => apiClient.patch<any, ApiResponse<User>>("/users/update-account", data),
   
-  updateAvatar: (formData: FormData) => apiClient.patch<any, ApiResponse<User>>("/users/avatar", formData, {
-    headers: { "Content-Type": "multipart/form-data" }
-  }),
+  updateAvatar: (data: { profile_picture: string }) => apiClient.patch<any, ApiResponse<User>>("/users/avatar", data),
   
   // Admin only
   getAllUsers: (params?: any) => apiClient.get<any, PaginatedResponse<User>>("/users", { params }),

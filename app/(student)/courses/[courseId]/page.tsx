@@ -87,8 +87,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
           {/* Header & Thumbnail */}
           <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
             <div className="h-48 md:h-64 bg-slate-100 relative">
-              {course.thumbnail ? (
-                <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+              {course.thumbnailUrl ? (
+                <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
                   <BookOpen className="w-16 h-16 text-slate-700" />
@@ -96,7 +96,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
               )}
               <div className="absolute top-4 left-4">
                 <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/90 backdrop-blur-sm text-slate-900 rounded-md shadow-sm">
-                  {course.category?.name || "General Category"}
+                  {(course.category as any)?.name || "General Category"}
                 </span>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
               <div className="flex flex-wrap items-center gap-4 md:gap-8 text-sm font-medium text-slate-500 mb-6">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-slate-400" />
-                  <span>Validity: <strong className="text-slate-800">{course.validityDays} Days</strong></span>
+                  <span>Validity: <strong className="text-slate-800">Lifetime</strong></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-slate-400" />
@@ -140,7 +140,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                <p className="text-sm font-medium text-slate-600">Valid for {course.validityDays} days from enrollment.</p>
+                <p className="text-sm font-medium text-slate-600">Lifetime validity from enrollment.</p>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
         <div className="lg:col-span-1">
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm sticky top-6 overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-100 p-6 text-center">
-              {course.pricing.type === "FREE" ? (
+              {course.accessType === "free" ? (
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Free Access</span>
                   <p className="text-3xl font-black text-slate-900 mt-3">₹0</p>
@@ -160,11 +160,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-1 rounded">Premium</span>
                   <div className="flex items-center justify-center gap-3 mt-3">
-                    {course.pricing.discountPrice && (
-                      <p className="text-lg font-bold text-slate-400 line-through decoration-1">{formatCurrency(course.pricing.price)}</p>
-                    )}
                     <p className="text-4xl font-black text-[#D00113]">
-                      {formatCurrency(course.pricing.discountPrice || course.pricing.price)}
+                      {formatCurrency(course.price)}
                     </p>
                   </div>
                 </div>
@@ -193,10 +190,10 @@ export default function CourseDetailsPage({ params }: PageProps) {
                     className="w-full py-3.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-center text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-red-600/10 transition-all flex items-center justify-center gap-2"
                   >
                     {isEnrolling && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {course.pricing.type === "FREE" ? "Enroll for Free" : "Purchase Course"}
+                    {course.accessType === "free" ? "Enroll for Free" : "Purchase Course"}
                   </button>
                   <p className="text-[10px] text-center font-medium text-slate-400 px-4">
-                    {course.pricing.type === "FREE" ? "No credit card required for free courses." : "Amount will be deducted from your wallet balance."}
+                    {course.accessType === "free" ? "No credit card required for free courses." : "Amount will be deducted from your wallet balance."}
                   </p>
                 </div>
               )}

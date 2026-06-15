@@ -10,19 +10,19 @@ export const mockTestService = {
   // Admin only
   create: (data: any) => apiClient.post<any, ApiResponse<MockTest>>("/mock-tests", data),
   
-  update: (id: string, data: any) => apiClient.patch<any, ApiResponse<MockTest>>(`/mock-tests/${id}`, data),
+  update: (id: string, data: any) => apiClient.put<any, ApiResponse<MockTest>>(`/mock-tests/${id}`, data),
   
   delete: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/mock-tests/${id}`),
   
-  publish: (id: string) => apiClient.post<any, ApiResponse<MockTest>>(`/mock-tests/${id}/publish`),
+  publish: (id: string) => apiClient.patch<any, ApiResponse<MockTest>>(`/mock-tests/${id}/publish`),
   
-  unpublish: (id: string) => apiClient.post<any, ApiResponse<MockTest>>(`/mock-tests/${id}/unpublish`),
+  unpublish: (id: string) => apiClient.patch<any, ApiResponse<MockTest>>(`/mock-tests/${id}/unpublish`),
   
   addQuestionsBulk: (id: string, data: any) => apiClient.post<any, ApiResponse<MockTest>>(`/mock-tests/${id}/questions/bulk`, data),
   
   addQuestion: (id: string, data: any) => apiClient.post<any, ApiResponse<MockTest>>(`/mock-tests/${id}/questions`, data),
   
-  updateQuestion: (testId: string, questionId: string, data: any) => apiClient.patch<any, ApiResponse<MockTest>>(`/mock-tests/${testId}/questions/${questionId}`, data),
+  updateQuestion: (testId: string, questionId: string, data: any) => apiClient.put<any, ApiResponse<MockTest>>(`/mock-tests/${testId}/questions/${questionId}`, data),
   
   removeQuestion: (testId: string, questionId: string) => apiClient.delete<any, ApiResponse<MockTest>>(`/mock-tests/${testId}/questions/${questionId}`),
 };

@@ -19,8 +19,8 @@ export default function AdminTestsManagementPage() {
   const fetchTests = async () => {
     try {
       const response = await mockTestService.getAll();
-      if (response.success && response.data) {
-        setTests(response.data.data || response.data);
+      if (response.success) {
+        setTests(Array.isArray(response.data) ? response.data : response.data?.data || []);
       }
     } catch (error) {
       toast.error("Failed to load mock tests");
@@ -31,13 +31,8 @@ export default function AdminTestsManagementPage() {
 
   const toggleTestStatus = async (test: MockTest) => {
     try {
-      if (test.is_active) {
-        await mockTestService.unpublish(test._id!);
-        toast.success("Test unpublished successfully");
-      } else {
-        await mockTestService.publish(test._id!);
-        toast.success("Test published successfully");
-      }
+      await mockTestService.update(test._id!, { is_active: !test.isActive });
+      toast.success(`Test ${!test.isActive ? 'published' : 'unpublished'} successfully`);
       fetchTests();
     } catch (error: any) {
       toast.error(error.message || "Failed to update test status");
@@ -105,30 +100,30 @@ export default function AdminTestsManagementPage() {
                     </td>
                     <td className="py-4 px-6 text-slate-500">
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.duration_minutes}m</span>
-                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.total_questions} Qs</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes}m</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.questions?.length || 0} Qs</span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
-                        test.is_active 
+                        test.isActive 
                           ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
                           : "bg-slate-50 text-slate-500 border-slate-200"
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${test.is_active ? "bg-emerald-500" : "bg-slate-400"}`} />
-                        {test.is_active ? "Published" : "Draft"}
+                        <span className={`w-1.5 h-1.5 rounded-full ${test.isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                        {test.isActive ? "Published" : "Draft"}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => toggleTestStatus(test)}
-                          title={test.is_active ? "Unpublish" : "Publish"}
+                          title={test.isActive ? "Unpublish" : "Publish"}
                           className={`p-1.5 rounded transition-colors ${
-                            test.is_active ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
+                            test.isActive ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
                           }`}
                         >
-                          {test.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {test.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                         <Link 
                           href={`/admin/tests/${test._id}/edit`}

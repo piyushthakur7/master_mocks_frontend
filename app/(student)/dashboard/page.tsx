@@ -42,16 +42,16 @@ export default function StudentDashboardPage() {
 
   // Fallback data if API returns empty
   const d = data || {
-    overview: { totalTestsAttempted: 0, averageScore: 0, totalEarned: 0, activeEnrollments: 0 },
+    totalAttempts: 0,
+    avgScore: "0",
     recentActivity: [],
-    upcomingTests: [],
-    performanceChart: []
+    upcomingTests: []
   };
 
   const metrics = [
     { title: "Wallet Balance", value: formatCurrency(user?.walletBalance || 0), sub: "Available rewards", icon: <Wallet className="w-6 h-6" />, statusColor: "text-emerald-600" },
-    { title: "Average Score", value: `${d.overview.averageScore.toFixed(1)}%`, sub: "Across all attempts", icon: <Target className="w-6 h-6" />, statusColor: "text-[#D00113]" },
-    { title: "Tests Attempted", value: d.overview.totalTestsAttempted.toString(), sub: "Total mocks completed", icon: <Flag className="w-6 h-6" />, statusColor: "text-slate-800" }
+    { title: "Average Score", value: `${parseFloat(d.avgScore || "0").toFixed(1)}%`, sub: "Across all attempts", icon: <Target className="w-6 h-6" />, statusColor: "text-[#D00113]" },
+    { title: "Tests Attempted", value: d.totalAttempts?.toString() || "0", sub: "Total mocks completed", icon: <Flag className="w-6 h-6" />, statusColor: "text-slate-800" }
   ];
 
   return (
@@ -61,7 +61,7 @@ export default function StudentDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Candidate Workspace</h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">Welcome back, {user?.name?.split(' ')[0] || 'Aspirant'}. Complete targeted performance test blocks to claim wallet rewards.</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Welcome back, {user?.full_name?.split(' ')[0] || 'Aspirant'}. Complete targeted performance test blocks to claim wallet rewards.</p>
         </div>
         <div>
           <Link href="/tests" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all text-center">
@@ -92,7 +92,7 @@ export default function StudentDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">Upcoming Tests</h2>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Mocks available in your enrolled courses.</p>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Mocks available in your assessments.</p>
             </div>
             <Link href="/tests" className="text-xs font-bold text-[#D00113] hover:underline flex items-center gap-1">
               View All <ArrowRight className="w-3 h-3" />
@@ -100,14 +100,14 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {d.upcomingTests.length > 0 ? d.upcomingTests.map((test, idx) => (
+            {(d.upcomingTests && d.upcomingTests.length > 0) ? d.upcomingTests.map((test, idx) => (
               <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm group hover:shadow-md transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="bg-red-50 text-[#D00113] p-2 rounded-lg">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
-                    {test.courseName}
+                    {test.courseName && test.courseName !== 'General' ? test.courseName : 'Assessment'}
                   </span>
                 </div>
                 <h3 className="font-bold text-slate-900 text-sm mb-1 group-hover:text-[#D00113] transition-colors line-clamp-2">{test.title}</h3>
@@ -122,9 +122,9 @@ export default function StudentDashboardPage() {
               </div>
             )) : (
               <div className="col-span-full bg-white border border-slate-200/80 rounded-2xl p-8 text-center shadow-sm">
-                <p className="text-sm text-slate-500 font-medium mb-4">No upcoming tests found in your courses.</p>
-                <Link href="/courses" className="inline-block px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors">
-                  Browse Courses
+                <p className="text-sm text-slate-500 font-medium mb-4">No upcoming tests found in your catalog.</p>
+                <Link href="/tests" className="inline-block px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors">
+                  Browse Mock Tests
                 </Link>
               </div>
             )}
@@ -139,7 +139,7 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-            {d.recentActivity.length > 0 ? (
+            {(d.recentActivity && d.recentActivity.length > 0) ? (
               <div className="divide-y divide-slate-100">
                 {d.recentActivity.map((activity, idx) => (
                   <div key={idx} className="p-4 hover:bg-slate-50/50 transition-colors">
@@ -155,7 +155,7 @@ export default function StudentDashboardPage() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800 line-clamp-2">{activity.title}</p>
-                        <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-wider">{formatDate(activity.date)}</p>
+                        <p className="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-wider">{activity.date ? formatDate(activity.date) : "N/A"}</p>
                       </div>
                     </div>
                   </div>

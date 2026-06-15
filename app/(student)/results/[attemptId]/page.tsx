@@ -57,11 +57,16 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
     );
   }
 
-  const isCompleted = attempt.status === "COMPLETED" || attempt.status === "EVALUATED";
-  const hasReward = attempt.rewardEarned > 0;
+  const isCompleted = attempt.status === "COMPLETED";
+  const rewardEarned = attempt.rewardEarned || 0;
+  const hasReward = rewardEarned > 0;
   
-  const accuracy = attempt.totalAttempted > 0 
-    ? ((attempt.correctAnswers / attempt.totalAttempted) * 100).toFixed(1) 
+  const totalAttempted = attempt.totalAttempted || 0;
+  const correctAnswers = attempt.correctAnswers || 0;
+  const score = attempt.score || 0;
+
+  const accuracy = totalAttempted > 0 
+    ? ((correctAnswers / totalAttempted) * 100).toFixed(1) 
     : "0.0";
 
   return (
@@ -80,7 +85,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
             </h1>
             <p className="text-xs text-slate-300 font-medium max-w-xl">
               {hasReward 
-                ? `Your performance tracking module cleared the target threshold. A compensation credit value of ${formatCurrency(attempt.rewardEarned)} has been dispatched to your dashboard student wallet.`
+                ? `Your performance tracking module cleared the target threshold. A compensation credit value of ${formatCurrency(rewardEarned)} has been dispatched to your dashboard student wallet.`
                 : 'Your mock test submission has been processed. Review your performance metrics below to identify areas of improvement.'}
             </p>
           </div>
@@ -92,14 +97,14 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><Target className="w-24 h-24" /></div>
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Your Compiled Score</p>
-          <p className="text-3xl font-black text-[#D00113] relative z-10">{attempt.score.toFixed(2)}</p>
+          <p className="text-3xl font-black text-[#D00113] relative z-10">{score.toFixed(2)}</p>
           <p className="text-xs text-slate-400 font-medium relative z-10">Out of {(attempt.test as any)?.questions?.length || 0}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><CheckCircle className="w-24 h-24" /></div>
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Accuracy Rating</p>
           <p className="text-3xl font-black text-slate-900 relative z-10">{accuracy}%</p>
-          <p className="text-xs text-slate-400 font-medium relative z-10">{attempt.correctAnswers} correct / {attempt.totalAttempted} attempted</p>
+          <p className="text-xs text-slate-400 font-medium relative z-10">{correctAnswers} correct / {totalAttempted} attempted</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><Clock className="w-24 h-24" /></div>
@@ -112,7 +117,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><Trophy className="w-24 h-24" /></div>
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Reward Earned</p>
-          <p className={`text-3xl font-black relative z-10 ${hasReward ? 'text-emerald-600' : 'text-slate-900'}`}>{formatCurrency(attempt.rewardEarned)}</p>
+          <p className={`text-3xl font-black relative z-10 ${hasReward ? 'text-emerald-600' : 'text-slate-900'}`}>{formatCurrency(rewardEarned)}</p>
           <p className="text-xs text-slate-400 font-medium relative z-10">Added to wallet</p>
         </div>
       </div>

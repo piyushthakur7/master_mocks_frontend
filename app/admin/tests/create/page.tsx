@@ -36,6 +36,11 @@ export default function AdminCreateTestPage() {
     negative_marks_per_wrong: 0,
     total_marks: 1,
     duration_minutes: 20,
+    // Hack fields for standalone pricing
+    is_standalone: true,
+    access_type: "paid",
+    price: 0,
+    discount_price: 0,
   });
 
   const [questions, setQuestions] = useState<QuestionTemplate[]>([
@@ -156,7 +161,35 @@ export default function AdminCreateTestPage() {
       };
 
       if (testForm.category) payload.category = testForm.category;
-      if (testForm.course) payload.course = testForm.course;
+
+      let courseIdToUse = testForm.course;
+      
+      // The "Fake It" Hack: If no course is selected (standalone test), we create a hidden utility course
+      if (!courseIdToUse) {
+        toast.loading("Generating standalone utility configuration...");
+        const hiddenCoursePayload = {
+          title: `[Standalone Test] ${testForm.title}`,
+          description: `Utility course automatically generated for standalone test: ${testForm.title}`,
+          category: testForm.category || categories[0]?._id, // Requires a category
+          access_type: testForm.access_type,
+          difficulty_level: testForm.difficulty,
+          pricing: {
+            price: Number(testForm.price),
+            discount_price: Number(testForm.discount_price),
+          },
+          is_active: true, // Needs to be active so students can "enroll"
+          features: ["Standalone Mock Test"],
+        };
+        
+        const courseRes = await courseService.create(hiddenCoursePayload);
+        if (courseRes.success && courseRes.data) {
+          courseIdToUse = courseRes.data._id;
+        } else {
+          throw new Error("Failed to initialize standalone utility course");
+        }
+      }
+
+      payload.course = courseIdToUse;
 
       const createRes = await mockTestService.create(payload);
       
@@ -259,6 +292,53 @@ export default function AdminCreateTestPage() {
                 ))}
               </select>
             </div>
+
+            {/* Standalone Test Pricing - Only shown if no course is selected */}
+            {!testForm.course && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 p-5 bg-red-50/50 border border-red-100 rounded-xl">
+                <div className="md:col-span-3 pb-2 border-b border-red-100">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Standalone Configuration</h3>
+                  <p className="text-xs text-slate-500 font-medium">Because no course is linked, this test will be sold individually. Set its pricing.</p>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Access Type</label>
+                  <select 
+                    value={testForm.access_type}
+                    onChange={e => setTestForm({...testForm, access_type: e.target.value})}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                  >
+                    <option value="free">Free</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+
+                {testForm.access_type === 'paid' && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
+                      <input 
+                        type="number" 
+                        value={testForm.price}
+                        onChange={e => setTestForm({...testForm, price: Number(e.target.value)})}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                        min={0}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Discount Price (₹)</label>
+                      <input 
+                        type="number" 
+                        value={testForm.discount_price}
+                        onChange={e => setTestForm({...testForm, discount_price: Number(e.target.value)})}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                        min={0}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 md:col-span-2">
               <div className="space-y-1.5">

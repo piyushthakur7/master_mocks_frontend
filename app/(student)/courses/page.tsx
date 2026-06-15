@@ -16,8 +16,8 @@ export default function StudentCoursesPage() {
     const fetchCourses = async () => {
       try {
         const response = await courseService.getAll({ status: "PUBLISHED" });
-        if (response.success && response.data) {
-          setCourses(response.data.data);
+        if (response.success) {
+          setCourses(Array.isArray(response.data) ? response.data : response.data?.data || []);
         }
       } catch (error) {
         toast.error("Failed to load courses");
@@ -51,9 +51,9 @@ export default function StudentCoursesPage() {
                 {/* Badge row */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
-                    {course.category?.name || "General"}
+                    {(course.category as any)?.name || "General"}
                   </span>
-                  {course.pricing.type === "FREE" ? (
+                  {course.accessType === "free" || course.price === 0 ? (
                     <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-md">
                       Free Course
                     </span>
@@ -66,8 +66,8 @@ export default function StudentCoursesPage() {
 
                 {/* Thumbnail placeholder */}
                 <div className="w-full h-32 bg-slate-100 rounded-xl overflow-hidden relative">
-                  {course.thumbnail ? (
-                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                  {course.thumbnailUrl ? (
+                    <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                       <BookOpen className="w-8 h-8 text-slate-300" />
@@ -81,21 +81,17 @@ export default function StudentCoursesPage() {
                     {course.title}
                   </h3>
                   <div className="flex items-center gap-4 text-xs text-slate-500 font-medium mt-3">
-                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {course.validityDays} Days</span>
-                    <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Tests</span>
+                    <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Course</span>
                   </div>
                 </div>
 
                 {/* Pricing Box */}
-                {course.pricing.type !== "FREE" && (
+                {course.accessType !== "free" && course.price > 0 && (
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between mt-2">
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Course Fee</span>
                     <div className="flex items-center gap-2">
-                      {course.pricing.discountPrice && (
-                        <span className="text-xs text-slate-400 line-through">{formatCurrency(course.pricing.price)}</span>
-                      )}
                       <span className="text-sm font-bold text-slate-900">
-                        {formatCurrency(course.pricing.discountPrice || course.pricing.price)}
+                        {formatCurrency(course.price)}
                       </span>
                     </div>
                   </div>

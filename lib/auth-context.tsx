@@ -40,8 +40,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setAccessToken(null);
       }
-    } catch (error) {
-      console.error("Failed to fetch user session", error);
+    } catch (error: any) {
+      // Avoid logging empty objects or expected 401s to the console
+      if (error?.status !== 401) {
+        console.warn("Failed to fetch user session or session expired");
+      }
       setAccessToken(null);
     } finally {
       setIsLoading(false);
@@ -60,8 +63,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await authService.logout();
-    } catch (error) {
-      console.error("Logout failed", error);
+    } catch (error: any) {
+      // API might return 401 if already logged out or token expired, which is fine.
+      // We don't need to log this as an error since we're clearing the state anyway.
     } finally {
       setAccessToken(null);
       setUser(null);

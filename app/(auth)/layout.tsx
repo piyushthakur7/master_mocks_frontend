@@ -10,7 +10,7 @@ export default function AuthGroupLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-6 md:p-10 antialiased font-sans">
       
       {/* Centered Main Layout Card matching layout proportions of images.jpg */}
-      <div className="w-full max-w-5xl aspect-[16/10] min-h-[500px] bg-white rounded-3xl shadow-xl border border-slate-200/60 overflow-hidden relative flex">
+      <div className="w-full max-w-5xl min-h-[600px] md:h-[650px] bg-white rounded-3xl shadow-xl border border-slate-200/60 overflow-hidden relative flex">
         
         {/* ─── LEFT SIDE ARTISTIC BG LAYER ─── */}
         <div className="hidden md:flex md:w-1/2 bg-[#1A1A1A] relative items-center p-12 overflow-hidden select-none">
@@ -43,7 +43,7 @@ export default function AuthGroupLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* ─── RIGHT SIDE CONTENT VIEWPORT (FORMS CONTAINER) ─── */}
-        <div className="w-full md:w-1/2 flex flex-col justify-between p-8 sm:p-12 md:p-16 relative bg-white">
+        <div className="w-full md:w-1/2 flex flex-col justify-center py-10 px-8 sm:px-12 md:px-16 relative bg-white overflow-y-auto">
           
           {/* Mobile-only branding layer (Hidden on desktop layout) */}
           <div className="md:hidden flex justify-center mb-6">
@@ -58,7 +58,7 @@ export default function AuthGroupLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Form Content Mount Point matching inputs positioning from images.jpg */}
-          <div className="my-auto w-full max-w-sm mx-auto">
+          <div className="w-full max-w-sm mx-auto my-auto">
             {children}
           </div>
 

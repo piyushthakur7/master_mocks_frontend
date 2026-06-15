@@ -142,13 +142,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center shadow-inner uppercase overflow-hidden relative">
                   {user?.avatar ? (
-                    <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                    <Image src={user.avatar} alt={user.full_name} fill className="object-cover" />
                   ) : (
-                    getInitials(user?.name || "Student")
+                    getInitials(user?.full_name || "Student")
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-800 line-clamp-1">{user?.name}</p>
+                  <p className="text-xs font-bold text-slate-800 line-clamp-1">{user?.full_name}</p>
                   <p className="text-[10px] font-medium text-slate-400">₹{user?.walletBalance?.toFixed(2) || "0.00"}</p>
                 </div>
               </div>

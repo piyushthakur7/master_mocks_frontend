@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,8 +29,18 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function StudentRegisterPage() {
   const router = useRouter();
-  const { login: setAuthUser } = useAuth();
+  const { login: setAuthUser, isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthLoading && isAuthenticated) {
+      if (user?.role === "ADMIN") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [isAuthLoading, isAuthenticated, user, router]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -47,7 +57,7 @@ export default function StudentRegisterPage() {
     setIsLoading(true);
     try {
       const response = await authService.register({
-        name: data.name,
+        full_name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
@@ -55,7 +65,7 @@ export default function StudentRegisterPage() {
       });
       
       if (response.success && response.data) {
-        setAuthUser(response.data.tokens.accessToken, response.data.user);
+        setAuthUser(response.data.accessToken, response.data.user);
         toast.success("Account created successfully!");
         router.push("/dashboard");
       }
@@ -65,6 +75,14 @@ export default function StudentRegisterPage() {
       setIsLoading(false);
     }
   };
+
+  if (isAuthLoading || isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

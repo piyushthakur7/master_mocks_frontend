@@ -10,7 +10,9 @@ import { Loader2, Download, FileText, Video, Link as LinkIcon, BookOpen, Databas
 
 export default function StudentResourcesVaultPage() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | "ALL">("ALL");
+  const [standaloneToBuy, setStandaloneToBuy] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
@@ -19,10 +21,35 @@ export default function StudentResourcesVaultPage() {
     const fetchCourses = async () => {
       try {
         const response = await courseService.getMyEnrolled();
+        let enrolled: Course[] = [];
         if (response.success && response.data) {
-          setCourses(response.data.data || response.data);
-          // If we want to load all resources, we might need to loop, but for now we just load the first one or require selection
+          enrolled = response.data.data || response.data;
+          setCourses(enrolled);
         }
+        // Extract unique categories from enrolled courses
+        const uniqueCats = Array.from(new Set(enrolled.map(c => {
+          if (typeof c.category === 'object' && c.category?.name) return c.category.name;
+          return null;
+        }).filter(Boolean))) as string[];
+        
+        // Fetch all courses to find standalone resources available for purchase
+        const allRes = await courseService.getAll();
+        if (allRes.success) {
+          const allCourses: Course[] = Array.isArray(allRes.data) ? allRes.data : allRes.data?.data || [];
+          const standalone = allCourses.filter(c => 
+            (c.title?.includes("[Standalone Resource]") || c.features?.includes("Standalone PDF Resource") || c.title?.includes("[Resource]")) &&
+            !enrolled.some(e => e._id === c._id)
+          );
+          setStandaloneToBuy(standalone);
+          
+          // Add categories from standalone resources too
+          standalone.forEach(c => {
+            if (typeof c.category === 'object' && c.category?.name && !uniqueCats.includes(c.category.name)) {
+              uniqueCats.push(c.category.name);
+            }
+          });
+        }
+        setCategories(uniqueCats);
       } catch (error) {
         toast.error("Failed to load enrolled courses");
       } finally {
@@ -34,24 +61,48 @@ export default function StudentResourcesVaultPage() {
 
   useEffect(() => {
     const fetchResources = async () => {
-      if (selectedCourseId === "ALL") {
-        setResources([]); // Or we could fetch for all if we had an endpoint
-        return;
-      }
       setIsLoadingResources(true);
       try {
-        const response = await resourceService.getForCourse(selectedCourseId);
-        if (response.success && response.data) {
-          setResources(response.data.data || response.data);
+        // Filter courses by selected category
+        let matchedCourses = courses;
+        if (selectedCategory !== "ALL") {
+          matchedCourses = courses.filter(c => {
+            const catName = typeof c.category === 'object' ? c.category?.name : null;
+            return catName === selectedCategory;
+          });
         }
+
+        if (matchedCourses.length === 0) {
+          setResources([]);
+          setIsLoadingResources(false);
+          return;
+        }
+
+        // Fetch resources for all matched courses in parallel
+        const promises = matchedCourses.map(c => resourceService.getForCourse(c._id!));
+        const results = await Promise.all(promises);
+        
+        const allResources: Resource[] = [];
+        results.forEach(res => {
+          if (res.success && res.data) {
+            const resArray = Array.isArray(res.data) ? res.data : res.data.data;
+            if (Array.isArray(resArray)) {
+              allResources.push(...resArray);
+            }
+          }
+        });
+        
+        setResources(allResources);
       } catch (error) {
-        toast.error("Failed to load resources for this course");
+        toast.error("Failed to load resources");
       } finally {
         setIsLoadingResources(false);
       }
     };
-    fetchResources();
-  }, [selectedCourseId]);
+    if (courses.length > 0) {
+      fetchResources();
+    }
+  }, [selectedCategory, courses]);
 
   const handleDownload = async (resourceId: string, title: string) => {
     try {
@@ -97,43 +148,39 @@ export default function StudentResourcesVaultPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 mb-4">
             <Database className="w-8 h-8 text-slate-400" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">No Enrolled Courses</h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto">You must be enrolled in a course to access its study materials.</p>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No Enrolled Material Suites</h3>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">You have not enrolled in any courses or standalone resources yet. Browse the catalog below to unlock study materials.</p>
         </div>
       ) : (
         <>
           {/* Segmented Category Filter Toggles */}
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
             <button
-              onClick={() => setSelectedCourseId("ALL")}
+              onClick={() => setSelectedCategory("ALL")}
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
-                selectedCourseId === "ALL"
+                selectedCategory === "ALL"
                   ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               }`}
             >
-              Select Course
+              All Categories
             </button>
-            {courses.map((course) => (
+            {categories.map((catName) => (
               <button
-                key={course._id}
-                onClick={() => setSelectedCourseId(course._id!)}
+                key={catName}
+                onClick={() => setSelectedCategory(catName)}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
-                  selectedCourseId === course._id
+                  selectedCategory === catName
                     ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
               >
-                {course.title}
+                {catName}
               </button>
             ))}
           </div>
 
-          {selectedCourseId === "ALL" ? (
-            <div className="text-center py-12">
-              <p className="text-sm font-medium text-slate-500">Please select a course above to view its resources.</p>
-            </div>
-          ) : isLoadingResources ? (
+          {isLoadingResources ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
             </div>
@@ -147,10 +194,10 @@ export default function StudentResourcesVaultPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
-                        {getResourceIcon(item.resource_type)}
+                        {getResourceIcon(item.type)}
                       </div>
                       <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider bg-slate-100 px-2 py-0.5 rounded">
-                        {item.resource_type}
+                        {item.type}
                       </span>
                     </div>
                     <h3 className="text-sm font-black text-slate-800 group-hover:text-[#D00113] transition-colors leading-snug line-clamp-2">
@@ -176,6 +223,49 @@ export default function StudentResourcesVaultPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Discovery Section for Standalone Resources */}
+      {!isLoading && standaloneToBuy.length > 0 && (
+        <div className="mt-12 pt-8 border-t border-slate-200/60">
+          <h2 className="text-lg font-black text-slate-900 tracking-tight mb-6">Discover Independent Resources</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {standaloneToBuy
+              .filter(c => {
+                if (selectedCategory === "ALL") return true;
+                const catName = typeof c.category === 'object' ? c.category?.name : null;
+                return catName === selectedCategory;
+              })
+              .map(course => (
+              <div key={course._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group">
+                <div className="space-y-4">
+                  <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
+                    <FileText className="w-6 h-6 text-[#D00113]" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-base leading-snug">{course.title.replace("[Standalone Resource]", "").replace("[Resource]", "").trim()}</h3>
+                  <p className="text-xs text-slate-500 line-clamp-2">{course.description}</p>
+                  
+                  <div className="pt-2">
+                    {course.accessType === "free" ? (
+                      <span className="text-xs font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded">Free Resource</span>
+                    ) : (
+                      <span className="text-lg font-black text-[#D00113]">₹{course.price}</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <Link 
+                    href={`/courses/${course._id}`}
+                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
+                  >
+                    Unlock & Download
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
     </div>

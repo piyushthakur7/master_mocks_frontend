@@ -33,6 +33,8 @@ export interface MockTest {
   durationMinutes: number;
   totalMarks: number;
   passingMarks: number;
+  negativeMarking: boolean;
+  negativeMarksPerWrong: number;
   difficulty: DifficultyLevel;
   isActive: boolean;
   totalAttempts: number;

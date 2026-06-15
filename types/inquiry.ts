@@ -4,6 +4,7 @@ import { User } from "./user";
 export interface InquiryReply {
   user: User | string;
   message: string;
+  isAdmin?: boolean;
   createdAt: string;
 }
 

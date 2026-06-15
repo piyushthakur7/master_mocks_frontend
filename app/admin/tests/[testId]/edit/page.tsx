@@ -26,10 +26,10 @@ export default function AdminEditTestPage({ params }: PageProps) {
     marks: 1,
     explanation: "",
     options: [
-      { text: "", is_correct: true },
-      { text: "", is_correct: false },
-      { text: "", is_correct: false },
-      { text: "", is_correct: false }
+      { text: "", isCorrect: true },
+      { text: "", isCorrect: false },
+      { text: "", isCorrect: false },
+      { text: "", isCorrect: false }
     ],
     correctOptionIndex: 0
   });
@@ -65,10 +65,10 @@ export default function AdminEditTestPage({ params }: PageProps) {
       const payload = {
         title: test.title,
         description: test.description,
-        duration_minutes: Number(test.duration_minutes),
-        passing_marks: Number(test.passing_marks),
-        negative_marking: test.negative_marking,
-        negative_marks_per_wrong: Number(test.negative_marks_per_wrong),
+        durationMinutes: Number(test.durationMinutes),
+        passingMarks: Number(test.passingMarks),
+        negativeMarking: test.negativeMarking,
+        negativeMarksPerWrong: Number(test.negativeMarksPerWrong),
         difficulty: test.difficulty,
       };
       await mockTestService.update(test._id!, payload);
@@ -110,8 +110,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
       setNewQuestion({
         text: "", marks: 1, explanation: "", correctOptionIndex: 0,
         options: [
-          { text: "", is_correct: true }, { text: "", is_correct: false },
-          { text: "", is_correct: false }, { text: "", is_correct: false }
+          { text: "", isCorrect: true }, { text: "", isCorrect: false },
+          { text: "", isCorrect: false }, { text: "", isCorrect: false }
         ]
       });
       fetchTest();
@@ -132,7 +132,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
     const updated = { ...newQuestion };
     updated.correctOptionIndex = index;
     updated.options.forEach((opt, idx) => {
-      opt.is_correct = (idx === index);
+      opt.isCorrect = (idx === index);
     });
     setNewQuestion(updated);
   };
@@ -159,9 +159,9 @@ export default function AdminEditTestPage({ params }: PageProps) {
         <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
           <h2 className="text-sm font-black uppercase tracking-wider text-slate-900">1. Exam Configuration</h2>
           <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
-            test.is_active ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-500 border-slate-200"
+            test.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-500 border-slate-200"
           }`}>
-            {test.is_active ? "Live" : "Draft"}
+            {test.isActive ? "Live" : "Draft"}
           </span>
         </div>
 
@@ -183,8 +183,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
                 <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Duration (Mins)</label>
                 <input 
                   type="number" 
-                  value={test.duration_minutes}
-                  onChange={e => setTest({...test, duration_minutes: Number(e.target.value)})}
+                  value={test.durationMinutes}
+                  onChange={e => setTest({...test, durationMinutes: Number(e.target.value)})}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                   min={1} required
                 />
@@ -193,8 +193,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
                 <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Passing Marks</label>
                 <input 
                   type="number" 
-                  value={test.passing_marks}
-                  onChange={e => setTest({...test, passing_marks: Number(e.target.value)})}
+                  value={test.passingMarks}
+                  onChange={e => setTest({...test, passingMarks: Number(e.target.value)})}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                   min={1} required
                 />
@@ -206,21 +206,21 @@ export default function AdminEditTestPage({ params }: PageProps) {
                 <label className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-2">
                   <input 
                     type="checkbox"
-                    checked={test.negative_marking}
-                    onChange={e => setTest({...test, negative_marking: e.target.checked})}
+                    checked={test.negativeMarking}
+                    onChange={e => setTest({...test, negativeMarking: e.target.checked})}
                     className="w-4 h-4 accent-[#D00113]"
                   />
                   Enable Negative Marking
                 </label>
               </div>
-              {test.negative_marking && (
+              {test.negativeMarking && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Penalty per wrong answer</label>
                   <input 
                     type="number" 
                     step="0.01"
-                    value={test.negative_marks_per_wrong}
-                    onChange={e => setTest({...test, negative_marks_per_wrong: Number(e.target.value)})}
+                    value={test.negativeMarksPerWrong}
+                    onChange={e => setTest({...test, negativeMarksPerWrong: Number(e.target.value)})}
                     className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#D00113]"
                     min={0}
                   />
@@ -271,12 +271,12 @@ export default function AdminEditTestPage({ params }: PageProps) {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                     {q.options.map((opt, oIndex) => (
-                      <div key={opt._id || oIndex} className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${opt.is_correct ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'}`}>
+                      <div key={opt._id || oIndex} className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${opt.isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'}`}>
                         <span className="font-bold w-5 h-5 flex items-center justify-center bg-white rounded-full border border-slate-100 shadow-sm shrink-0">
                           {String.fromCharCode(65 + oIndex)}
                         </span>
                         <span>{opt.text}</span>
-                        {opt.is_correct && <span className="ml-auto text-[10px] font-black uppercase text-emerald-600 tracking-wider">Correct</span>}
+                        {opt.isCorrect && <span className="ml-auto text-[10px] font-black uppercase text-emerald-600 tracking-wider">Correct</span>}
                       </div>
                     ))}
                   </div>

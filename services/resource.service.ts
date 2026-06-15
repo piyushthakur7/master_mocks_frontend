@@ -8,7 +8,7 @@ export const resourceService = {
   download: (id: string) => apiClient.get<any, ApiResponse<{ downloadUrl: string }>>(`/resources/${id}/download`),
   
   // Admin only
-  upload: (data: FormData) => apiClient.post<any, ApiResponse<Resource>>("/resources/upload", data, {
+  create: (data: FormData) => apiClient.post<any, ApiResponse<Resource>>("/resources", data, {
     headers: { "Content-Type": "multipart/form-data" }
   }),
   

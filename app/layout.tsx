@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "Master Mocks | India's 1st Performance-Based Mock Platform",
@@ -18,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html lang="en" className={cn("font-sans")}>
       <body className="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
         <AuthProvider>
           {children}

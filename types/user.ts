@@ -2,7 +2,7 @@ import { UserRole, UserStatus } from "@/lib/constants";
 
 export interface User {
   _id: string;
-  name: string;
+  full_name: string;
   email: string;
   phone?: string;
   role: UserRole;
@@ -11,14 +11,13 @@ export interface User {
   walletBalance: number;
   totalMocksCompleted: number;
   fraudFlags: number;
+  enrolledCourses?: string[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AuthData {
   user: User;
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  accessToken: string;
+  refreshToken: string;
 }

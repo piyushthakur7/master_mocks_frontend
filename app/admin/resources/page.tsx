@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { resourceService } from "@/services/resource.service";
 import { courseService } from "@/services/course.service";
+import { categoryService } from "@/services/category.service";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, FileText, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { formatDate } from "@/lib/utils";
 export default function AdminResourcesUploadPage() {
   const [resources, setResources] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +19,10 @@ export default function AdminResourcesUploadPage() {
   const [newResource, setNewResource] = useState({
     title: "",
     course: "",
+    category: "",
+    access_type: "paid",
+    price: 0,
+    discount_price: 0,
     file: null as File | null,
   });
 
@@ -26,12 +32,35 @@ export default function AdminResourcesUploadPage() {
 
   const fetchData = async () => {
     try {
-      const [resResponse, courseResponse] = await Promise.all([
-        resourceService.getAll(),
-        courseService.getAll()
+      const [courseResponse, catResponse] = await Promise.all([
+        courseService.getAll(),
+        categoryService.getAll()
       ]);
-      if (resResponse.success) setResources(resResponse.data.data || resResponse.data);
-      if (courseResponse.success) setCourses(courseResponse.data.data || courseResponse.data);
+      
+      let fetchedCourses: any[] = [];
+      if (courseResponse.success) {
+        fetchedCourses = Array.isArray(courseResponse.data) ? courseResponse.data : courseResponse.data?.data || [];
+        setCourses(fetchedCourses);
+      }
+
+      if (catResponse.success) {
+        setCategories(Array.isArray(catResponse.data) ? catResponse.data : catResponse.data?.data || []);
+      }
+
+      // Fetch resources for all available courses sequentially or in parallel
+      const allResources: any[] = [];
+      if (fetchedCourses.length > 0) {
+        const resourcePromises = fetchedCourses.map(c => resourceService.getForCourse(c._id).catch(() => null));
+        const resourcesResponses = await Promise.all(resourcePromises);
+        
+        resourcesResponses.forEach(res => {
+          if (res && res.success) {
+            const arr = Array.isArray(res.data) ? res.data : res.data?.data || [];
+            allResources.push(...arr);
+          }
+        });
+      }
+      setResources(allResources);
     } catch (error) {
       toast.error("Failed to load data");
     } finally {
@@ -47,22 +76,50 @@ export default function AdminResourcesUploadPage() {
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newResource.title || !newResource.course || !newResource.file) {
+    if (!newResource.title || !newResource.file) {
       toast.error("Please fill all required fields");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      let courseIdToUse = newResource.course;
+      
+      // Standalone logic
+      if (!courseIdToUse) {
+        toast.loading("Generating standalone utility configuration...");
+        const hiddenCoursePayload = {
+          title: `[Standalone Resource] ${newResource.title}`,
+          description: `Utility course automatically generated for standalone resource: ${newResource.title}`,
+          category: newResource.category || categories[0]?._id,
+          access_type: newResource.access_type,
+          difficulty_level: "beginner",
+          pricing: {
+            price: Number(newResource.price),
+            discount_price: Number(newResource.discount_price),
+          },
+          is_active: true,
+          features: ["Standalone PDF Resource"],
+        };
+        
+        const courseRes = await courseService.create(hiddenCoursePayload);
+        if (courseRes.success && courseRes.data) {
+          courseIdToUse = courseRes.data._id;
+        } else {
+          throw new Error("Failed to initialize standalone utility course");
+        }
+      }
+
       const formData = new FormData();
       formData.append("title", newResource.title);
-      formData.append("course", newResource.course);
+      formData.append("course", courseIdToUse);
       formData.append("file", newResource.file);
+      formData.append("resource_type", "pdf");
 
       await resourceService.create(formData);
       toast.success("Resource uploaded successfully");
       
-      setNewResource({ title: "", course: "", file: null });
+      setNewResource({ title: "", course: "", category: "", access_type: "paid", price: 0, discount_price: 0, file: null });
       setIsFormVisible(false);
       fetchData();
     } catch (error: any) {
@@ -131,15 +188,74 @@ export default function AdminResourcesUploadPage() {
                   value={newResource.course}
                   onChange={e => setNewResource({...newResource, course: e.target.value})}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-[#D00113]"
-                  required
                 >
-                  <option value="">Select a Course...</option>
+                  <option value="">None (Standalone Resource)</option>
                   {courses.map(c => (
                     <option key={c._id} value={c._id}>{c.title}</option>
                   ))}
                 </select>
               </div>
             </div>
+
+            {!newResource.course && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-red-50/50 border border-red-100 rounded-xl">
+                <div className="md:col-span-3 pb-2 border-b border-red-100">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Standalone Configuration</h3>
+                  <p className="text-xs text-slate-500 font-medium">Configure this independent resource to be sold individually.</p>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Category</label>
+                  <select 
+                    value={newResource.category}
+                    onChange={e => setNewResource({...newResource, category: e.target.value})}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                  >
+                    <option value="">None</option>
+                    {categories.map(c => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Access Type</label>
+                  <select 
+                    value={newResource.access_type}
+                    onChange={e => setNewResource({...newResource, access_type: e.target.value})}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                  >
+                    <option value="free">Free</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+
+                {newResource.access_type === 'paid' && (
+                  <div className="space-y-1.5 md:col-span-1 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
+                      <input 
+                        type="number" 
+                        value={newResource.price}
+                        onChange={e => setNewResource({...newResource, price: Number(e.target.value)})}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                        min={0}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Discount (₹)</label>
+                      <input 
+                        type="number" 
+                        value={newResource.discount_price}
+                        onChange={e => setNewResource({...newResource, discount_price: Number(e.target.value)})}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider block">File Payload (.pdf)</label>

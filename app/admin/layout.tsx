@@ -36,6 +36,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
   const adminNavItems = [
     { name: "Overview Desk", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "Manage Courses", href: "/admin/courses", icon: <FolderOpen size={18} /> },
+    { name: "Manage Categories", href: "/admin/categories", icon: <FolderOpen size={18} /> },
     { name: "Manage Mocks", href: "/admin/tests", icon: <FileEdit size={18} /> },
     { name: "Aspirant Roster", href: "/admin/students", icon: <Users size={18} /> },
     { name: "PDF Resources", href: "/admin/resources", icon: <FileText size={18} /> },
@@ -137,13 +138,13 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-red-600 text-white font-black text-xs flex items-center justify-center relative overflow-hidden">
                 {user?.avatar ? (
-                  <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                  <Image src={user.avatar} alt={user.full_name} fill className="object-cover" />
                 ) : (
-                  getInitials(user?.name || "Admin")
+                  getInitials(user?.full_name || "Admin")
                 )}
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-200 line-clamp-1">{user?.name || "SuperUser Node"}</p>
+                <p className="text-xs font-bold text-slate-200 line-clamp-1">{user?.full_name || "SuperUser Node"}</p>
                 <p className="text-[9px] font-bold font-mono text-slate-500">SECURE_LEVEL//01</p>
               </div>
             </div>

@@ -5,10 +5,9 @@ import { inquiryService } from "@/services/inquiry.service";
 import { toast } from "sonner";
 import { Loader2, MessageSquare, Plus, Clock, CheckCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { useForm } from "react-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm as useReactHookForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 const inquirySchema = z.object({
   subject: z.string().min(5, "Subject must be at least 5 characters"),
@@ -23,7 +22,7 @@ export default function StudentInquiriesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useReactHookForm<InquiryFormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<InquiryFormValues>({
     resolver: zodResolver(inquirySchema),
   });
 

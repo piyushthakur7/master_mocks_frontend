@@ -20,8 +20,11 @@ export interface TestAttempt {
   score?: number;
   totalQuestions?: number;
   attemptedQuestions?: number;
+  totalAttempted?: number;
   correctAnswers?: number;
   wrongAnswers?: number;
+  timeSpent?: number;
+  test?: MockTest | string;
   percentage?: number;
   rewardEarned?: number;
   fraudFlags?: number;

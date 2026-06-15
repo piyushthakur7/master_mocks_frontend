@@ -17,7 +17,7 @@ export default function StudentResultsPage() {
       try {
         const response = await attemptService.getMyAttempts({ limit: 50 });
         if (response.success && response.data) {
-          setAttempts(response.data.data);
+          setAttempts(response.data?.data || []);
         }
       } catch (error) {
         toast.error("Failed to load attempt history");
@@ -58,8 +58,10 @@ export default function StudentResultsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
                 {attempts.map((attempt) => {
-                  const accuracy = attempt.totalAttempted > 0 
-                    ? ((attempt.correctAnswers / attempt.totalAttempted) * 100).toFixed(1) 
+                  const totalAttempted = attempt.totalAttempted || 0;
+                  const correctAnswers = attempt.correctAnswers || 0;
+                  const accuracy = totalAttempted > 0 
+                    ? ((correctAnswers / totalAttempted) * 100).toFixed(1) 
                     : "0.0";
                     
                   return (
@@ -78,7 +80,7 @@ export default function StudentResultsPage() {
                         {formatDate(attempt.startTime)}
                       </td>
                       <td className="py-4 px-6 font-bold text-slate-700">
-                        {attempt.score.toFixed(2)}
+                        {(attempt.score || 0).toFixed(2)}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-1.5">
@@ -87,8 +89,8 @@ export default function StudentResultsPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6 font-bold">
-                        {attempt.rewardEarned > 0 ? (
-                          <span className="text-emerald-600">{formatCurrency(attempt.rewardEarned)}</span>
+                        {(attempt.rewardEarned || 0) > 0 ? (
+                          <span className="text-emerald-600">{formatCurrency(attempt.rewardEarned || 0)}</span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}

@@ -13,8 +13,8 @@ export default function StudentSettingsPage() {
 
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    full_name: user?.name || "",
-    phone_number: user?.phone_number || "",
+    full_name: user?.full_name || "",
+    phone: user?.phone || "",
   });
 
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -102,18 +102,75 @@ export default function StudentSettingsPage() {
           {activeTab === "profile" && (
             <div className="space-y-8 animate-in fade-in">
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-slate-100 border-4 border-white shadow-md flex items-center justify-center text-2xl font-black text-slate-400 relative group overflow-hidden">
-                  {user?.profile_picture ? (
-                    <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                <label className="w-20 h-20 rounded-full bg-slate-100 border-4 border-white shadow-md flex items-center justify-center text-2xl font-black text-slate-400 relative group overflow-hidden cursor-pointer">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    user?.name?.charAt(0).toUpperCase() || <UserIcon className="w-8 h-8" />
+                    user?.full_name?.charAt(0).toUpperCase() || <UserIcon className="w-8 h-8" />
                   )}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
-                </div>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const loadingToast = toast.loading("Processing avatar...");
+                      
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const img = new Image();
+                        img.src = reader.result as string;
+                        img.onload = async () => {
+                          // Compress image to bypass 16KB JSON limit
+                          const canvas = document.createElement("canvas");
+                          const MAX_SIZE = 100; // Small size for avatar to stay under 16KB base64
+                          let width = img.width;
+                          let height = img.height;
+                          
+                          if (width > height) {
+                            if (width > MAX_SIZE) {
+                              height *= MAX_SIZE / width;
+                              width = MAX_SIZE;
+                            }
+                          } else {
+                            if (height > MAX_SIZE) {
+                              width *= MAX_SIZE / height;
+                              height = MAX_SIZE;
+                            }
+                          }
+                          
+                          canvas.width = width;
+                          canvas.height = height;
+                          const ctx = canvas.getContext("2d");
+                          ctx?.drawImage(img, 0, 0, width, height);
+                          
+                          // Use low quality jpeg to ensure it stays tiny
+                          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.5);
+                          
+                          toast.loading("Uploading avatar...", { id: loadingToast });
+                          
+                          try {
+                            const res = await userService.updateAvatar({ profile_picture: compressedBase64 });
+                            if (res.success) {
+                              toast.success("Avatar updated successfully", { id: loadingToast });
+                              window.location.reload();
+                            }
+                          } catch (error: any) {
+                            toast.error(error.message || "Failed to upload avatar", { id: loadingToast });
+                          }
+                        };
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-lg">{user?.name}</h3>
+                  <h3 className="font-bold text-slate-900 text-lg">{user?.full_name}</h3>
                   <p className="text-xs text-slate-500 font-medium capitalize">{user?.role.toLowerCase()}</p>
                 </div>
               </div>
@@ -153,8 +210,8 @@ export default function StudentSettingsPage() {
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
                       type="text"
-                      value={profileForm.phone_number}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D00113]/20 focus:border-[#D00113] font-medium"
                       placeholder="Optional"
                     />
