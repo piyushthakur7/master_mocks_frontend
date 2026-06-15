@@ -31,14 +31,64 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Center Navigation Links - Redirect to Login */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
-          <Link href="/login" className="hover:text-[#D00113] transition-colors">
-            Free Mocks
-          </Link>
-          <Link href="/login" className="hover:text-[#D00113] transition-colors">
-            Free PDFs
-          </Link>
+        {/* Center Navigation Links with Dropdowns */}
+        <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-600">
+          
+          {/* Free Mocks Dropdown */}
+          <div className="relative group h-full flex items-center">
+            <button className="flex items-center gap-1 hover:text-[#D00113] transition-colors outline-none focus:outline-none py-6">
+              Free Mocks
+              <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            
+            {/* Dropdown Container with padding bridge */}
+            <div className="absolute top-[100%] left-0 pt-2 w-60 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+              <div className="bg-white rounded-lg shadow-xl border border-slate-100 p-2 transform origin-top translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                <div className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50 rounded-md mb-1">
+                  Banking & Insurance
+                </div>
+                <div className="flex flex-col">
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Reasoning
+                  </Link>
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Quant
+                  </Link>
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Current Affairs
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Free PDFs Dropdown */}
+          <div className="relative group h-full flex items-center">
+            <button className="flex items-center gap-1 hover:text-[#D00113] transition-colors outline-none focus:outline-none py-6">
+              Free PDFs
+              <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            
+            {/* Dropdown Container with padding bridge */}
+            <div className="absolute top-[100%] left-0 pt-2 w-60 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+              <div className="bg-white rounded-lg shadow-xl border border-slate-100 p-2 transform origin-top translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                <div className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50 rounded-md mb-1">
+                  Banking & Insurance
+                </div>
+                <div className="flex flex-col">
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Reasoning
+                  </Link>
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Quant
+                  </Link>
+                  <Link href="#" className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#D00113] rounded-md transition-colors block">
+                    Current Affairs
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
         </nav>
 
         {/* Primary Call to Action */}

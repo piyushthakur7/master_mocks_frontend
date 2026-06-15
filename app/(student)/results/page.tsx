@@ -20,7 +20,8 @@ export default function StudentResultsPage() {
           setAttempts(response.data?.data || []);
         }
       } catch (error) {
-        toast.error("Failed to load attempt history");
+        console.error("Failed to load attempt history:", error);
+        setAttempts([]); // Fallback to empty state which UI handles gracefully
       } finally {
         setIsLoading(false);
       }

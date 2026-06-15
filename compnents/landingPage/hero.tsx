@@ -27,17 +27,17 @@ export default function Hero() {
         {/* Left Side Content */}
         <div className="lg:col-span-7 flex flex-col text-left">
           <div className="inline-flex items-center min-h-[40px] mb-6">
-            <span className="bg-brand-light text-brand text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full border border-red-200/60 shadow-sm animate-pulse">
-               {animatingTexts[index]}
+            <span className="bg-brand-light text-brand text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full border border-red-200/60 shadow-sm uppercase tracking-wider animate-pulse">
+               About Us
             </span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] mb-6">
-            India&apos;s 1st <span className="text-brand">Performance-Based</span> Mock Test Platform
+            We are India&apos;s 1st <span className="text-brand">Performance-Based</span> Mock Test Platform
           </h1>
           
           <p className="text-lg text-slate-600 mb-8 max-w-2xl">
-            We combine high-quality exam-level questions with smart analytics, AI-powered performance insights, and real exam simulations designed specifically for serious Banking & Insurance aspirant.
+            {animatingTexts[index]} We combine high-quality exam-level questions with smart analytics, AI-powered performance insights, and real exam simulations designed specifically for serious Banking & Insurance aspirant.
           </p>
 
           {/* <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">

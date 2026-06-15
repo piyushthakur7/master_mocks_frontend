@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { resourceService } from "@/services/resource.service";
 import { courseService } from "@/services/course.service";
 import { Course } from "@/types/course";

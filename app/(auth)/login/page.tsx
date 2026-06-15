@@ -62,6 +62,8 @@ export default function StudentLoginPage() {
         } else {
           router.push("/dashboard");
         }
+      } else {
+        toast.error(response.message || "Invalid email or password.");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to login. Please check your credentials.");
