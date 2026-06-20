@@ -120,6 +120,8 @@ export const ROUTES = {
   STUDENT_RESOURCES: "/resources",
   STUDENT_INQUIRIES: "/inquiries",
   STUDENT_SETTINGS: "/settings",
+  STUDENT_PURCHASES: "/purchases",
+  STUDENT_LEADERBOARD: "/leaderboard",
   // Admin routes
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_COURSES: "/admin/courses",

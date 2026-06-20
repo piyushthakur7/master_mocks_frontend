@@ -25,5 +25,7 @@ export interface AdminDashboard {
   totalStudents: number;
   totalCourses: number;
   totalTests: number;
+  totalFreeTests: number;     // v2.0: NEW
+  totalPaidTests: number;     // v2.0: NEW
   revenue: number;
 }

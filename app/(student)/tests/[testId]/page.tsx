@@ -4,6 +4,7 @@ import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
+import { paymentService } from "@/services/payment.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Clock, HelpCircle, Target, Lock } from "lucide-react";
@@ -19,8 +20,11 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const { user } = useAuth();
   
   const [test, setTest] = useState<MockTest | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [accessReason, setAccessReason] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     const fetchTestDetails = async () => {
@@ -28,6 +32,13 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         const response = await mockTestService.getById(unwrappedParams.testId);
         if (response.success && response.data) {
           setTest(response.data);
+          
+          // Check access
+          const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
+          if (accessResponse.success && accessResponse.data) {
+            setHasAccess(accessResponse.data.has_access);
+            setAccessReason(accessResponse.data.reason || "");
+          }
         } else {
           toast.error("Test not found");
           router.push("/tests");
@@ -44,9 +55,83 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   }, [unwrappedParams.testId, router]);
 
   const handleStart = (e: React.MouseEvent) => {
+    if (!hasAccess) {
+      e.preventDefault();
+      handlePurchase();
+      return;
+    }
+    
     if (!acceptedTerms) {
       e.preventDefault();
       toast.error("Please accept the terms to proceed");
+    }
+  };
+
+  const handlePurchase = async () => {
+    if (!test || !user) {
+      toast.error("Please login to purchase");
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      // 1. Create order
+      const orderRes = await paymentService.createOrder({
+        item_id: test._id,
+        item_type: "MockTest",
+      });
+
+      if (!orderRes.success || !orderRes.data) {
+        throw new Error(orderRes.message || "Failed to create order");
+      }
+
+      const { order_id, amount, currency, key_id } = orderRes.data;
+
+      // 2. Open Razorpay
+      const options = {
+        key: key_id,
+        amount: amount * 100, // paise
+        currency: currency,
+        name: "MasterMock",
+        description: `Purchase: ${test.title}`,
+        order_id: order_id,
+        handler: async (response: any) => {
+          try {
+            // 3. Verify payment
+            const verifyRes = await paymentService.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (verifyRes.success) {
+              toast.success("Payment successful! You can now start the test.");
+              setHasAccess(true);
+            } else {
+              throw new Error("Payment verification failed");
+            }
+          } catch (err: any) {
+            toast.error(err.message || "Payment verification failed");
+          }
+        },
+        prefill: {
+          name: user.full_name || "Student",
+          email: user.email || "",
+        },
+        theme: {
+          color: "#D00113",
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function (response: any) {
+        toast.error(response.error.description || "Payment failed");
+      });
+      rzp.open();
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong during checkout");
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -59,9 +144,6 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   }
 
   if (!test) return null;
-
-  const courseId = typeof test.course === 'object' ? (test.course as any)?._id : test.course;
-  const isEnrolled = courseId ? user?.enrolledCourses?.includes(courseId) : true;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">
@@ -93,7 +175,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           </div>
           <div className="flex gap-3">
             <span className="text-[#D00113] font-bold">02.</span>
-            <p><strong className="text-slate-900">Negative Score Allocation:</strong> Standard exam marking rules apply. Each accurate choice awards points according to the question's value, while erroneous entries deduct {test.negativeMarking ? `-${test.negativeMarksPerWrong}` : "0"} marks.</p>
+            <p><strong className="text-slate-900">Negative Score Allocation:</strong> Standard exam marking rules apply. Each accurate choice awards points according to the question's value, while erroneous entries deduct {test.negative_marking ? `-${test.negative_marks_per_wrong}` : "0"} marks.</p>
           </div>
           <div className="flex gap-3">
             <span className="text-[#D00113] font-bold">03.</span>
@@ -106,22 +188,22 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           <div>
             <div className="flex justify-center mb-1"><Clock className="w-4 h-4 text-slate-400" /></div>
             <p className="text-[10px] font-black uppercase text-slate-400">Total Timer</p>
-            <p className="text-lg font-black text-slate-900">{test.durationMinutes} Mins</p>
+            <p className="text-lg font-black text-slate-900">{test.duration_minutes} Mins</p>
           </div>
           <div>
             <div className="flex justify-center mb-1"><HelpCircle className="w-4 h-4 text-slate-400" /></div>
             <p className="text-[10px] font-black uppercase text-slate-400">Total Value</p>
-            <p className="text-lg font-black text-slate-900">{test.questions?.length || 0} MCQs</p>
+            <p className="text-lg font-black text-slate-900">{test.total_questions || test.questions?.length || 0} MCQs</p>
           </div>
           <div>
             <div className="flex justify-center mb-1"><Target className="w-4 h-4 text-slate-400" /></div>
             <p className="text-[10px] font-black uppercase text-slate-400">Total Marks</p>
-            <p className="text-lg font-black text-emerald-600">{test.totalMarks}</p>
+            <p className="text-lg font-black text-emerald-600">{test.total_marks}</p>
           </div>
         </div>
 
         {/* Dynamic Launch Triggers / Access Gate */}
-        {isEnrolled ? (
+        {hasAccess ? (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
             <div className="flex items-start gap-2.5">
               <input 
@@ -150,19 +232,24 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           </div>
         ) : (
           <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
-            <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
-              <Lock className="w-5 h-5 text-slate-500" />
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <Lock className="w-5 h-5 text-[#D00113]" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Access Restricted</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">You have not enrolled in the parent course or test series to access this mock test.</p>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Premium Access Required</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">{accessReason || "You must purchase this test to unlock access."}</p>
             </div>
-            <Link 
-              href={`/courses/${courseId}`}
-              className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all"
+            <button 
+              onClick={handlePurchase}
+              disabled={isProcessingPayment}
+              className="px-6 py-3 bg-[#D00113] hover:bg-[#b0010f] disabled:bg-slate-400 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
             >
-              Unlock Access
-            </Link>
+              {isProcessingPayment ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+              ) : (
+                `Buy Now — ₹${test.price}`
+              )}
+            </button>
           </div>
         )}
 

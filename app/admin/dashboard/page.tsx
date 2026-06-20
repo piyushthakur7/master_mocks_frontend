@@ -39,6 +39,8 @@ export default function AdminDashboardOverviewPage() {
     totalStudents: 0,
     totalCourses: 0,
     totalTests: 0,
+    totalFreeTests: 0,
+    totalPaidTests: 0,
     revenue: 0
   };
 
@@ -46,7 +48,7 @@ export default function AdminDashboardOverviewPage() {
     { title: "Total Aspirants", value: d.totalStudents.toLocaleString(), icon: <Users className="w-5 h-5" />, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
     { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
     { title: "Active Courses", value: d.totalCourses.toString(), icon: <BookOpen className="w-5 h-5" />, color: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
-    { title: "Mock Tests", value: d.totalTests.toString(), icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-50 border-red-100" }
+    { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-50 border-red-100" }
   ];
 
   return (
@@ -79,6 +81,7 @@ export default function AdminDashboardOverviewPage() {
             </div>
             <div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">{card.value}</p>
+              {card.subtext && <p className="text-[10px] font-bold text-slate-400 mt-1">{card.subtext}</p>}
             </div>
           </div>
         ))}

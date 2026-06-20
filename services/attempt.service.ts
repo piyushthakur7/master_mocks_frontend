@@ -3,18 +3,30 @@ import { TestAttempt } from "@/types/attempt";
 import { ApiResponse, PaginatedResponse } from "@/types/api";
 
 export const attemptService = {
-  start: (testId: string) => apiClient.post<any, ApiResponse<TestAttempt>>("/attempts/start", { testId }),
+  // v2.0: Uses mock_test_id instead of testId
+  start: (mockTestId: string) =>
+    apiClient.post<any, ApiResponse<TestAttempt>>("/attempts/start", { mock_test_id: mockTestId }),
   
-  answer: (attemptId: string, data: { questionId: string; selectedOptionId: string }) => apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, data),
+  // v2.0: Uses snake_case field names
+  answer: (attemptId: string, data: {
+    question_id: string;
+    selected_option_id: string;
+    is_marked_for_review?: boolean;
+  }) => apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, data),
   
-  submit: (attemptId: string) => apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/submit`),
+  submit: (attemptId: string) =>
+    apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/submit`),
   
-  evaluate: (attemptId: string) => apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/evaluate`),
+  evaluate: (attemptId: string) =>
+    apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/evaluate`),
   
-  getMyAttempts: (params?: any) => apiClient.get<any, PaginatedResponse<TestAttempt>>("/attempts/my", { params }),
+  getMyAttempts: (params?: any) =>
+    apiClient.get<any, PaginatedResponse<TestAttempt>>("/attempts/my", { params }),
   
-  getById: (id: string) => apiClient.get<any, ApiResponse<TestAttempt>>(`/attempts/${id}`),
+  getById: (id: string) =>
+    apiClient.get<any, ApiResponse<TestAttempt>>(`/attempts/${id}`),
   
   // Admin only
-  getAllAttempts: (params?: any) => apiClient.get<any, PaginatedResponse<TestAttempt>>("/attempts", { params }),
+  getAllAttempts: (params?: any) =>
+    apiClient.get<any, PaginatedResponse<TestAttempt>>("/attempts", { params }),
 };

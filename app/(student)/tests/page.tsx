@@ -77,9 +77,9 @@ export default function StudentTestsPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md truncate max-w-[150px]">
                     {typeof test.category === 'object' && test.category?.name ? test.category.name : "General Assessment"}
                   </span>
-                  {test.rewardPool?.isActive ? (
+                  {test.access_type === "paid" ? (
                     <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-red-50 text-[#D00113] border border-red-100 rounded-md">
-                      💎 Premium
+                      💎 ₹{test.price}
                     </span>
                   ) : (
                     <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-md">
@@ -95,7 +95,7 @@ export default function StudentTestsPage() {
                   </h3>
                   <div className="flex items-center gap-4 text-xs text-slate-400 font-medium mt-2">
                     <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes} Mins</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.questions?.length || 0} MCQs</span>
+                    <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.total_questions || test.questions?.length || 0} MCQs</span>
                   </div>
                 </div>
 
@@ -121,7 +121,7 @@ export default function StudentTestsPage() {
                   href={`/tests/${test._id}`} 
                   className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
                 >
-                  Configure Test Environment
+                  {test.access_type === "paid" ? `View details — ₹${test.price}` : "Configure Test Environment"}
                 </Link>
               </div>
             </div>

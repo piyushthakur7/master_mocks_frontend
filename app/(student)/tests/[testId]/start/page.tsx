@@ -39,7 +39,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
         }
         
         setTest(testRes.data);
-        setTimeLeft(testRes.data.durationMinutes * 60);
+        setTimeLeft(testRes.data.duration_minutes * 60);
 
         // Start attempt
         const attemptRes = await attemptService.start(unwrappedParams.testId);
@@ -49,18 +49,19 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
           // Pre-fill any existing answers if the attempt was already started and resumed
           if (attemptRes.data.answers) {
             const answersMap: Record<string, string> = {};
-            attemptRes.data.answers.forEach((ans) => {
-              answersMap[ans.question.toString()] = ans.selectedOption.toString();
+            attemptRes.data.answers.forEach((ans: any) => {
+              answersMap[(ans.question_id || ans.question).toString()] = (ans.selected_option_id || ans.selectedOption).toString();
             });
             setSelectedAnswers(answersMap);
           }
           
-          // Adjust time left based on startTime if it's a resumed attempt
-          if (attemptRes.data.startTime) {
-            const startTime = new Date(attemptRes.data.startTime).getTime();
+          // Adjust time left based on started_at if it's a resumed attempt
+          const startTimestamp = attemptRes.data.started_at || attemptRes.data.startTime;
+          if (startTimestamp) {
+            const startTime = new Date(startTimestamp).getTime();
             const now = new Date().getTime();
             const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remaining = (testRes.data.durationMinutes * 60) - elapsedSeconds;
+            const remaining = (testRes.data.duration_minutes * 60) - elapsedSeconds;
             setTimeLeft(remaining > 0 ? remaining : 0);
           }
         }
@@ -102,7 +103,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
     try {
       // Sync with server
-      await attemptService.answer(attempt._id, { questionId, selectedOptionId: optionId });
+      await attemptService.answer(attempt._id, { question_id: questionId, selected_option_id: optionId });
     } catch (error) {
       toast.error("Failed to save answer. Please check your connection.");
     }

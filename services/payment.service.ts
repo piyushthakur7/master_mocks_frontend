@@ -1,12 +1,25 @@
 import { apiClient } from "@/lib/api-client";
-import { Payment } from "@/types/payment";
+import { Payment, Purchase, CreateOrderRequest, CreateOrderResponse, VerifyPaymentRequest } from "@/types/payment";
 import { ApiResponse, PaginatedResponse } from "@/types/api";
 
 export const paymentService = {
-  createOrder: (data: { courseId: string; amount: number; currency: string }) => apiClient.post<any, ApiResponse<Payment>>("/payments/create-order", data),
+  // v2.0: Backend auto-fetches price — only send item_id and item_type
+  createOrder: (data: CreateOrderRequest) =>
+    apiClient.post<any, ApiResponse<CreateOrderResponse>>("/payments/create-order", data),
   
-  verifyPayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => apiClient.post<any, ApiResponse<{ success: boolean; purchaseId?: string }>>("/payments/verify", data),
+  // v2.0: Verify Razorpay payment signature
+  verifyPayment: (data: VerifyPaymentRequest) =>
+    apiClient.post<any, ApiResponse<Payment>>("/payments/verify", data),
+  
+  // v2.0: Get user's active purchases
+  getMyPurchases: () =>
+    apiClient.get<any, ApiResponse<Purchase[]>>("/payments/my-purchases"),
+  
+  // v2.0: Get full payment history
+  getMyHistory: () =>
+    apiClient.get<any, ApiResponse<Payment[]>>("/payments/my-history"),
   
   // Admin only
-  getAllPurchases: (params?: any) => apiClient.get<any, PaginatedResponse<any>>("/payments/purchases", { params }),
+  getAllPurchases: (params?: any) =>
+    apiClient.get<any, PaginatedResponse<any>>("/payments/purchases", { params }),
 };

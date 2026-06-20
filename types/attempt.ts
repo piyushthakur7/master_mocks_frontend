@@ -4,7 +4,14 @@ import { User } from "./user";
 
 export interface Answer {
   question: Question | string;
-  selectedOption: string;
+  question_id?: string;
+  question_text?: string;               // v2.0: included in evaluation
+  selected_option_id?: string;           // v2.0: snake_case
+  selected_option_text?: string;         // v2.0: included in evaluation
+  is_correct?: boolean;                  // v2.0: included in evaluation
+  is_marked_for_review?: boolean;        // v2.0: new field
+  // Legacy camelCase aliases
+  selectedOption?: string;
   isCorrect?: boolean;
   marksAwarded?: number;
 }
@@ -12,12 +19,16 @@ export interface Answer {
 export interface TestAttempt {
   _id: string;
   user: User | string;
-  mockTest: MockTest | string;
-  startTime: string;
-  endTime?: string;
-  answers: Answer[];
+  mock_test: MockTest | string;          // v2.0: snake_case
+  started_at: string;                    // v2.0: snake_case
   status: AttemptStatus;
+  answers: Answer[];
   score?: number;
+  percentage?: number;                   // v2.0: included in evaluation
+  // Legacy camelCase aliases (still used in some UI code)
+  mockTest?: MockTest | string;
+  startTime?: string;
+  endTime?: string;
   totalQuestions?: number;
   attemptedQuestions?: number;
   totalAttempted?: number;
@@ -25,7 +36,6 @@ export interface TestAttempt {
   wrongAnswers?: number;
   timeSpent?: number;
   test?: MockTest | string;
-  percentage?: number;
   rewardEarned?: number;
   fraudFlags?: number;
   createdAt: string;

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, FileText, BookOpen, BarChart2, Settings, LogOut, Menu, X, Bell } from "lucide-react";
+import { LayoutDashboard, FileText, BookOpen, BarChart2, Settings, LogOut, Menu, X, Bell, CreditCard } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +33,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     { name: "Mock Tests", href: "/tests", icon: <FileText size={18} /> },
     { name: "Study Resources", href: "/resources", icon: <BookOpen size={18} /> },
     { name: "My Results", href: "/results", icon: <BarChart2 size={18} /> },
+    { name: "My Purchases", href: "/purchases", icon: <CreditCard size={18} /> },
     { name: "Portal Settings", href: "/settings", icon: <Settings size={18} /> },
   ];
 

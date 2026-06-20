@@ -1,4 +1,4 @@
-import { DifficultyLevel } from "@/lib/constants";
+import { DifficultyLevel, AccessType } from "@/lib/constants";
 import { Category } from "./category";
 import { Course } from "./course";
 
@@ -28,16 +28,26 @@ export interface MockTest {
   _id: string;
   title: string;
   description?: string;
+  access_type: AccessType;            // v2.0: "free" | "paid"
+  price: number;                       // v2.0: 0 for free, > 0 for paid
   category: Category | string;
   course?: Course | string;
-  durationMinutes: number;
-  totalMarks: number;
-  passingMarks: number;
-  negativeMarking: boolean;
-  negativeMarksPerWrong: number;
+  total_questions: number;             // v2.0: count from API
+  total_marks: number;
+  duration_minutes: number;
+  passing_marks: number;
+  negative_marking: boolean;
+  negative_marks_per_wrong: number;
   difficulty: DifficultyLevel;
-  isActive: boolean;
-  totalAttempts: number;
+  is_active: boolean;
+  // Legacy camelCase aliases (still used in some UI code)
+  durationMinutes?: number;
+  totalMarks?: number;
+  passingMarks?: number;
+  negativeMarking?: boolean;
+  negativeMarksPerWrong?: number;
+  isActive?: boolean;
+  totalAttempts?: number;
   questions?: Question[]; // Array of populated questions or IDs depending on endpoint
   rewardPool?: {
     isActive: boolean;
