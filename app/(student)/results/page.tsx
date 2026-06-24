@@ -78,7 +78,7 @@ export default function StudentResultsPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-slate-500">
-                        {formatDate(attempt.startTime)}
+                        {formatDate(attempt.startTime || attempt.started_at)}
                       </td>
                       <td className="py-4 px-6 font-bold text-slate-700">
                         {(attempt.score || 0).toFixed(2)}

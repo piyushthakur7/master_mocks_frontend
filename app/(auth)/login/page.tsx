@@ -150,6 +150,13 @@ export default function StudentLoginPage() {
           Create Account Free
         </Link>
       </div>
+
+      <div className="text-center pt-2 text-xs text-slate-500 font-medium">
+        Administrator?{" "}
+        <Link href="/admin/login" className="text-slate-900 font-bold hover:underline">
+          Access Admin Portal
+        </Link>
+      </div>
     </div>
   );
 }

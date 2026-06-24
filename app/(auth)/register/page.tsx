@@ -50,7 +50,7 @@ export default function StudentRegisterPage() {
       email: "",
       phone: "",
       password: "",
-      terms: undefined,
+      terms: false,
     },
   });
 
@@ -191,6 +191,13 @@ export default function StudentRegisterPage() {
         Already registered?{" "}
         <Link href="/login" className="text-[#D00113] font-bold hover:underline">
           Sign In Instead
+        </Link>
+      </div>
+
+      <div className="text-center pt-2 text-xs text-slate-500 font-medium">
+        Administrator?{" "}
+        <Link href="/admin/login" className="text-slate-900 font-bold hover:underline">
+          Access Admin Portal
         </Link>
       </div>
     </div>
