@@ -150,7 +150,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{user?.full_name}</p>
-                  <p className="text-[10px] font-medium text-slate-400">₹{user?.walletBalance?.toFixed(2) || "0.00"}</p>
                 </div>
               </div>
               <button onClick={logout} className="text-slate-400 hover:text-[#D00113] p-1 transition-colors" title="Logout">

@@ -49,7 +49,6 @@ export default function StudentDashboardPage() {
   };
 
   const metrics = [
-    { title: "Wallet Balance", value: formatCurrency(user?.walletBalance || 0), sub: "Available rewards", icon: <Wallet className="w-6 h-6" />, statusColor: "text-emerald-600" },
     { title: "Average Score", value: `${parseFloat(d.avgScore || "0").toFixed(1)}%`, sub: "Across all attempts", icon: <Target className="w-6 h-6" />, statusColor: "text-[#D00113]" },
     { title: "Tests Attempted", value: d.totalAttempts?.toString() || "0", sub: "Total mocks completed", icon: <Flag className="w-6 h-6" />, statusColor: "text-slate-800" }
   ];
@@ -61,7 +60,7 @@ export default function StudentDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Candidate Workspace</h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">Welcome back, {user?.full_name?.split(' ')[0] || 'Aspirant'}. Complete targeted performance test blocks to claim wallet rewards.</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Welcome back, {user?.full_name?.split(' ')[0] || 'Aspirant'}. Complete targeted performance test blocks to improve your score.</p>
         </div>
         <div>
           <Link href="/tests" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all text-center">
@@ -71,7 +70,7 @@ export default function StudentDashboardPage() {
       </div>
 
       {/* ─── METRIC SCOREBOARDS TRACK ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {metrics.map((metric, i) => (
           <div key={i} className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex items-start justify-between relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="space-y-2">
