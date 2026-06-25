@@ -30,7 +30,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const navigationItems = [
     { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "Mock Tests", href: "/tests", icon: <FileText size={18} /> },
+    { name: "Free Mocks", href: "/tests", icon: <FileText size={18} /> },
     { name: "FREE Pdfs", href: "/resources", icon: <BookOpen size={18} /> },
     { name: "My Results", href: "/results", icon: <BarChart2 size={18} /> },
     { name: "My Purchases", href: "/purchases", icon: <CreditCard size={18} /> },

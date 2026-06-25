@@ -28,6 +28,11 @@ export default function CourseDetailsPage({ params }: PageProps) {
       try {
         const response = await courseService.getById(unwrappedParams.courseId);
         if (response.success && response.data) {
+          if (response.data.description?.includes("Utility course automatically generated")) {
+            toast.info("This is a standalone resource, not a course.");
+            router.push("/courses");
+            return;
+          }
           setCourse(response.data);
         } else {
           toast.error("Course not found");

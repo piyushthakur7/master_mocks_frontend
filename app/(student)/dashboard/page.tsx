@@ -3,23 +3,35 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { dashboardService } from "@/services/dashboard.service";
+import { mockTestService } from "@/services/mock-test.service";
+import { MockTest } from "@/types/mock-test";
 import { StudentDashboard } from "@/types/dashboard";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight } from "lucide-react";
+import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function StudentDashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<StudentDashboard | null>(null);
+  const [paidMocks, setPaidMocks] = useState<MockTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await dashboardService.getStudentDashboard();
-        if (response.success) {
-          setData(response.data);
+        const [dashRes, mocksRes] = await Promise.all([
+          dashboardService.getStudentDashboard(),
+          mockTestService.getAll({ limit: 10, status: "PUBLISHED" }).catch(() => ({ success: false, data: [] }))
+        ]);
+        
+        if (dashRes.success) {
+          setData(dashRes.data);
+        }
+        
+        if (mocksRes.success) {
+          const allMocks = Array.isArray(mocksRes.data) ? mocksRes.data : mocksRes.data?.data || [];
+          setPaidMocks(allMocks.filter((m: any) => m.access_type === "paid"));
         }
       } catch (error) {
         // If API fails, we could set some fallback/empty state or show error
@@ -64,7 +76,7 @@ export default function StudentDashboardPage() {
         </div>
         <div>
           <Link href="/tests" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all text-center">
-            <Activity className="w-4 h-4" /> Launch Live Test
+            <Activity className="w-4 h-4" /> Start Mock Test
           </Link>
         </div>
       </div>
@@ -86,11 +98,11 @@ export default function StudentDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ─── UPCOMING TESTS ─── */}
+        {/* ─── UPCOMING MOCKS ─── */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Upcoming Tests</h2>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Upcoming Mocks</h2>
               <p className="text-xs text-slate-400 font-medium mt-0.5">Mocks available in your assessments.</p>
             </div>
             <Link href="/tests" className="text-xs font-bold text-[#D00113] hover:underline flex items-center gap-1">
@@ -127,6 +139,47 @@ export default function StudentDashboardPage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* ─── PAID MOCKS SECTION ─── */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">Paid Mocks</h2>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">Premium mocks available for purchase.</p>
+              </div>
+              <Link href="/courses" className="text-xs font-bold text-[#D00113] hover:underline flex items-center gap-1">
+                Browse Courses <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {paidMocks.length > 0 ? paidMocks.map((test, idx) => (
+                <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm group hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="bg-red-50 text-[#D00113] p-2 rounded-lg">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <span className="bg-red-50 text-[#D00113] text-[10px] font-black px-2.5 py-1 border border-red-100 rounded-md uppercase tracking-wider">
+                      💎 ₹{test.price}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-sm mb-1 group-hover:text-[#D00113] transition-colors line-clamp-2">{test.title}</h3>
+                  <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-3">
+                    <Clock className="w-3.5 h-3.5" /> {test.durationMinutes || test.duration_minutes || 60} Mins
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <Link href={`/tests/${test._id}`} className="w-full py-2 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-lg transition-all">
+                      View details
+                    </Link>
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-center text-slate-500 text-sm font-medium">
+                  No premium mocks available right now.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -17,7 +17,8 @@ export default function StudentCoursesPage() {
       try {
         const response = await courseService.getAll({ status: "PUBLISHED" });
         if (response.success) {
-          setCourses(Array.isArray(response.data) ? response.data : response.data?.data || []);
+          const courseList = Array.isArray(response.data) ? response.data : response.data?.data || [];
+          setCourses(courseList.filter((c: Course) => !c.description?.includes("Utility course automatically generated")));
         }
       } catch (error) {
         toast.error("Failed to load courses");

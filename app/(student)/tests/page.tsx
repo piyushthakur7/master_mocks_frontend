@@ -50,18 +50,18 @@ export default function StudentTestsPage() {
   }, []);
 
   const filteredTests = activeTab === "All"
-    ? tests
+    ? tests.filter((t) => t.access_type === "free")
     : activeTab === "Available"
-      ? tests.filter((t) => !completedTestIds.includes(t._id))
-      : tests.filter((t) => completedTestIds.includes(t._id));
+      ? tests.filter((t) => t.access_type === "free" && !completedTestIds.includes(t._id))
+      : tests.filter((t) => t.access_type === "free" && completedTestIds.includes(t._id));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
 
       {/* Upper Descriptive Column */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Available Mock Assessments</h1>
-        <p className="text-xs text-slate-500 font-medium mt-0.5">Select a testing matrix below. Premium modules allocate payouts directly to your student ledger upon achieving rank tiers.</p>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Free Mock Assessments</h1>
+        <p className="text-xs text-slate-500 font-medium mt-0.5">Select a testing matrix below to start practicing for free.</p>
       </div>
 
       {/* Categorical Filtering Tabs */}
