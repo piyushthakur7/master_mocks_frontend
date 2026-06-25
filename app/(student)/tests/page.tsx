@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { mockTestService } from "@/services/mock-test.service";
+import { attemptService } from "@/services/attempt.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, Clock, CheckCircle2 } from "lucide-react";
@@ -11,14 +12,32 @@ import { formatCurrency } from "@/lib/utils";
 export default function StudentTestsPage() {
   const [activeTab, setActiveTab] = useState<"All" | "Available" | "Completed">("All");
   const [tests, setTests] = useState<MockTest[]>([]);
+  const [purchasedTestIds, setPurchasedTestIds] = useState<string[]>([]);
+  const [completedTestIds, setCompletedTestIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTests = async () => {
+    const fetchData = async () => {
       try {
-        const response = await mockTestService.getAll({ limit: 50, status: "PUBLISHED" });
-        if (response.success) {
-          setTests(Array.isArray(response.data) ? response.data : response.data?.data || []);
+        const [testsRes, purchasedRes, attemptsRes] = await Promise.all([
+          mockTestService.getAll({ limit: 50, status: "PUBLISHED" }),
+          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] })),
+          attemptService.getMyAttempts({ status: "COMPLETED", limit: 100 }).catch(() => ({ success: false, data: [] }))
+        ]);
+
+        if (testsRes.success) {
+          setTests(Array.isArray(testsRes.data) ? testsRes.data : testsRes.data?.data || []);
+        }
+
+        if (purchasedRes.success && purchasedRes.data) {
+          setPurchasedTestIds(purchasedRes.data.map((t: any) => t._id));
+        }
+
+        if (attemptsRes.success && attemptsRes.data) {
+          const attempts = Array.isArray(attemptsRes.data) ? attemptsRes.data : attemptsRes.data?.data || [];
+          setCompletedTestIds(attempts.map((a: any) => 
+            typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
+          ).filter(Boolean));
         }
       } catch (error) {
         toast.error("Failed to load mock tests");
@@ -27,14 +46,14 @@ export default function StudentTestsPage() {
       }
     };
 
-    fetchTests();
+    fetchData();
   }, []);
 
   const filteredTests = activeTab === "All" 
     ? tests 
     : activeTab === "Available"
-      ? tests // Replace with logic if there's a way to know if completed
-      : [];
+      ? tests.filter((t) => !completedTestIds.includes(t._id))
+      : tests.filter((t) => completedTestIds.includes(t._id));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -94,7 +113,7 @@ export default function StudentTestsPage() {
                     {test.title}
                   </h3>
                   <div className="flex items-center gap-4 text-xs text-slate-400 font-medium mt-2">
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes} Mins</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes || test.duration_minutes} Mins</span>
                     <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.total_questions || test.questions?.length || 0} MCQs</span>
                   </div>
                 </div>
@@ -121,7 +140,9 @@ export default function StudentTestsPage() {
                   href={`/tests/${test._id}`} 
                   className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
                 >
-                  {test.access_type === "paid" ? `View details — ₹${test.price}` : "Configure Test Environment"}
+                  {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
+                    ? `View details — ₹${test.price}` 
+                    : "Configure Test Environment"}
                 </Link>
               </div>
             </div>
