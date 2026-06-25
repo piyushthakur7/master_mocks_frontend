@@ -10,6 +10,29 @@ export const metadata: Metadata = {
   description: "Boost your Banking & Insurance exam prep with exam-level mocks and earn cashback rewards.",
   icons: {
     icon: '/logo.jpeg',
+    apple: '/logo.jpeg',
+  },
+  openGraph: {
+    title: "Master Mocks | India's 1st Performance-Based Mock Platform",
+    description: "Boost your Banking & Insurance exam prep with exam-level mocks and earn cashback rewards.",
+    url: "https://master-mocks-frontend-yant.vercel.app",
+    siteName: "Master Mocks",
+    images: [
+      {
+        url: "/logo.jpeg",
+        width: 800,
+        height: 800,
+        alt: "Master Mocks Logo",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Master Mocks | India's 1st Performance-Based Mock Platform",
+    description: "Boost your Banking & Insurance exam prep with exam-level mocks and earn cashback rewards.",
+    images: ["/logo.jpeg"],
   },
 };
 
