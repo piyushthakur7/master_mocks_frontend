@@ -35,7 +35,7 @@ export default function StudentTestsPage() {
 
         if (attemptsRes.success && attemptsRes.data) {
           const attempts = Array.isArray(attemptsRes.data) ? attemptsRes.data : attemptsRes.data?.data || [];
-          setCompletedTestIds(attempts.map((a: any) => 
+          setCompletedTestIds(attempts.map((a: any) =>
             typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
           ).filter(Boolean));
         }
@@ -49,15 +49,15 @@ export default function StudentTestsPage() {
     fetchData();
   }, []);
 
-  const filteredTests = activeTab === "All" 
-    ? tests 
+  const filteredTests = activeTab === "All"
+    ? tests
     : activeTab === "Available"
       ? tests.filter((t) => !completedTestIds.includes(t._id))
       : tests.filter((t) => completedTestIds.includes(t._id));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Upper Descriptive Column */}
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Available Mock Assessments</h1>
@@ -70,11 +70,10 @@ export default function StudentTestsPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider transition-all border-b-2 -mb-px ${
-              activeTab === tab
+            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider transition-all border-b-2 -mb-px ${activeTab === tab
                 ? "border-[#D00113] text-[#D00113]"
                 : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -90,7 +89,7 @@ export default function StudentTestsPage() {
           {filteredTests.map((test) => (
             <div key={test._id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-all">
               <div className="space-y-4">
-                
+
                 {/* Badge row */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md truncate max-w-[150px]">
@@ -136,12 +135,12 @@ export default function StudentTestsPage() {
 
               {/* Launch trigger action wire route */}
               <div className="mt-6 pt-4 border-t border-slate-100">
-                <Link 
-                  href={`/tests/${test._id}`} 
+                <Link
+                  href={`/tests/${test._id}`}
                   className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
                 >
                   {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
-                    ? `View details — ₹${test.price}` 
+                    ? `View details — ₹${test.price}`
                     : "Configure Test Environment"}
                 </Link>
               </div>
