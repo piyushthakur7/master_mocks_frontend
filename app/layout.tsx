@@ -8,6 +8,9 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Master Mocks | India's 1st Performance-Based Mock Platform",
   description: "Boost your Banking & Insurance exam prep with exam-level mocks and earn cashback rewards.",
+  icons: {
+    icon: '/logo.jpeg',
+  },
 };
 
 export default function RootLayout({
