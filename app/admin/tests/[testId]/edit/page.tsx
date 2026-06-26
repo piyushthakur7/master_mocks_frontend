@@ -70,6 +70,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
         negativeMarking: test.negativeMarking,
         negativeMarksPerWrong: Number(test.negativeMarksPerWrong),
         difficulty: test.difficulty,
+        access_type: test.access_type,
+        price: Number(test.price || 0),
       };
       await mockTestService.update(test._id!, payload);
       toast.success("Test configuration updated");
@@ -176,6 +178,33 @@ export default function AdminEditTestPage({ params }: PageProps) {
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-[#D00113]"
                 required
               />
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-red-50/50 border border-red-100 rounded-xl">
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Access Type</label>
+                <select 
+                  value={test.access_type || "free"}
+                  onChange={e => setTest({...test, access_type: e.target.value as "free" | "paid"})}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                >
+                  <option value="free">Free</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+
+              {test.access_type === 'paid' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
+                  <input 
+                    type="number" 
+                    value={test.price || 0}
+                    onChange={e => setTest({...test, price: Number(e.target.value)})}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                    min={0}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:col-span-2">
