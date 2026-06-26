@@ -167,7 +167,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
           </span>
         </div>
 
-        <form onSubmit={handleTestUpdate} className="space-y-4">
+        <form id="test-config-form" onSubmit={handleTestUpdate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2 space-y-1.5">
               <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Assessment Title</label>
@@ -415,6 +415,19 @@ export default function AdminEditTestPage({ params }: PageProps) {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Global save action for test configuration */}
+      <div className="flex items-center justify-end gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl sticky bottom-6 z-10 mt-8">
+        <button 
+          type="submit" 
+          form="test-config-form"
+          disabled={isSubmitting}
+          className="px-6 py-2.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center gap-2"
+        >
+          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Save Changes
+        </button>
       </div>
 
     </div>
