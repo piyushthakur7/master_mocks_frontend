@@ -198,8 +198,9 @@ export default function AdminEditTestPage({ params }: PageProps) {
                   <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
                   <input 
                     type="number" 
-                    value={test.price || 0}
-                    onChange={e => setTest({...test, price: Number(e.target.value)})}
+                    value={test.price === 0 ? "" : test.price}
+                    onChange={e => setTest({...test, price: e.target.value ? Number(e.target.value) : 0})}
+                    placeholder="0"
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                     min={0}
                   />

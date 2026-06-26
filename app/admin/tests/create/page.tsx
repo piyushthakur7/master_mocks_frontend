@@ -323,8 +323,9 @@ export default function AdminCreateTestPage() {
                     <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
                     <input 
                       type="number" 
-                      value={testForm.price}
-                      onChange={e => setTestForm({...testForm, price: Number(e.target.value)})}
+                      value={testForm.price === 0 ? "" : testForm.price}
+                      onChange={e => setTestForm({...testForm, price: e.target.value ? Number(e.target.value) : 0})}
+                      placeholder="0"
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                       min={0}
                     />
@@ -333,8 +334,9 @@ export default function AdminCreateTestPage() {
                     <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Discount Price (₹)</label>
                     <input 
                       type="number" 
-                      value={testForm.discount_price}
-                      onChange={e => setTestForm({...testForm, discount_price: Number(e.target.value)})}
+                      value={testForm.discount_price === 0 ? "" : testForm.discount_price}
+                      onChange={e => setTestForm({...testForm, discount_price: e.target.value ? Number(e.target.value) : 0})}
+                      placeholder="0"
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                       min={0}
                     />
