@@ -69,13 +69,7 @@ export default function StudentResourcesVaultPage() {
       
       {/* Banner Deck Header */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-800 text-white shadow-sm">
-        <span className="text-[10px] font-black bg-[#D00113] text-white px-2.5 py-1 rounded-md uppercase tracking-wider">
-          Knowledge Base
-        </span>
-        <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-2">Study Materials & Assets</h1>
-        <p className="text-xs text-slate-400 font-medium mt-1 max-w-xl">
-          Access all study materials, PDFs, videos, and toolkits freely available to our students.
-        </p>
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight">Free Pdf's</h1>
       </div>
 
       {isLoading && selectedCategory === "ALL" ? (

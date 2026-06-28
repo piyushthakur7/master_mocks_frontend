@@ -117,6 +117,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         prefill: {
           name: user.full_name || "Student",
           email: user.email || "",
+          contact: (user as any).phone || "9999999999",
         },
         theme: {
           color: "#D00113",

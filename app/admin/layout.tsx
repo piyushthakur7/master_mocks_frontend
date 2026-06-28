@@ -35,7 +35,6 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
   // All URL paths explicitly target the clear /admin sub-directory tree
   const adminNavItems = [
     { name: "Overview Desk", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "Manage Courses", href: "/admin/courses", icon: <FolderOpen size={18} /> },
     { name: "Manage Categories", href: "/admin/categories", icon: <FolderOpen size={18} /> },
     { name: "Manage Mocks", href: "/admin/tests", icon: <FileEdit size={18} /> },
     { name: "Aspirant Roster", href: "/admin/students", icon: <Users size={18} /> },

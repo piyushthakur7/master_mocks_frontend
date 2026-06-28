@@ -52,6 +52,7 @@ export default function AdminCreateTestPage() {
         { text: "", is_correct: true },
         { text: "", is_correct: false },
         { text: "", is_correct: false },
+        { text: "", is_correct: false },
         { text: "", is_correct: false }
       ], 
       correctOptionIndex: 0 
@@ -83,6 +84,7 @@ export default function AdminCreateTestPage() {
       explanation: "", 
       options: [
         { text: "", is_correct: true },
+        { text: "", is_correct: false },
         { text: "", is_correct: false },
         { text: "", is_correct: false },
         { text: "", is_correct: false }

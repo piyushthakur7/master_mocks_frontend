@@ -29,6 +29,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
       { text: "", isCorrect: true },
       { text: "", isCorrect: false },
       { text: "", isCorrect: false },
+      { text: "", isCorrect: false },
       { text: "", isCorrect: false }
     ],
     correctOptionIndex: 0
@@ -113,7 +114,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
         text: "", marks: 1, explanation: "", correctOptionIndex: 0,
         options: [
           { text: "", isCorrect: true }, { text: "", isCorrect: false },
-          { text: "", isCorrect: false }, { text: "", isCorrect: false }
+          { text: "", isCorrect: false }, { text: "", isCorrect: false },
+          { text: "", isCorrect: false }
         ]
       });
       fetchTest();

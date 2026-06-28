@@ -81,22 +81,6 @@ export default function StudentDashboardPage() {
         </div>
       </div>
 
-      {/* ─── METRIC SCOREBOARDS TRACK ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {metrics.map((metric, i) => (
-          <div key={i} className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex items-start justify-between relative overflow-hidden group hover:border-slate-300 transition-all">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{metric.title}</p>
-              <p className={`text-3xl font-black tracking-tight ${metric.statusColor}`}>{metric.value}</p>
-              <p className="text-xs text-slate-400 font-medium">{metric.sub}</p>
-            </div>
-            <div className="text-slate-400 bg-slate-50 border border-slate-100 p-3 rounded-xl group-hover:scale-110 group-hover:text-[#D00113] transition-all">
-              {metric.icon}
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ─── UPCOMING MOCKS ─── */}
         <div className="lg:col-span-2 space-y-4">
@@ -148,9 +132,6 @@ export default function StudentDashboardPage() {
                 <h2 className="text-lg font-black text-slate-900 tracking-tight">Paid Mocks</h2>
                 <p className="text-xs text-slate-400 font-medium mt-0.5">Premium mocks available for purchase.</p>
               </div>
-              <Link href="/courses" className="text-xs font-bold text-[#D00113] hover:underline flex items-center gap-1">
-                Browse Courses <ArrowRight className="w-3 h-3" />
-              </Link>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
