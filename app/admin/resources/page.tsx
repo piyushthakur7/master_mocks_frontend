@@ -83,36 +83,9 @@ export default function AdminResourcesUploadPage() {
 
     setIsSubmitting(true);
     try {
-      let courseIdToUse = newResource.course;
-      
-      // Standalone logic
-      if (!courseIdToUse) {
-        toast.loading("Generating standalone utility configuration...");
-        const hiddenCoursePayload = {
-          title: `[Standalone Resource] ${newResource.title}`,
-          description: `Utility course automatically generated for standalone resource: ${newResource.title}`,
-          category: newResource.category || categories[0]?._id,
-          access_type: newResource.access_type,
-          difficulty_level: "beginner",
-          pricing: {
-            price: Number(newResource.price),
-            discount_price: Number(newResource.discount_price),
-          },
-          is_active: true,
-          features: ["Standalone PDF Resource"],
-        };
-        
-        const courseRes = await courseService.create(hiddenCoursePayload);
-        if (courseRes.success && courseRes.data) {
-          courseIdToUse = courseRes.data._id;
-        } else {
-          throw new Error("Failed to initialize standalone utility course");
-        }
-      }
-
       const formData = new FormData();
       formData.append("title", newResource.title);
-      formData.append("course", courseIdToUse);
+      if (newResource.course) formData.append("course", newResource.course);
       formData.append("file", newResource.file);
       formData.append("resource_type", "pdf");
 

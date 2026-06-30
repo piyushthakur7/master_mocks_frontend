@@ -167,36 +167,7 @@ export default function AdminCreateTestPage() {
 
       if (testForm.category) payload.category = testForm.category;
 
-      let courseIdToUse = testForm.course;
-      
-      // The "Fake It" Hack: If no course is selected (standalone test), we create a hidden utility course
-      if (!courseIdToUse) {
-        if (!testForm.category && categories.length === 0) {
-          throw new Error("You must create at least one Category in the system before creating standalone tests (needed for the utility course).");
-        }
-        
-        const loadingToast = toast.loading("Generating standalone utility configuration...");
-        const hiddenCoursePayload = {
-          title: `[Standalone Test] ${testForm.title}`,
-          description: `Utility course automatically generated for standalone test: ${testForm.title}`,
-          category: testForm.category || categories[0]?._id, // Requires a category
-          access_type: testForm.access_type,
-          price: Number(testForm.price),
-        };
-        
-        try {
-          const courseRes = await courseService.create(hiddenCoursePayload);
-          if (courseRes.success && (courseRes.data || (courseRes as any).course)) {
-            courseIdToUse = courseRes.data?._id || (courseRes as any).course?._id;
-          } else {
-            throw new Error((courseRes as any).message || "Failed to initialize standalone utility course");
-          }
-        } finally {
-          toast.dismiss(loadingToast);
-        }
-      }
-
-      payload.course = courseIdToUse;
+      if (testForm.course) payload.course = testForm.course;
 
       const createRes = await mockTestService.create(payload);
       

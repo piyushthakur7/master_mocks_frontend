@@ -117,7 +117,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       await attemptService.submit(attempt._id);
       await attemptService.evaluate(attempt._id);
       toast.success("Test submitted successfully!");
-      router.push(`/reports/${attempt._id}`);
+      router.push(`/results/${attempt._id}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to submit test");
       setIsSubmitting(false); // Let them try again

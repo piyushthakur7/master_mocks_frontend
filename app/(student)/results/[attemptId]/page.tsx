@@ -168,9 +168,12 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
       )}
 
       {/* Bottom return navigation actions track button link layout */}
-      <div className="text-center pt-4">
+      <div className="text-center pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Link href="/dashboard" className="inline-block px-6 py-3 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
           ← Terminate Review & Go To Dashboard
+        </Link>
+        <Link href={`/leaderboard/${(attempt.test as any)?._id || attempt.test}`} className="inline-block px-6 py-3 bg-[#D00113] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
+          View Leaderboard 🏆
         </Link>
       </div>
 
