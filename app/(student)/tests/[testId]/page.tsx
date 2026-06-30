@@ -67,6 +67,18 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
     }
   };
 
+  const recheckAccess = async (): Promise<boolean> => {
+    try {
+      const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
+      if (accessResponse.success && accessResponse.data?.has_access) {
+        setHasAccess(true);
+        setAccessReason(accessResponse.data.reason || "");
+        return true;
+      }
+    } catch {}
+    return false;
+  };
+
   const handlePurchase = async () => {
     if (!test || !user) {
       toast.error("Please login to purchase");
@@ -97,7 +109,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       // 3. Open Razorpay
       const options = {
         key: key_id,
-        amount: amount * 100, // paise
+        amount: amount * 100, // convert rupees to paise
         currency: currency,
         name: "MasterMock",
         description: `Purchase: ${test.title}`,
@@ -118,7 +130,21 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
               throw new Error("Payment verification failed");
             }
           } catch (err: any) {
-            toast.error(err.message || "Payment verification failed");
+            console.error("Payment verify error:", err);
+            // Verify failed but money was deducted — re-check access
+            // Backend webhooks may have already processed the payment
+            toast.loading("Confirming your payment...");
+            await new Promise(r => setTimeout(r, 2000));
+            const hasIt = await recheckAccess();
+            if (hasIt) {
+              toast.dismiss();
+              toast.success("Payment confirmed! You can now start the test.");
+            } else {
+              toast.dismiss();
+              toast.error(
+                "Payment received but verification is pending. It will be confirmed shortly. Please refresh the page in a minute."
+              );
+            }
           } finally {
             setIsProcessingPayment(false);
           }
@@ -132,7 +158,12 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           color: "#D00113",
         },
         modal: {
-          ondismiss: () => {
+          ondismiss: async () => {
+            // User closed modal — check if they already paid
+            const hasIt = await recheckAccess();
+            if (hasIt) {
+              toast.success("Payment already confirmed! You can start the test.");
+            }
             setIsProcessingPayment(false);
           },
         },

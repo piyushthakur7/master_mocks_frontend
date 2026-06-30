@@ -88,6 +88,17 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Handle 429 Rate Limiting
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers?.['retry-after'];
+      const waitTime = retryAfter ? `${retryAfter} seconds` : 'a moment';
+      return Promise.reject({
+        success: false,
+        message: `Too many requests. Please wait ${waitTime} and try again.`,
+        status: 429,
+      });
+    }
+
     // Unpack standard ApiError structure if possible
     if (error.response?.data) {
       return Promise.reject(error.response.data);
