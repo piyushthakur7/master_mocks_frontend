@@ -50,7 +50,13 @@ apiClient.interceptors.request.use(
 // Response Interceptor: Handle 401 and Token Refresh
 apiClient.interceptors.response.use(
   (response) => {
-    return response.data; // Unpack the Axios wrapper for convenience
+    const body = response.data;
+    // Normalize backend response: backend returns { statusCode, data, message }
+    // but frontend expects { success, data, message }
+    if (body && typeof body === "object" && "statusCode" in body && !("success" in body)) {
+      body.success = body.statusCode >= 200 && body.statusCode < 300;
+    }
+    return body;
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
