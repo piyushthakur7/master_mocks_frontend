@@ -109,45 +109,45 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       // 3. Open Razorpay
       const options = {
         key: key_id,
-        amount: amount * 100, // convert rupees to paise
-        currency: currency,
         name: "MasterMock",
         description: `Purchase: ${test.title}`,
         order_id: order_id,
-        handler: async (response: any) => {
-          try {
-            // 4. Verify payment
-            const verifyRes = await paymentService.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
+        handler: function (response: any) {
+          (async () => {
+            try {
+              // 4. Verify payment
+              const verifyRes = await paymentService.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
 
-            if (verifyRes.success) {
-              toast.success("Payment successful! You can now start the test.");
-              setHasAccess(true);
-            } else {
-              throw new Error("Payment verification failed");
+              if (verifyRes.success) {
+                toast.success("Payment successful! You can now start the test.");
+                setHasAccess(true);
+              } else {
+                throw new Error("Payment verification failed");
+              }
+            } catch (err: any) {
+              console.error("Payment verify error:", err);
+              // Verify failed but money was deducted — re-check access
+              // Backend webhooks may have already processed the payment
+              toast.loading("Confirming your payment...", { id: 'verify-toast' });
+              await new Promise(r => setTimeout(r, 2000));
+              const hasIt = await recheckAccess();
+              if (hasIt) {
+                toast.dismiss('verify-toast');
+                toast.success("Payment confirmed! You can now start the test.");
+              } else {
+                toast.dismiss('verify-toast');
+                toast.error(
+                  "Payment received but verification is pending. It will be confirmed shortly. Please refresh the page in a minute."
+                );
+              }
+            } finally {
+              setIsProcessingPayment(false);
             }
-          } catch (err: any) {
-            console.error("Payment verify error:", err);
-            // Verify failed but money was deducted — re-check access
-            // Backend webhooks may have already processed the payment
-            toast.loading("Confirming your payment...");
-            await new Promise(r => setTimeout(r, 2000));
-            const hasIt = await recheckAccess();
-            if (hasIt) {
-              toast.dismiss();
-              toast.success("Payment confirmed! You can now start the test.");
-            } else {
-              toast.dismiss();
-              toast.error(
-                "Payment received but verification is pending. It will be confirmed shortly. Please refresh the page in a minute."
-              );
-            }
-          } finally {
-            setIsProcessingPayment(false);
-          }
+          })();
         },
         prefill: {
           name: user.full_name || "Student",
@@ -158,13 +158,15 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           color: "#D00113",
         },
         modal: {
-          ondismiss: async () => {
-            // User closed modal — check if they already paid
-            const hasIt = await recheckAccess();
-            if (hasIt) {
-              toast.success("Payment already confirmed! You can start the test.");
-            }
-            setIsProcessingPayment(false);
+          ondismiss: function () {
+            (async () => {
+              // User closed modal — check if they already paid
+              const hasIt = await recheckAccess();
+              if (hasIt) {
+                toast.success("Payment already confirmed! You can start the test.");
+              }
+              setIsProcessingPayment(false);
+            })();
           },
         },
       };
