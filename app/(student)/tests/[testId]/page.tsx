@@ -87,7 +87,14 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
       const { order_id, amount, currency, key_id } = orderRes.data;
 
-      // 2. Open Razorpay
+      // 2. Check Razorpay SDK is loaded
+      if (!(window as any).Razorpay) {
+        toast.error("Payment system is still loading. Please try again in a moment.");
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // 3. Open Razorpay
       const options = {
         key: key_id,
         amount: amount * 100, // paise
@@ -97,7 +104,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         order_id: order_id,
         handler: async (response: any) => {
           try {
-            // 3. Verify payment
+            // 4. Verify payment
             const verifyRes = await paymentService.verifyPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -112,6 +119,8 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
             }
           } catch (err: any) {
             toast.error(err.message || "Payment verification failed");
+          } finally {
+            setIsProcessingPayment(false);
           }
         },
         prefill: {
@@ -122,16 +131,21 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         theme: {
           color: "#D00113",
         },
+        modal: {
+          ondismiss: () => {
+            setIsProcessingPayment(false);
+          },
+        },
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function (response: any) {
         toast.error(response.error.description || "Payment failed");
+        setIsProcessingPayment(false);
       });
       rzp.open();
     } catch (error: any) {
       toast.error(error.message || "Something went wrong during checkout");
-    } finally {
       setIsProcessingPayment(false);
     }
   };
