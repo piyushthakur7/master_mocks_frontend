@@ -30,7 +30,8 @@ export default function StudentPaidTestsPage() {
         }
 
         if (purchasedRes.success && purchasedRes.data) {
-          setPurchasedTestIds(purchasedRes.data.map((t: any) => t._id));
+          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : purchasedRes.data?.data || [];
+          setPurchasedTestIds(purchased.map((t: any) => t._id));
         }
 
         if (attemptsRes.success && attemptsRes.data) {

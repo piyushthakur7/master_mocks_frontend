@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState, useEffect } from "react";
+import React, { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
@@ -25,6 +25,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const isCheckoutOpen = useRef(false);
 
   useEffect(() => {
     const fetchTestDetails = async () => {
@@ -85,6 +86,12 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       return;
     }
 
+    // Duplicate click guard — prevent opening multiple Razorpay modals
+    if (isCheckoutOpen.current) {
+      return;
+    }
+
+    isCheckoutOpen.current = true;
     setIsProcessingPayment(true);
     try {
       // 1. Create order
@@ -99,11 +106,22 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
       const { order_id, amount, currency, key_id } = orderRes.data;
 
-      // 2. Check Razorpay SDK is loaded
+      // 2. Wait for Razorpay SDK to load (with timeout)
       if (!(window as any).Razorpay) {
-        toast.error("Payment system is still loading. Please try again in a moment.");
-        setIsProcessingPayment(false);
-        return;
+        await new Promise<void>((resolve, reject) => {
+          let elapsed = 0;
+          const interval = setInterval(() => {
+            if ((window as any).Razorpay) {
+              clearInterval(interval);
+              resolve();
+            }
+            elapsed += 200;
+            if (elapsed >= 5000) {
+              clearInterval(interval);
+              reject(new Error("Payment system failed to load. Please refresh the page."));
+            }
+          }, 200);
+        });
       }
 
       // 3. Open Razorpay
@@ -145,6 +163,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 );
               }
             } finally {
+              isCheckoutOpen.current = false;
               setIsProcessingPayment(false);
             }
           })();
@@ -157,14 +176,33 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         theme: {
           color: "#D00113",
         },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [
+                  {
+                    method: "upi"
+                  }
+                ]
+              }
+            },
+            sequence: ["block.upi"],
+            preferences: {
+              show_default_blocks: false
+            }
+          }
+        },
         modal: {
           ondismiss: function () {
             (async () => {
               // User closed modal — check if they already paid
               const hasIt = await recheckAccess();
-              if (hasIt) {
-                toast.success("Payment already confirmed! You can start the test.");
+              if (hasIt && !hasAccess) {
+                toast.success("Payment confirmed! You can start the test.");
               }
+              isCheckoutOpen.current = false;
               setIsProcessingPayment(false);
             })();
           },
@@ -172,13 +210,45 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       };
 
       const rzp = new (window as any).Razorpay(options);
+      
+      // Start polling as a fallback for UPI WebSocket drops
+      const pollInterval = setInterval(async () => {
+        if (!isCheckoutOpen.current) {
+          clearInterval(pollInterval);
+          return;
+        }
+        
+        try {
+          const hasIt = await recheckAccess();
+          if (hasIt) {
+            clearInterval(pollInterval);
+            isCheckoutOpen.current = false;
+            setIsProcessingPayment(false);
+            rzp.close(); // Programmatically close the modal
+            toast.success("Payment confirmed successfully via server! You can now start the test.");
+            setHasAccess(true);
+          }
+        } catch (err) {
+          // Ignore polling errors
+        }
+      }, 3000);
+
       rzp.on("payment.failed", function (response: any) {
         toast.error(response.error.description || "Payment failed");
+        isCheckoutOpen.current = false;
         setIsProcessingPayment(false);
       });
       rzp.open();
     } catch (error: any) {
-      toast.error(error.message || "Something went wrong during checkout");
+      // Differentiate error types for cleaner messages
+      if (error?.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment and try again.");
+      } else if (error?.message?.includes("Network") || error?.code === "ERR_NETWORK") {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(error.message || "Something went wrong during checkout");
+      }
+      isCheckoutOpen.current = false;
       setIsProcessingPayment(false);
     }
   };

@@ -15,14 +15,16 @@ export default function StudentDashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<StudentDashboard | null>(null);
   const [paidMocks, setPaidMocks] = useState<MockTest[]>([]);
+  const [purchasedTestIds, setPurchasedTestIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashRes, mocksRes] = await Promise.all([
+        const [dashRes, mocksRes, purchasedRes] = await Promise.all([
           dashboardService.getStudentDashboard(),
-          mockTestService.getAll({ limit: 10, status: "PUBLISHED" }).catch(() => ({ success: false, data: [] }))
+          mockTestService.getAll({ limit: 10, status: "PUBLISHED" }).catch(() => ({ success: false, data: [] })),
+          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] }))
         ]);
         
         if (dashRes.success) {
@@ -32,6 +34,11 @@ export default function StudentDashboardPage() {
         if (mocksRes.success) {
           const allMocks = Array.isArray(mocksRes.data) ? mocksRes.data : mocksRes.data?.data || [];
           setPaidMocks(allMocks.filter((m: any) => m.access_type === "paid"));
+        }
+
+        if (purchasedRes.success && purchasedRes.data) {
+          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : purchasedRes.data?.data || [];
+          setPurchasedTestIds(purchased.map((t: any) => t._id));
         }
       } catch (error) {
         // If API fails, we could set some fallback/empty state or show error
@@ -151,7 +158,7 @@ export default function StudentDashboardPage() {
                   </p>
                   <div className="mt-4 pt-4 border-t border-slate-100">
                     <Link href={`/tests/${test._id}`} className="w-full py-2 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-lg transition-all">
-                      View details
+                      {purchasedTestIds.includes(test._id) ? "Configure Test" : "View details"}
                     </Link>
                   </div>
                 </div>
