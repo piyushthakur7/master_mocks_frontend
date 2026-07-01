@@ -7,7 +7,8 @@ import { TestAttempt } from "@/types/attempt";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, Clock, Target, Trophy } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-
+import { leaderboardService } from "@/services/leaderboard.service";
+import { LeaderboardEntry } from "@/types/leaderboard";
 interface PageProps {
   params: Promise<{ attemptId: string }>;
 }
@@ -17,6 +18,8 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
   
   const [attempt, setAttempt] = useState<TestAttempt | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lbEntries, setLbEntries] = useState<LeaderboardEntry[]>([]);
+  const [isLbLoading, setIsLbLoading] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -24,6 +27,20 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
         const response = await attemptService.getById(unwrappedParams.attemptId);
         if (response.success && response.data) {
           setAttempt(response.data);
+          
+          // Fetch leaderboard
+          const testObj: any = response.data.test || response.data.mock_test;
+          const testId = testObj?._id || testObj;
+          if (testId) {
+             setIsLbLoading(true);
+             leaderboardService.getLeaderboard(testId, { page: 1, limit: 10 })
+               .then(lbRes => {
+                 if (lbRes.success && lbRes.data) {
+                   setLbEntries(lbRes.data.entries);
+                 }
+               })
+               .finally(() => setIsLbLoading(false));
+          }
         } else {
           toast.error("Failed to load attempt details");
         }
@@ -98,7 +115,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><Target className="w-24 h-24" /></div>
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Your Compiled Score</p>
           <p className="text-3xl font-black text-[#D00113] relative z-10">{score.toFixed(2)}</p>
-          <p className="text-xs text-slate-400 font-medium relative z-10">Out of {(attempt.test as any)?.questions?.length || 0}</p>
+          <p className="text-xs text-slate-400 font-medium relative z-10">Out of {(attempt.test || attempt.mock_test as any)?.questions?.length || attempt.totalQuestions || 0}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><CheckCircle className="w-24 h-24" /></div>
@@ -139,20 +156,20 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                     <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 font-bold rounded-lg text-sm">
                       {idx + 1}
                     </span>
-                    {ans.isCorrect ? (
+                    {(ans.isCorrect ?? ans.is_correct) ? (
                       <CheckCircle className="w-5 h-5 text-emerald-500" />
                     ) : (
                       <div className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs font-bold">X</div>
                     )}
                   </div>
                   <div className="flex-1 space-y-3">
-                    <div className="text-sm font-medium text-slate-800" dangerouslySetInnerHTML={{ __html: (ans.question as any)?.questionText || "Question text not available" }} />
+                    <div className="text-sm font-medium text-slate-800" dangerouslySetInnerHTML={{ __html: (ans.question as any)?.questionText || ans.question_text || "Question text not available" }} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className={`p-3 rounded-lg border ${ans.isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
+                      <div className={`p-3 rounded-lg border ${(ans.isCorrect ?? ans.is_correct) ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
                         <span className="font-bold block mb-1">Your Answer:</span>
-                        <span dangerouslySetInnerHTML={{ __html: (ans.selectedOption as any)?.text || "Selected option text" }} />
+                        <span dangerouslySetInnerHTML={{ __html: (ans.selectedOption as any)?.text || ans.selected_option_text || "Selected option text" }} />
                       </div>
-                      {!ans.isCorrect && (
+                      {!(ans.isCorrect ?? ans.is_correct) && (
                         <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
                           <span className="font-bold block mb-1">Correct Answer:</span>
                           <span>Please check solution logic</span>
@@ -167,13 +184,55 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
         </div>
       )}
 
+      {/* ─── LEADERBOARD SECTION ─── */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-8">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-black text-slate-900 tracking-tight">Global Leaderboard</h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Top performers on this assessment.</p>
+          </div>
+          {isLbLoading && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                <th className="py-4 px-6 font-bold w-16 text-center">Rank</th>
+                <th className="py-4 px-6 font-bold">Aspirant</th>
+                <th className="py-4 px-6 font-bold text-right">Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
+              {lbEntries.length > 0 ? lbEntries.map((entry) => (
+                <tr key={entry.user._id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-4 px-6 text-center">
+                    {entry.rank === 1 ? <Trophy className="w-4 h-4 text-amber-500 mx-auto" /> : <span className="font-black text-slate-400">#{entry.rank}</span>}
+                  </td>
+                  <td className="py-4 px-6 font-bold text-slate-900">
+                    {entry.user.full_name}
+                  </td>
+                  <td className="py-4 px-6 font-black text-[#D00113] text-right">
+                    {entry.best_score.toFixed(2)}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={3} className="py-8 text-center text-slate-400">Leaderboard data not available yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Bottom return navigation actions track button link layout */}
-      <div className="text-center pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <Link href="/dashboard" className="inline-block px-6 py-3 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
-          ← Terminate Review & Go To Dashboard
+      <div className="text-center pt-8 pb-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Link href="/dashboard" className="inline-block px-6 py-3 bg-[#1A1A1A] hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
+          ← Return To Dashboard
         </Link>
-        <Link href={`/leaderboard/${(attempt.test as any)?._id || attempt.test}`} className="inline-block px-6 py-3 bg-[#D00113] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
-          View Leaderboard 🏆
+        <Link href={`/leaderboard/${(attempt.test || attempt.mock_test as any)?._id || attempt.test || attempt.mock_test}`} className="inline-block px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all">
+          View Full Leaderboard
         </Link>
       </div>
 

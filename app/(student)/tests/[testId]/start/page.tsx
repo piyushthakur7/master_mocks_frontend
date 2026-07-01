@@ -114,8 +114,16 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     setIsSubmitting(true);
     
     try {
-      await attemptService.submit(attempt._id);
-      await attemptService.evaluate(attempt._id);
+      try {
+        await attemptService.submit(attempt._id);
+      } catch (e: any) {
+        if (e.statusCode !== 400) throw e;
+      }
+      try {
+        await attemptService.evaluate(attempt._id);
+      } catch (e: any) {
+        if (e.statusCode !== 400) throw e;
+      }
       toast.success("Test submitted successfully!");
       router.push(`/results/${attempt._id}`);
     } catch (error: any) {
