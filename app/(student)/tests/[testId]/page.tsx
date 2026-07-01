@@ -143,8 +143,6 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
               toast.dismiss('processing-toast');
               toast.success("Payment successful! You can now start the test.");
               setHasAccess(true);
-              // Note: We don't forcefully close the modal since rzp.close() is unstable,
-              // but the UI behind it unlocks. If the user closes the modal, they can start the test.
             } else if (statusRes.data.status === 'FAILED') {
               if (pollInterval) clearInterval(pollInterval);
               isCheckoutOpen.current = false;
@@ -165,9 +163,31 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         description: `Purchase: ${test.title}`,
         order_id: order_id,
         handler: function (response: any) {
-           // Provide instant local feedback, but rely on webhook polling for actual unlocking
-           toast.loading("Verifying payment...", { id: 'processing-toast' });
-           // checkStatus polling will handle the success/unlock
+          (async () => {
+            try {
+              toast.loading("Verifying payment...", { id: 'processing-toast' });
+              
+              // 4. Verify payment (Accelerator for local dev and fast networks)
+              const verifyRes = await paymentService.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+
+              if (verifyRes.success) {
+                toast.dismiss('processing-toast');
+                toast.success("Payment successful! You can now start the test.");
+                setHasAccess(true);
+                if (pollInterval) clearInterval(pollInterval);
+                isCheckoutOpen.current = false;
+                setIsProcessingPayment(false);
+              }
+            } catch (err: any) {
+              console.error("Payment verify accelerator error:", err);
+              // Ignore error. The robust polling (checkStatus) will catch the webhook success eventually.
+              // We leave the processing-toast up.
+            }
+          })();
         },
         prefill: {
           name: user.full_name || "Student",
@@ -176,18 +196,6 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         },
         theme: {
           color: "#D00113",
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI",
-                instruments: [{ method: "upi" }]
-              }
-            },
-            sequence: ["block.upi"],
-            preferences: { show_default_blocks: false }
-          }
         },
         modal: {
           ondismiss: function () {
