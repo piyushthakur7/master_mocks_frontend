@@ -37,7 +37,7 @@ export default function StudentDashboardPage() {
         }
 
         if (purchasedRes.success && purchasedRes.data) {
-          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : purchasedRes.data?.data || [];
+          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : (purchasedRes as any).data?.data || [];
           setPurchasedTestIds(purchased.map((t: any) => t._id));
         }
       } catch (error) {
