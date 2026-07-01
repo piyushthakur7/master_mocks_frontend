@@ -9,7 +9,7 @@ export const mockTestService = {
   getById: (id: string) => apiClient.get<any, ApiResponse<MockTest>>(`/mock-tests/${id}`),
   
   // v2.0: Check if user can start this test (free access or purchased)
-  checkAccess: (id: string) => apiClient.get<any, ApiResponse<AccessCheckResponse>>(`/mock-tests/${id}/check-access`),
+  checkAccess: (id: string) => apiClient.get<any, ApiResponse<AccessCheckResponse>>(`/mock-tests/${id}/check-access?_t=${Date.now()}`),
   
   // v2.0: Get tests the user has purchased
   getMyPurchased: () => apiClient.get<any, ApiResponse<MockTest[]>>("/mock-tests/my/purchased"),

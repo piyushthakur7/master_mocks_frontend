@@ -199,14 +199,16 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
             (async () => {
               // User closed modal — check if they already paid
               const hasIt = await recheckAccess();
-              if (hasIt && !hasAccess) {
+              if (hasIt) {
                 toast.success("Payment confirmed! You can start the test.");
+                setHasAccess(true);
               }
               isCheckoutOpen.current = false;
               setIsProcessingPayment(false);
             })();
           },
         },
+
       };
 
       const rzp = new (window as any).Razorpay(options);
@@ -224,14 +226,21 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
             clearInterval(pollInterval);
             isCheckoutOpen.current = false;
             setIsProcessingPayment(false);
-            rzp.close(); // Programmatically close the modal
             toast.success("Payment confirmed successfully via server! You can now start the test.");
             setHasAccess(true);
+            try {
+              if (typeof rzp.close === 'function') {
+                rzp.close();
+              }
+            } catch (closeErr) {
+              console.error("Error closing Razorpay:", closeErr);
+            }
           }
         } catch (err) {
           // Ignore polling errors
         }
       }, 3000);
+
 
       rzp.on("payment.failed", function (response: any) {
         toast.error(response.error.description || "Payment failed");
