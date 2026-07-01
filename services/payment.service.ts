@@ -7,9 +7,9 @@ export const paymentService = {
   createOrder: (data: CreateOrderRequest) =>
     apiClient.post<any, ApiResponse<CreateOrderResponse>>("/payments/create-order", data),
   
-  // v2.0: Verify Razorpay payment signature
-  verifyPayment: (data: VerifyPaymentRequest) =>
-    apiClient.post<any, ApiResponse<Payment>>("/payments/verify", data),
+  // v2.0: Get Payment Status (Webhook-first flow)
+  getPaymentStatus: (orderId: string) =>
+    apiClient.get<any, ApiResponse<{status: string, order_id: string, payment_id: string}>>(`/payments/status/${orderId}`),
   
   // v2.0: Get user's active purchases
   getMyPurchases: () =>
