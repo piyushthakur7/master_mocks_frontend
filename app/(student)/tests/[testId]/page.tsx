@@ -90,10 +90,8 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
     if (isCheckoutOpen.current) {
       return;
     }
-
     isCheckoutOpen.current = true;
     setIsProcessingPayment(true);
-    let pollInterval: NodeJS.Timeout | null = null;
 
     try {
       // 1. Create order
@@ -108,7 +106,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
       const { order_id, amount, currency, key_id } = orderRes.data;
 
-      // 2. Wait for Razorpay SDK to load (with timeout)
+      // 2. Wait for Razorpay SDK to load
       if (!(window as any).Razorpay) {
         await new Promise<void>((resolve, reject) => {
           let elapsed = 0;
@@ -126,37 +124,9 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         });
       }
 
-      // 3. Define the polling function
-      const checkStatus = async () => {
-        if (!isCheckoutOpen.current) {
-          if (pollInterval) clearInterval(pollInterval);
-          return;
-        }
-
-        try {
-          const statusRes = await paymentService.getPaymentStatus(order_id);
-          if (statusRes.success && statusRes.data) {
-            if (statusRes.data.status === 'SUCCESS') {
-              if (pollInterval) clearInterval(pollInterval);
-              isCheckoutOpen.current = false;
-              setIsProcessingPayment(false);
-              toast.dismiss('processing-toast');
-              toast.success("Payment successful! You can now start the test.");
-              setHasAccess(true);
-            } else if (statusRes.data.status === 'FAILED') {
-              if (pollInterval) clearInterval(pollInterval);
-              isCheckoutOpen.current = false;
-              setIsProcessingPayment(false);
-              toast.dismiss('processing-toast');
-              toast.error("Payment failed. Please try again.");
-            }
-          }
-        } catch (err) {
-           // Ignore polling errors to keep trying
-        }
-      };
-
-      // 4. Open Razorpay
+      // 3. Open Razorpay (Simple Flow)
+      let rzp: any = null;
+      
       const options = {
         key: key_id,
         name: "MasterMock",
@@ -167,7 +137,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
             try {
               toast.loading("Verifying payment...", { id: 'processing-toast' });
               
-              // 4. Verify payment (Accelerator for local dev and fast networks)
+              // 4. Verify payment instantly using secret key
               const verifyRes = await paymentService.verifyPayment({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -178,14 +148,18 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 toast.dismiss('processing-toast');
                 toast.success("Payment successful! You can now start the test.");
                 setHasAccess(true);
-                if (pollInterval) clearInterval(pollInterval);
                 isCheckoutOpen.current = false;
                 setIsProcessingPayment(false);
+                
+                if (rzp && typeof rzp.close === 'function') {
+                  try { rzp.close(); } catch (e) {}
+                }
               }
             } catch (err: any) {
-              console.error("Payment verify accelerator error:", err);
-              // Ignore error. The robust polling (checkStatus) will catch the webhook success eventually.
-              // We leave the processing-toast up.
+              toast.dismiss('processing-toast');
+              toast.error(err?.message || "Payment verification failed");
+              isCheckoutOpen.current = false;
+              setIsProcessingPayment(false);
             }
           })();
         },
@@ -199,38 +173,23 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         },
         modal: {
           ondismiss: function () {
-            // User closed modal — clean up
-            if (pollInterval) clearInterval(pollInterval);
             isCheckoutOpen.current = false;
             setIsProcessingPayment(false);
             toast.dismiss('processing-toast');
-            
-            // Do one final check just in case it succeeded right before they closed it
-            (async () => {
-               try {
-                 const statusRes = await paymentService.getPaymentStatus(order_id);
-                 if (statusRes.success && statusRes.data?.status === 'SUCCESS') {
-                   toast.success("Payment confirmed! You can start the test.");
-                   setHasAccess(true);
-                 }
-               } catch (e) {}
-            })();
           },
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
-      
-      // Start polling for webhook success (every 3 seconds)
-      pollInterval = setInterval(checkStatus, 3000);
+      rzp = new (window as any).Razorpay(options);
       
       rzp.on("payment.failed", function (response: any) {
         toast.error(response.error.description || "Payment failed");
+        isCheckoutOpen.current = false;
+        setIsProcessingPayment(false);
       });
       
       rzp.open();
     } catch (error: any) {
-      if (pollInterval) clearInterval(pollInterval);
       if (error?.response?.status === 429) {
         toast.error("Too many requests. Please wait a moment and try again.");
       } else if (error?.message?.includes("Network") || error?.code === "ERR_NETWORK") {
