@@ -32,7 +32,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "Free Mocks", href: "/tests", icon: <FileText size={18} /> },
     { name: "Paid Mock Test", href: "/paid-tests", icon: <FileText size={18} /> },
-    { name: "Courses", href: "/courses", icon: <BookOpen size={18} /> },
     { name: "Free Pdfs", href: "/resources", icon: <BookOpen size={18} /> },
     { name: "My Results", href: "/results", icon: <BarChart2 size={18} /> },
     { name: "My Purchases", href: "/purchases", icon: <CreditCard size={18} /> },
