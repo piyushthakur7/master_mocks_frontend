@@ -180,9 +180,26 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         },
         modal: {
           ondismiss: function () {
-            isCheckoutOpen.current = false;
-            setIsProcessingPayment(false);
-            toast.dismiss('processing-toast');
+            toast.loading("Verifying payment status...", { id: 'processing-toast' });
+            
+            // On mobile or when modal is closed, verify actual status from our backend
+            paymentService.getPaymentStatus(orderId)
+              .then((res) => {
+                if (res.data?.status === 'SUCCESS') {
+                  toast.success("Payment verified! Redirecting...");
+                  setHasAccess(true);
+                  router.push("/payment-success");
+                } else {
+                  isCheckoutOpen.current = false;
+                  setIsProcessingPayment(false);
+                  toast.dismiss('processing-toast');
+                }
+              })
+              .catch(() => {
+                isCheckoutOpen.current = false;
+                setIsProcessingPayment(false);
+                toast.dismiss('processing-toast');
+              });
           },
         },
       };
