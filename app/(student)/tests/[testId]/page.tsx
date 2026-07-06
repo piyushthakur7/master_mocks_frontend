@@ -104,7 +104,10 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         throw new Error(orderRes.message || "Failed to create order");
       }
 
-      const { orderId, amount, currency, key } = orderRes.data;
+      const orderId = orderRes.data.orderId || orderRes.data.order_id;
+      const key = orderRes.data.key || orderRes.data.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const amount = orderRes.data.amount;
+      const currency = orderRes.data.currency;
 
       // 2. Wait for Razorpay SDK to load
       if (!(window as any).Razorpay) {
