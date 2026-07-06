@@ -183,7 +183,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
             toast.loading("Verifying payment status...", { id: 'processing-toast' });
             
             // On mobile or when modal is closed, verify actual status from our backend
-            paymentService.getPaymentStatus(orderId)
+            paymentService.getPaymentStatus(orderId as string)
               .then((res) => {
                 if (res.data?.status === 'SUCCESS') {
                   toast.success("Payment verified! Redirecting...");
