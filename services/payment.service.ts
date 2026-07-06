@@ -5,11 +5,11 @@ import { ApiResponse, PaginatedResponse } from "@/types/api";
 export const paymentService = {
   // v2.0: Backend auto-fetches price — only send item_id and item_type
   createOrder: (data: CreateOrderRequest) =>
-    apiClient.post<any, ApiResponse<CreateOrderResponse>>("/payments/create-order", data),
+    apiClient.post<any, ApiResponse<CreateOrderResponse>>("/payment/create-order", data),
   
   // v2.0: Verify Razorpay payment signature (Frontend Accelerator)
   verifyPayment: (data: VerifyPaymentRequest) =>
-    apiClient.post<any, ApiResponse<Payment>>("/payments/verify", data),
+    apiClient.post<any, ApiResponse<Payment>>("/payment/verify", data),
 
   // v2.0: Get Payment Status (Webhook-first flow)
   getPaymentStatus: (orderId: string) =>

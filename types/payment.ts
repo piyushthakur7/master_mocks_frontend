@@ -44,10 +44,10 @@ export interface CreateOrderRequest {
 }
 
 export interface CreateOrderResponse {
-  order_id: string;
+  orderId: string;
   amount: number;
   currency: string;
-  key_id: string;
+  key: string;
 }
 
 export interface VerifyPaymentRequest {

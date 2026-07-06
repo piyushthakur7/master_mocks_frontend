@@ -104,7 +104,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         throw new Error(orderRes.message || "Failed to create order");
       }
 
-      const { order_id, amount, currency, key_id } = orderRes.data;
+      const { orderId, amount, currency, key } = orderRes.data;
 
       // 2. Wait for Razorpay SDK to load
       if (!(window as any).Razorpay) {
@@ -128,10 +128,12 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       let rzp: any = null;
       
       const options = {
-        key: key_id,
+        key: key,
+        amount: amount,
+        currency: currency,
         name: "MasterMock",
         description: `Purchase: ${test.title}`,
-        order_id: order_id,
+        order_id: orderId,
         handler: function (response: any) {
           (async () => {
             try {
@@ -146,7 +148,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
               if (verifyRes.success) {
                 toast.dismiss('processing-toast');
-                toast.success("Payment successful! You can now start the test.");
+                toast.success(verifyRes.message || "Payment verified. Redirecting...");
                 setHasAccess(true);
                 isCheckoutOpen.current = false;
                 setIsProcessingPayment(false);
@@ -154,6 +156,8 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 if (rzp && typeof rzp.close === 'function') {
                   try { rzp.close(); } catch (e) {}
                 }
+                
+                router.push("/payment-success");
               }
             } catch (err: any) {
               toast.dismiss('processing-toast');
