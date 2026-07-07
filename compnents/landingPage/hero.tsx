@@ -37,9 +37,6 @@ export default function Hero() {
 
           <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
 
-            <span className="inline-flex items-center rounded-full bg-brand-light border border-red-200 px-4 py-2 text-sm font-semibold text-brand mb-6">
-              🚀 About Test Mithra
-            </span>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-tight">
               Practice Like the
