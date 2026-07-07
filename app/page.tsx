@@ -39,10 +39,9 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <UpcomingMocks />
         <WhyChooseUs />
         <AboutUs />
-        <UpcomingMocks />
-        <CourseCards />
         <Testimonials />
       </main>
       <Footer />

@@ -5,12 +5,14 @@ export default function Testimonials() {
     {
       name: "Rohit Yadav",
       tag: "Preparing for 2 Years  ",
-      text: "Performance based rewards!!!!! Wow!!!!. Nice concept team Mastermocks. Till now I have got 10-12 times Rs 25 cashback. I have been preparing for the last 2 years, struggling in mains. Just one request, include MAINS level questions more. Rest, everything is good.  "
+      text: "Performance based rewards!!!!! Wow!!!!. Nice concept team Mastermocks. Till now I have got 10-12 times Rs 25 cashback. I have been preparing for the last 2 years, struggling in mains. Just one request, include MAINS level questions more. Rest, everything is good.  ",
+      image: "https://i.pravatar.cc/150?img=11" // Placeholder, replace with actual image later
     },
     {
       name: "Deepak Meena",
       tag: "Daily Paid Mock User  ",
-      text: "Nice bro. First time I am seeing this concept. Loving it. I give daily the paid mock. It is addictive in a positive way especially when you get the cashback. Good concept. Just one suggestion, increases the number of questions is possible.  "
+      text: "Nice bro. First time I am seeing this concept. Loving it. I give daily the paid mock. It is addictive in a positive way especially when you get the cashback. Good concept. Just one suggestion, increases the number of questions is possible.  ",
+      image: "https://i.pravatar.cc/150?img=12" // Placeholder, replace with actual image later
     }
   ];
 
@@ -30,8 +32,14 @@ export default function Testimonials() {
                 "{t.text}"
               </p>
               <div className="flex items-center gap-4 pt-6 mt-6 border-t border-slate-50">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center font-black text-white text-lg uppercase shadow-lg shadow-brand/20">
-                  {t.name[0]}
+                <div className="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shadow-lg shadow-brand/20 shrink-0 relative">
+                  {t.image ? (
+                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center font-black text-white text-lg uppercase">
+                      {t.name[0]}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>

@@ -30,10 +30,9 @@ export default function Hero() {
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-24 lg:py-32">
 
-        <div className="grid lg:grid-cols-12 gap-16 items-center">
+        <div className="flex flex-col items-center text-center">
 
-          {/* LEFT */}
-          <div className="lg:col-span-7">
+          <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
 
             <span className="inline-flex items-center rounded-full bg-brand-light border border-red-200 px-4 py-2 text-sm font-semibold text-brand mb-6">
               🚀 About Test Mithra
@@ -46,14 +45,14 @@ export default function Hero() {
               Get Rewarded for Your Performance.
             </h1>
 
-            <p className="mt-8 text-lg text-slate-600 leading-8 max-w-2xl transition-all duration-500">
+            <p className="mt-8 text-lg text-slate-600 leading-8 max-w-2xl mx-auto transition-all duration-500">
               {highlights[active]} Every mock test is carefully designed to
               match the latest exam pattern while giving you detailed insights
               to improve your preparation.
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-10">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
 
               <Link
                 href="/signup"
@@ -73,7 +72,7 @@ export default function Hero() {
 
             {/* Stats */}
 
-            <div className="flex flex-wrap gap-10 mt-14">
+            <div className="flex flex-wrap justify-center gap-10 mt-14">
 
               <div>
                 <h3 className="text-3xl font-bold text-slate-900">50+</h3>
@@ -89,140 +88,6 @@ export default function Hero() {
                 <h3 className="text-3xl font-bold text-slate-900">₹25</h3>
                 <p className="text-slate-500 mt-1">Maximum Cashback</p>
               </div>
-
-            </div>
-
-          </div>
-
-          {/* RIGHT */}
-
-          <div className="lg:col-span-5 relative flex justify-center">
-
-            {/* Floating Card */}
-            <div className="absolute -top-6 -left-6 bg-white shadow-xl shadow-brand/5 rounded-2xl px-5 py-4 border border-brand/10 hidden lg:block z-10 backdrop-blur-sm">
-              <p className="text-xs text-slate-500 font-medium">
-                Average Accuracy
-              </p>
-              <h3 className="text-3xl font-black text-brand bg-clip-text text-transparent bg-gradient-to-r from-brand to-orange-500">
-                84%
-              </h3>
-            </div>
-
-            <div className="w-full max-w-md rounded-3xl border border-white/50 bg-white/80 backdrop-blur-xl shadow-2xl shadow-slate-200/50 p-7 relative z-0">
-
-              {/* Header */}
-
-              <div className="flex justify-between items-center mb-6">
-
-                <div>
-                  <p className="text-sm text-slate-500">
-                    Live Reward Mock
-                  </p>
-
-                  <h3 className="font-bold text-xl text-slate-900">
-                    SBI PO Full Mock
-                  </h3>
-                </div>
-
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  LIVE
-                </span>
-
-              </div>
-
-              {/* Details */}
-
-              <div className="space-y-5">
-
-                <div className="flex justify-between">
-                  <span className="text-slate-500">
-                    Questions
-                  </span>
-
-                  <span className="font-semibold">
-                    100
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-slate-500">
-                    Duration
-                  </span>
-
-                  <span className="font-semibold">
-                    60 Minutes
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-slate-500">
-                    Difficulty
-                  </span>
-
-                  <span className="font-semibold">
-                    ★★★★☆
-                  </span>
-                </div>
-
-                <div>
-
-                  <div className="flex justify-between mb-2 text-sm">
-                    <span className="text-slate-500">
-                      Progress
-                    </span>
-
-                    <span className="font-semibold">
-                      68%
-                    </span>
-                  </div>
-
-                  <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                    <div className="bg-brand h-full w-2/3 rounded-full"></div>
-                  </div>
-
-                </div>
-
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-5">
-
-                  <div className="flex justify-between mb-3">
-                    <span className="text-slate-500">
-                      Current Rank
-                    </span>
-
-                    <span className="font-bold text-brand">
-                      #18 / 752
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-
-                    <span className="text-slate-500">
-                      Cashback Reward
-                    </span>
-
-                    <span className="font-bold text-green-600">
-                      ₹25
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* Floating Reward */}
-
-            <div className="absolute -bottom-5 right-0 bg-brand text-white rounded-2xl shadow-xl px-6 py-4 hidden lg:block">
-
-              <p className="text-xs uppercase tracking-wider opacity-80">
-                Top Performer
-              </p>
-
-              <h3 className="text-3xl font-bold">
-                ₹25
-              </h3>
 
             </div>
 
