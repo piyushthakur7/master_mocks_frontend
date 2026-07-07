@@ -140,7 +140,7 @@ export default function StudentPaidTestsPage() {
                 >
                   {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
                     ? `View details — ₹${test.price}`
-                    : "Configure Test Environment"}
+                    : "Attempt Now"}
                 </Link>
               </div>
             </div>
