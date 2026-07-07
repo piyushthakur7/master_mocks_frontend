@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+
 import { useAuth } from "@/hooks/use-auth";
 import Navbar from "@/compnents/Navbar";
 import Hero from "@/compnents/landingPage/hero";
@@ -13,20 +12,9 @@ import Testimonials from "@/compnents/landingPage/Testimonials";
 import Footer from "@/compnents/Footer";
 
 export default function Home() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const router = useRouter();
+  const { isLoading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      if (user?.role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
-    }
-  }, [isLoading, isAuthenticated, user, router]);
-
-  if (isLoading || isAuthenticated) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="w-8 h-8 border-4 border-[#D00113] border-t-transparent rounded-full animate-spin"></div>
