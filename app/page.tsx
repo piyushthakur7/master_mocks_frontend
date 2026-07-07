@@ -10,6 +10,7 @@ import AboutUs from "@/compnents/landingPage/AboutUs";
 import UpcomingMocks from "@/compnents/landingPage/UpcomingMocks";
 import CourseCards from "@/compnents/landingPage/CourseCards";;
 import Testimonials from "@/compnents/landingPage/Testimonials";
+import Footer from "@/compnents/Footer";
 
 export default function Home() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -44,9 +45,7 @@ export default function Home() {
         <CourseCards />
         <Testimonials />
       </main>
-      <footer className="bg-slate-900 text-slate-500 text-center py-8 text-xs border-t border-slate-800">
-        &copy; {new Date().getFullYear()} MASTER MOCKS. Practice Smart. Score High. 
-      </footer>
+      <Footer />
     </div>
   );
 }
