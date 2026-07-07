@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { dashboardService } from "@/services/dashboard.service";
 import { mockTestService } from "@/services/mock-test.service";
+import { attemptService } from "@/services/attempt.service";
 import { MockTest } from "@/types/mock-test";
 import { StudentDashboard } from "@/types/dashboard";
 import { toast } from "sonner";
@@ -21,10 +22,11 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashRes, mocksRes, purchasedRes] = await Promise.all([
+        const [dashRes, mocksRes, purchasedRes, attemptsRes] = await Promise.all([
           dashboardService.getStudentDashboard(),
           mockTestService.getAll({ limit: 10, status: "PUBLISHED" }).catch(() => ({ success: false, data: [] })),
-          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] }))
+          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] })),
+          attemptService.getMyAttempts({ status: "COMPLETED", limit: 100 }).catch(() => ({ success: false, data: [] }))
         ]);
         
         if (dashRes.success) {
@@ -33,7 +35,12 @@ export default function StudentDashboardPage() {
         
         if (mocksRes.success) {
           const allMocks = Array.isArray(mocksRes.data) ? mocksRes.data : mocksRes.data?.data || [];
-          setPaidMocks(allMocks.filter((m: any) => m.access_type === "paid"));
+          let completedIds: string[] = [];
+          if (attemptsRes && attemptsRes.success && attemptsRes.data) {
+            const attempts = Array.isArray(attemptsRes.data) ? attemptsRes.data : attemptsRes.data?.data || [];
+            completedIds = attempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
+          }
+          setPaidMocks(allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id)));
         }
 
         if (purchasedRes.success && purchasedRes.data) {
@@ -136,7 +143,7 @@ export default function StudentDashboardPage() {
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-black text-slate-900 tracking-tight">Paid Mocks</h2>
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">Available Paid Mocks</h2>
                 <p className="text-xs text-slate-400 font-medium mt-0.5">Premium mocks available for purchase.</p>
               </div>
             </div>

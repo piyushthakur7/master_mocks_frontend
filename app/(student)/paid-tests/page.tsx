@@ -10,7 +10,7 @@ import { Loader2, Clock, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default function StudentPaidTestsPage() {
-  const [activeTab, setActiveTab] = useState<"All" | "Available" | "Completed">("All");
+  const [activeTab, setActiveTab] = useState<"Available" | "Attempted">("Available");
   const [tests, setTests] = useState<MockTest[]>([]);
   const [purchasedTestIds, setPurchasedTestIds] = useState<string[]>([]);
   const [completedTestIds, setCompletedTestIds] = useState<string[]>([]);
@@ -50,11 +50,9 @@ export default function StudentPaidTestsPage() {
     fetchData();
   }, []);
 
-  const filteredTests = activeTab === "All"
-    ? tests.filter((t) => t.access_type === "paid")
-    : activeTab === "Available"
-      ? tests.filter((t) => t.access_type === "paid" && !completedTestIds.includes(t._id))
-      : tests.filter((t) => t.access_type === "paid" && completedTestIds.includes(t._id));
+  const filteredTests = activeTab === "Available"
+    ? tests.filter((t) => t.access_type === "paid" && !completedTestIds.includes(t._id))
+    : tests.filter((t) => t.access_type === "paid" && completedTestIds.includes(t._id));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -67,7 +65,7 @@ export default function StudentPaidTestsPage() {
 
       {/* Categorical Filtering Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-px">
-        {(["All", "Available", "Completed"] as const).map((tab) => (
+        {(["Available", "Attempted"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
