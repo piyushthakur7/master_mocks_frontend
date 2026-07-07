@@ -34,8 +34,11 @@ export default function CourseCards() {
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 relative overflow-hidden bg-white">
+      {/* Mesh Gradient Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-50/40 via-white to-brand/5 pointer-events-none" />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
@@ -51,10 +54,10 @@ export default function CourseCards() {
           {specializedMocks.map((mock) => (
             <div 
               key={mock.id} 
-              className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col hover:border-red-300 hover:shadow-xl transition-all duration-200 group"
+              className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-2xl overflow-hidden flex flex-col hover:border-brand/30 hover:shadow-2xl hover:shadow-brand/10 transition-all duration-300 group hover:-translate-y-1"
             >
-              <div className="h-2 w-full bg-brand" />
-              <div className="p-6 flex-1 flex flex-col">
+              <div className="h-2 w-full bg-gradient-to-r from-brand to-orange-400 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="p-7 flex-1 flex flex-col">
                 <span className="text-xs font-bold uppercase tracking-wide text-brand mb-2 block">
                   {mock.subject}
                 </span>
@@ -86,7 +89,7 @@ export default function CourseCards() {
 
                 <Link 
                   href="/signup" 
-                  className="w-full py-2.5 rounded-md bg-slate-50 hover:bg-brand text-slate-800 hover:text-white font-bold text-sm text-center border border-slate-200 group-hover:border-brand transition-all"
+                  className="w-full py-3 mt-2 rounded-xl bg-slate-50 hover:bg-gradient-to-r hover:from-brand hover:to-orange-500 text-slate-800 hover:text-white font-bold text-sm text-center border border-slate-200 group-hover:border-transparent transition-all duration-300 shadow-sm group-hover:shadow-md"
                 >
                   Unlock Mock Test Pack
                 </Link>
@@ -99,7 +102,7 @@ export default function CourseCards() {
         <div className="mt-14 text-center">
           <Link 
             href="/signup" 
-            className="inline-flex items-center gap-2 px-10 py-4 bg-brand hover:bg-brand-hover text-white font-black rounded-lg text-base shadow-md hover:shadow-xl transition-all group"
+            className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-brand to-orange-500 hover:from-brand-hover hover:to-orange-600 text-white font-black rounded-xl text-base shadow-lg shadow-brand/20 hover:shadow-brand/40 transition-all group hover:-translate-y-0.5"
           >
             Explore More Test Series
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">

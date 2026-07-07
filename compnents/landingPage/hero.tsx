@@ -22,10 +22,11 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-white border-b border-slate-200">
+    <section className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-orange-50 border-b border-slate-200">
       {/* Background Decorations */}
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-red-50 blur-3xl opacity-70" />
-      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-slate-100 blur-3xl opacity-70" />
+      <div className="absolute -top-32 -left-32 h-[30rem] w-[30rem] rounded-full bg-brand/10 blur-[100px]" />
+      <div className="absolute top-1/2 right-1/4 h-72 w-72 rounded-full bg-orange-400/10 blur-[80px]" />
+      <div className="absolute -bottom-32 -right-32 h-[30rem] w-[30rem] rounded-full bg-blue-400/10 blur-[100px]" />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-24 lg:py-32">
 
@@ -56,7 +57,7 @@ export default function Hero() {
 
               <Link
                 href="/signup"
-                className="bg-brand hover:bg-red-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:-translate-y-1"
+                className="bg-brand hover:bg-brand-hover text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:-translate-y-1"
               >
                 Start Practicing
               </Link>
@@ -98,16 +99,16 @@ export default function Hero() {
           <div className="lg:col-span-5 relative flex justify-center">
 
             {/* Floating Card */}
-            <div className="absolute -top-6 -left-6 bg-white shadow-xl rounded-2xl px-5 py-4 border border-slate-200 hidden lg:block">
-              <p className="text-xs text-slate-500">
+            <div className="absolute -top-6 -left-6 bg-white shadow-xl shadow-brand/5 rounded-2xl px-5 py-4 border border-brand/10 hidden lg:block z-10 backdrop-blur-sm">
+              <p className="text-xs text-slate-500 font-medium">
                 Average Accuracy
               </p>
-              <h3 className="text-3xl font-bold text-brand">
+              <h3 className="text-3xl font-black text-brand bg-clip-text text-transparent bg-gradient-to-r from-brand to-orange-500">
                 84%
               </h3>
             </div>
 
-            <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white shadow-2xl p-7">
+            <div className="w-full max-w-md rounded-3xl border border-white/50 bg-white/80 backdrop-blur-xl shadow-2xl shadow-slate-200/50 p-7 relative z-0">
 
               {/* Header */}
 

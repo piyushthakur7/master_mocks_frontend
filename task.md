@@ -1,0 +1,22 @@
+# Landing Page Redesign Tasks
+
+- `[ ]` Update `hero.tsx`
+  - `[ ]` Add soft background gradient (e.g. `bg-gradient-to-br from-red-50 via-white to-orange-50`)
+  - `[ ]` Add abstract decorative blobs behind the floating card
+  - `[ ]` Enhance buttons with gradients and richer shadows
+- `[ ]` Update `WhyChooseUs.tsx`
+  - `[ ]` Change section background to a deep dark theme (`bg-slate-900`)
+  - `[ ]` Update "Reward Split" cards to use glassmorphism (`bg-white/10 backdrop-blur-md`) and vibrant text
+- `[ ]` Update `AboutUs.tsx`
+  - `[ ]` Apply a soft vibrant diagonal gradient background
+  - `[ ]` Add a colorful glow to the logo graphic
+- `[ ]` Update `UpcomingMocks.tsx`
+  - `[ ]` Add a faint slate-blue/pink background tint
+  - `[ ]` Implement colorful gradient top-borders and soft shadows on cards
+- `[ ]` Update `CourseCards.tsx`
+  - `[ ]` Add a subtle colorful mesh gradient background
+  - `[ ]` Implement modern hover elevations and colorful CTA button
+- `[ ]` Update `Testimonials.tsx`
+  - `[ ]` Use a warm `bg-red-50/30` background
+  - `[ ]` Add colorful accents to avatars and borders
+- `[ ]` Create `walkthrough.md`
