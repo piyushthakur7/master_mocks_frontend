@@ -88,7 +88,17 @@ apiClient.interceptors.response.use(
         // Refresh token failed or expired, log user out
         setAccessToken(null);
         if (typeof window !== "undefined") {
-          window.location.href = ROUTES.LOGIN;
+          const publicPaths = [
+            ROUTES.HOME,
+            ROUTES.LOGIN,
+            ROUTES.REGISTER,
+            ROUTES.FORGOT_PASSWORD,
+            "/home",
+            "/admin/login"
+          ];
+          if (!publicPaths.includes(window.location.pathname)) {
+            window.location.href = ROUTES.LOGIN;
+          }
         }
         return Promise.reject(refreshError);
       }
