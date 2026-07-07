@@ -1,3 +1,5 @@
+
+\
 # Landing Page Redesign Plan
 
 The current landing page is functional but feels too plain and "white." The goal is to introduce a more vibrant, modern, and clean aesthetic while maintaining the exact same content. We will leverage the brand's crimson red color (`#D00113`) alongside complementary gradients, subtle background elements, and modern UI trends (like soft shadows and subtle glassmorphism) to make the page pop.
