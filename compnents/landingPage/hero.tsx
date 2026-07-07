@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Hero() {
+  const { isAuthenticated, user } = useAuth();
+  
   const highlights = [
     "Full-length mock tests based on the latest Banking & Insurance exam pattern.",
     "Compete with aspirants across India and see where you stand.",
@@ -55,7 +58,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
 
               <Link
-                href="/signup"
+                href={isAuthenticated ? (user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard") : "/register"}
                 className="bg-brand hover:bg-brand-hover text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:-translate-y-1"
               >
                 Start Practicing
