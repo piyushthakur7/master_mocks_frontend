@@ -63,7 +63,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
     if (!test) return;
     setIsSubmitting(true);
     try {
-      const payload = {
+      const payload: any = {
         title: test.title,
         description: test.description,
         durationMinutes: Number(test.durationMinutes),
@@ -74,6 +74,12 @@ export default function AdminEditTestPage({ params }: PageProps) {
         access_type: test.access_type,
         price: Number(test.price || 0),
       };
+
+      if (test.access_type === 'paid') {
+        if (test.start_time) payload.start_time = new Date(test.start_time).toISOString();
+        if (test.end_time) payload.end_time = new Date(test.end_time).toISOString();
+      }
+
       await mockTestService.update(test._id!, payload);
       toast.success("Test configuration updated");
     } catch (error: any) {
@@ -206,6 +212,30 @@ export default function AdminEditTestPage({ params }: PageProps) {
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                     min={0}
                   />
+                </div>
+                
+                <div className="space-y-1.5 md:col-span-2 pt-2">
+                  <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Schedule Time Window (Optional)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500">Start Time</label>
+                      <input 
+                        type="datetime-local" 
+                        value={test.start_time ? new Date(new Date(test.start_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                        onChange={e => setTest({...test, start_time: e.target.value})}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500">End Time</label>
+                      <input 
+                        type="datetime-local" 
+                        value={test.end_time ? new Date(new Date(test.end_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                        onChange={e => setTest({...test, end_time: e.target.value})}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

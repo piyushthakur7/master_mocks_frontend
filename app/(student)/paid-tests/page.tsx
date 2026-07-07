@@ -116,6 +116,18 @@ export default function StudentPaidTestsPage() {
                   </div>
                 </div>
 
+                {/* Schedule Box */}
+                {test.start_time && test.end_time && (
+                  <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase text-orange-600 tracking-wider">Scheduled Window:</span>
+                    <span className="text-xs font-bold text-slate-700">
+                      {new Date(test.start_time).toLocaleDateString()} {new Date(test.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {" - "}
+                      {new Date(test.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
+
                 {/* Target Reward Ledger Metric Box */}
                 {test.rewardPool?.isActive && test.rewardPool.tiers && test.rewardPool.tiers.length > 0 && (
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col gap-1.5">

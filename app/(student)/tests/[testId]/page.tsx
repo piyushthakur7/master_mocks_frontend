@@ -257,6 +257,18 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
       {/* Instructions Framework Blueprint */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+        
+        {test.start_time && test.end_time && (
+          <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex flex-col gap-1.5 mb-6">
+            <span className="text-xs font-black uppercase text-orange-600 tracking-wider">Scheduled Window</span>
+            <span className="text-sm font-bold text-slate-700">
+              {new Date(test.start_time).toLocaleDateString()} {new Date(test.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {" - "}
+              {new Date(test.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        )}
+
         <h2 className="text-sm font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-3">Examination Protocol Rules</h2>
         
         <div className="space-y-4 text-xs font-medium text-slate-600 leading-relaxed">
@@ -294,55 +306,83 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         </div>
 
         {/* Dynamic Launch Triggers / Access Gate */}
-        {hasAccess ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
-            <div className="flex items-start gap-2.5">
-              <input 
-                type="checkbox" 
-                id="confirm-rules" 
-                className="mt-0.5 accent-[#D00113]" 
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-              />
-              <label htmlFor="confirm-rules" className="text-[11px] text-slate-400 font-medium leading-tight cursor-pointer">
-                I certify that my workstation hardware configuration meets environment integrity requirements.
-              </label>
+        {(() => {
+          const isBeforeWindow = test.start_time ? new Date() < new Date(test.start_time) : false;
+          const isAfterWindow = test.end_time ? new Date() > new Date(test.end_time) : false;
+          const isOutsideWindow = isBeforeWindow || isAfterWindow;
+
+          if (isOutsideWindow) {
+            return (
+              <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-slate-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {isBeforeWindow ? "Test Not Started Yet" : "Test Window Closed"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    {isBeforeWindow ? "Please wait for the scheduled start time to begin." : "The scheduled time window for this test has ended."}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          if (hasAccess) {
+            return (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+                <div className="flex items-start gap-2.5">
+                  <input 
+                    type="checkbox" 
+                    id="confirm-rules" 
+                    className="mt-0.5 accent-[#D00113]" 
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  />
+                  <label htmlFor="confirm-rules" className="text-[11px] text-slate-400 font-medium leading-tight cursor-pointer">
+                    I certify that my workstation hardware configuration meets environment integrity requirements.
+                  </label>
+                </div>
+                
+                <Link 
+                  href={`/tests/${test._id}/start`}
+                  onClick={handleStart}
+                  className={`px-6 py-3 text-white text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all shrink-0 ${
+                    acceptedTerms 
+                      ? "bg-[#D00113] hover:bg-[#b0010f] shadow-red-600/10" 
+                      : "bg-slate-300 cursor-not-allowed"
+                  }`}
+                >
+                  Acknowledge & Start Test
+                </Link>
+              </div>
+            );
+          }
+
+          return (
+            <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Lock className="w-5 h-5 text-[#D00113]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Premium Access Required</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">{accessReason || "You must purchase this test to unlock access."}</p>
+              </div>
+              <button 
+                onClick={handlePurchase}
+                disabled={isProcessingPayment}
+                className="px-6 py-3 bg-[#D00113] hover:bg-[#b0010f] disabled:bg-slate-400 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
+              >
+                {isProcessingPayment ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                ) : (
+                  `Buy Now — ₹${test.price}`
+                )}
+              </button>
             </div>
-            
-            <Link 
-              href={`/tests/${test._id}/start`}
-              onClick={handleStart}
-              className={`px-6 py-3 text-white text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all shrink-0 ${
-                acceptedTerms 
-                  ? "bg-[#D00113] hover:bg-[#b0010f] shadow-red-600/10" 
-                  : "bg-slate-300 cursor-not-allowed"
-              }`}
-            >
-              Acknowledge & Start Test
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <Lock className="w-5 h-5 text-[#D00113]" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Premium Access Required</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">{accessReason || "You must purchase this test to unlock access."}</p>
-            </div>
-            <button 
-              onClick={handlePurchase}
-              disabled={isProcessingPayment}
-              className="px-6 py-3 bg-[#D00113] hover:bg-[#b0010f] disabled:bg-slate-400 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
-            >
-              {isProcessingPayment ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
-              ) : (
-                `Buy Now — ₹${test.price}`
-              )}
-            </button>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
 

@@ -40,6 +40,8 @@ export interface MockTest {
   negative_marks_per_wrong: number;
   difficulty: DifficultyLevel;
   is_active: boolean;
+  start_time?: string;                 // v2.0: ISO timestamp
+  end_time?: string;                   // v2.0: ISO timestamp
   // Legacy camelCase aliases (still used in some UI code)
   durationMinutes?: number;
   totalMarks?: number;

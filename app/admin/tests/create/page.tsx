@@ -41,6 +41,8 @@ export default function AdminCreateTestPage() {
     access_type: "paid",
     price: 0,
     discount_price: 0,
+    start_time: "",
+    end_time: "",
   });
 
   const [questions, setQuestions] = useState<QuestionTemplate[]>([
@@ -164,6 +166,11 @@ export default function AdminCreateTestPage() {
         price: Number(testForm.price),
         discount_price: Number(testForm.discount_price),
       };
+
+      if (testForm.access_type === 'paid') {
+        if (testForm.start_time) payload.start_time = new Date(testForm.start_time).toISOString();
+        if (testForm.end_time) payload.end_time = new Date(testForm.end_time).toISOString();
+      }
 
       if (testForm.category) payload.category = testForm.category;
 
@@ -313,6 +320,29 @@ export default function AdminCreateTestPage() {
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
                       min={0}
                     />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-3 pt-2">
+                    <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Schedule Time Window (Optional)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500">Start Time</label>
+                        <input 
+                          type="datetime-local" 
+                          value={testForm.start_time}
+                          onChange={e => setTestForm({...testForm, start_time: e.target.value})}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500">End Time</label>
+                        <input 
+                          type="datetime-local" 
+                          value={testForm.end_time}
+                          onChange={e => setTestForm({...testForm, end_time: e.target.value})}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </>
               )}

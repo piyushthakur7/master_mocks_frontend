@@ -34,6 +34,10 @@ export default function WhyChooseUs() {
               <p className="text-2xl font-black text-green-400 drop-shadow-sm">Gets ₹15 Cashback</p>
             </div>
           </div>
+          
+          <div className="mt-8 text-sm text-slate-300 bg-white/5 border border-white/10 p-5 rounded-2xl">
+            <span className="font-bold text-white">NOTE-</span> The window to attempt any mock will be 15 minutes. For example if a mock is getting live at 9:00 am , then from 9:00 am to 9:15 you can give that mock.
+          </div>
         </div>
 
       </div>
