@@ -65,7 +65,9 @@ export default function AdminLoginPage() {
         toast.error(response.message || "Invalid email or password.");
       }
     } catch (error: any) {
-      if (error.response?.status === 403) {
+      if (error?.response?.status === 429 || error?.status === 429 || (typeof error === 'string' && error.includes('429'))) {
+        toast.error("Too many login attempts. Please wait a while before trying again.");
+      } else if (error.response?.status === 403) {
         toast.error("Access Denied: You do not have admin privileges or your account is locked.");
       } else {
         toast.error(error.message || "Failed to login. Please check your credentials.");

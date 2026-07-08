@@ -67,7 +67,11 @@ export default function StudentLoginPage() {
         toast.error(response.message || "Invalid email or password.");
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to login. Please check your credentials.");
+      if (error?.response?.status === 429 || error?.status === 429 || (typeof error === 'string' && error.includes('429'))) {
+        toast.error("Too many login attempts. Please wait a while before trying again.");
+      } else {
+        toast.error(error.message || "Failed to login. Please check your credentials.");
+      }
     } finally {
       setIsLoading(false);
     }
