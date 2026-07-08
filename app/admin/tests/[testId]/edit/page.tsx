@@ -202,6 +202,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
               </div>
 
               {test.access_type === 'paid' && (
+                <>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
                   <input 
@@ -237,6 +238,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
                     </div>
                   </div>
                 </div>
+                </>
               )}
             </div>
 

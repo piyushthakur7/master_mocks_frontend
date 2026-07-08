@@ -54,7 +54,8 @@ export default function CategoryPageTemplate({
               category: category._id,
               resource_type: 'pdf'
             });
-            fetchedItems = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+            const resData: any = res.data;
+            fetchedItems = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
           }
         }
 
