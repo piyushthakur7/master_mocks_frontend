@@ -40,11 +40,11 @@ export default function CourseCards() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+        <div className="text-center max-w-4xl mx-auto mb-16">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
             Specialized Mock Packs for Banking & Insurance
           </h2>
-          <p className="text-lg text-slate-600">
+          <p className="text-xl sm:text-2xl text-slate-600">
             Target your weakest areas with real exam-level questions curated by elite faculty .
           </p>
         </div>

@@ -9,33 +9,33 @@ export default function WhyChooseUs() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
+        <div className="text-center max-w-4xl mx-auto mb-16">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
             How Are We Different? 
           </h2>
-          <p className="text-lg text-slate-300">
+          <p className="text-xl sm:text-2xl text-slate-300 leading-relaxed">
             Just like any other platform, we also provide FREE mocks, FREE PDFs and PAID mocks. The difference here is that if you perform good in PAID mocks, you can earn cashback rewards .
           </p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-6 sm:p-10 shadow-2xl">
-          <h4 className="font-bold text-xl mb-3 text-white">Reward Split Distribution Example (Per 100 Students) </h4>
+          <h4 className="font-bold text-2xl mb-4 text-white">Reward Split Distribution Example (Per 100 Students) </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
             <div className="bg-white/5 hover:bg-white/10 transition-colors p-6 rounded-2xl border border-white/10 shadow-inner">
-              <p className="text-xs uppercase tracking-wider text-slate-300 font-bold mb-2">Top 5% of Students </p>
-              <p className="text-2xl font-black text-green-400 drop-shadow-sm">Gets ₹25 Cashback</p>
+              <p className="text-sm uppercase tracking-wider text-slate-300 font-bold mb-2">Top 5% of Students </p>
+              <p className="text-3xl font-black text-green-400 drop-shadow-sm">Gets ₹25 Cashback</p>
             </div>
             <div className="bg-white/5 hover:bg-white/10 transition-colors p-6 rounded-2xl border border-white/10 shadow-inner">
-              <p className="text-xs uppercase tracking-wider text-slate-300 font-bold mb-2">Next 5% of Students </p>
-              <p className="text-2xl font-black text-green-400 drop-shadow-sm">Gets ₹20 Cashback</p>
+              <p className="text-sm uppercase tracking-wider text-slate-300 font-bold mb-2">Next 5% of Students </p>
+              <p className="text-3xl font-black text-green-400 drop-shadow-sm">Gets ₹20 Cashback</p>
             </div>
             <div className="bg-white/5 hover:bg-white/10 transition-colors p-6 rounded-2xl border border-white/10 shadow-inner">
-              <p className="text-xs uppercase tracking-wider text-slate-300 font-bold mb-2">Following 5% of Students </p>
-              <p className="text-2xl font-black text-green-400 drop-shadow-sm">Gets ₹15 Cashback</p>
+              <p className="text-sm uppercase tracking-wider text-slate-300 font-bold mb-2">Following 5% of Students </p>
+              <p className="text-3xl font-black text-green-400 drop-shadow-sm">Gets ₹15 Cashback</p>
             </div>
           </div>
           
-          <div className="mt-8 text-sm text-slate-300 bg-white/5 border border-white/10 p-5 rounded-2xl">
+          <div className="mt-8 text-lg text-slate-300 bg-white/5 border border-white/10 p-6 rounded-2xl leading-relaxed">
             <span className="font-bold text-white">NOTE-</span> The window to attempt any mock will be 15 minutes. For example if a mock is getting live at 9:00 am , then from 9:00 am to 9:15 you can give that mock.
           </div>
         </div>

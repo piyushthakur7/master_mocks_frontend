@@ -35,35 +35,35 @@ export default function Hero() {
 
         <div className="flex flex-col items-center text-center">
 
-          <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+          <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
 
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-5xl sm:text-6xl lg:text-[5rem] font-black tracking-tight text-slate-900 leading-tight">
               Practice Like the
               <span className="text-brand"> Real Exam.</span>
               <br />
               Get Rewarded for Your Performance.
             </h1>
 
-            <p className="mt-8 text-lg text-slate-600 leading-8 max-w-2xl mx-auto transition-all duration-500">
+            <p className="mt-8 text-xl sm:text-2xl text-slate-600 leading-relaxed max-w-3xl mx-auto transition-all duration-500">
               {highlights[active]} Every mock test is carefully designed to
               match the latest exam pattern while giving you detailed insights
               to improve your preparation.
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
+            <div className="flex flex-col sm:flex-row justify-center gap-6 mt-12">
 
               <Link
                 href={isAuthenticated ? (user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard") : "/register"}
-                className="bg-brand hover:bg-brand-hover text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:-translate-y-1"
+                className="bg-brand hover:bg-brand-hover text-white text-lg sm:text-xl px-10 py-5 rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:-translate-y-1"
               >
                 Start Practicing
               </Link>
 
               <Link
                 href="/mocks"
-                className="border border-slate-300 hover:bg-slate-50 px-8 py-4 rounded-xl font-semibold text-slate-700 transition"
+                className="border border-slate-300 hover:bg-slate-50 text-lg sm:text-xl px-10 py-5 rounded-xl font-semibold text-slate-700 transition"
               >
                 Explore Mock Tests
               </Link>
@@ -72,21 +72,21 @@ export default function Hero() {
 
             {/* Stats */}
 
-            <div className="flex flex-wrap justify-center gap-10 mt-14">
+            <div className="flex flex-wrap justify-center gap-14 mt-16">
 
               <div>
-                <h3 className="text-3xl font-bold text-slate-900">50+</h3>
-                <p className="text-slate-500 mt-1">Premium Mock Tests</p>
+                <h3 className="text-4xl sm:text-5xl font-bold text-slate-900">50+</h3>
+                <p className="text-lg sm:text-xl text-slate-500 mt-2">Premium Mock Tests</p>
               </div>
 
               <div>
-                <h3 className="text-3xl font-bold text-slate-900">10K+</h3>
-                <p className="text-slate-500 mt-1">Practice Questions</p>
+                <h3 className="text-4xl sm:text-5xl font-bold text-slate-900">10K+</h3>
+                <p className="text-lg sm:text-xl text-slate-500 mt-2">Practice Questions</p>
               </div>
 
               <div>
-                <h3 className="text-3xl font-bold text-slate-900">₹25</h3>
-                <p className="text-slate-500 mt-1">Maximum Cashback</p>
+                <h3 className="text-4xl sm:text-5xl font-bold text-slate-900">₹25</h3>
+                <p className="text-lg sm:text-xl text-slate-500 mt-2">Maximum Cashback</p>
               </div>
 
             </div>
