@@ -61,8 +61,8 @@ export default function Testimonials() {
   return (
     <section className="py-24 bg-gradient-to-b from-white to-red-50/40 border-y border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+        <div className="text-center max-w-4xl mx-auto mb-16">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
             What Serious Aspirants Say About Us 
           </h2>
         </div>
@@ -70,7 +70,7 @@ export default function Testimonials() {
           {studentReviews.map((t, idx) => (
             <div key={idx} className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-brand/5 to-transparent rounded-bl-[100px]" />
-              <p className="text-slate-700 italic text-sm sm:text-base leading-relaxed font-medium relative z-10">
+              <p className="text-slate-700 italic text-base sm:text-lg leading-relaxed font-medium relative z-10">
                 "{t.text}"
               </p>
               <div className="flex items-center gap-4 pt-6 mt-6 border-t border-slate-50">
