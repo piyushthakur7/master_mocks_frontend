@@ -11,15 +11,9 @@ const navItems = [
       {
         category: "Banking & Insurance",
         links: [
-          { name: "SBI PO Prelims", href: "/free-mocks/sbi-po" },
-          { name: "IBPS Clerk Prelims", href: "/free-mocks/ibps-clerk" },
-          { name: "RRB PO Prelims", href: "/free-mocks/rrb-po" },
-        ]
-      },
-      {
-        category: "SSC",
-        links: [
-          { name: "SSC CGL Tier 1", href: "/free-mocks/ssc-cgl" },
+          { name: "Reasoning Ability", href: "/free-mocks/reasoning" },
+          { name: "Quantitative Aptitude", href: "/free-mocks/quant" },
+          { name: "Daily Current Affairs", href: "/free-mocks/current-affairs" },
         ]
       }
     ]
@@ -28,11 +22,11 @@ const navItems = [
     title: "Paid Mocks",
     sections: [
       {
-        category: "Reward Mocks",
+        category: "Banking & Insurance",
         links: [
-          { name: "SBI PO Mains (Reward)", href: "/paid-mocks/sbi-po-mains" },
-          { name: "IBPS PO Mains (Reward)", href: "/paid-mocks/ibps-po-mains" },
-          { name: "RBI Grade B Phase 1", href: "/paid-mocks/rbi-grade-b" },
+          { name: "Reasoning Ability", href: "/paid-mocks/reasoning" },
+          { name: "Quantitative Aptitude", href: "/paid-mocks/quant" },
+          { name: "Daily Current Affairs", href: "/paid-mocks/current-affairs" },
         ]
       }
     ]
@@ -41,11 +35,11 @@ const navItems = [
     title: "Free PDFs",
     sections: [
       {
-        category: "Study Materials",
+        category: "Banking & Insurance",
         links: [
-          { name: "Current Affairs 2024", href: "/pdfs/current-affairs" },
-          { name: "Quant Formula Book", href: "/pdfs/quant-formulas" },
-          { name: "1000+ Puzzle Series", href: "/pdfs/puzzles" },
+          { name: "Reasoning Ability", href: "/free-pdfs/reasoning" },
+          { name: "Quantitative Aptitude", href: "/free-pdfs/quant" },
+          { name: "Daily Current Affairs", href: "/free-pdfs/current-affairs" },
         ]
       }
     ]
