@@ -4,7 +4,7 @@ import { ApiResponse, PaginatedResponse } from "@/types/api";
 
 export const resourceService = {
   // v2.0: Get all resources (free for logged-in users), supports filtering
-  getAll: (params?: { category?: string; resource_type?: string }) =>
+  getAll: (params?: { category?: string; resource_type?: string; access_type?: string }) =>
     apiClient.get<any, ApiResponse<Resource[]>>("/resources", { params }),
   
   // Backward compatible: Get resources by course
