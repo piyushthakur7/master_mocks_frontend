@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "Master Mocks | India's 1st Performance-Based Mock Platform",
@@ -42,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans")}>
+    <html lang="en" className={cn("font-sans", inter.variable)}>
       <body className="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
         <AuthProvider>
           {children}

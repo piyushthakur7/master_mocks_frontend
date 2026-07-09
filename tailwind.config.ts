@@ -22,6 +22,9 @@ const config: Config = {
           light: "#fff5f5",   
         },
       },
+      fontFamily: {
+        sans: ["var(--font-inter)", "sans-serif"],
+      },
     },
   },
   plugins: [],

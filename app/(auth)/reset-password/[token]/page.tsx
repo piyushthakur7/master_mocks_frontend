@@ -18,8 +18,8 @@ interface PageParameters {
 }
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  confirmPassword: z.string().min(6, { message: "Please confirm your password." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  confirmPassword: z.string().min(8, { message: "Please confirm your password." }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match.",
   path: ["confirmPassword"],
@@ -99,7 +99,7 @@ export default function ResetPasswordTokenPage({ params }: PageParameters) {
           <Input 
             id="password"
             type="password" 
-            placeholder="Minimum 6 characters" 
+            placeholder="Minimum 8 characters" 
             className="w-full text-sm px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
             {...form.register("password")}
           />
