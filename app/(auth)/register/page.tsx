@@ -89,16 +89,16 @@ export default function StudentRegisterPage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create Free Account</h1>
-        <p className="text-sm text-slate-500 mt-1">Get access to live rankings, performance insights, and free mock downloads.</p>
+        <p className="text-base text-slate-500 mt-1">Get access to live rankings, performance insights, and free mock downloads.</p>
       </div>
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-400">Full Name</Label>
+          <Label htmlFor="name" className="text-sm font-bold uppercase tracking-wider text-slate-400">Full Name</Label>
           <Input 
             id="name"
             placeholder="Enter full name" 
-            className="w-full text-sm px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
+            className="w-full text-base px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
             {...form.register("name")}
           />
           {form.formState.errors.name && (
@@ -107,12 +107,12 @@ export default function StudentRegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-400">Email Address</Label>
+          <Label htmlFor="email" className="text-sm font-bold uppercase tracking-wider text-slate-400">Email Address</Label>
           <Input 
             id="email"
             type="email" 
             placeholder="name@example.com" 
-            className="w-full text-sm px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
+            className="w-full text-base px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
             {...form.register("email")}
           />
           {form.formState.errors.email && (
@@ -121,12 +121,12 @@ export default function StudentRegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-400">Phone Number (Optional)</Label>
+          <Label htmlFor="phone" className="text-sm font-bold uppercase tracking-wider text-slate-400">Phone Number (Optional)</Label>
           <Input 
             id="phone"
             type="tel" 
             placeholder="Enter 10-digit mobile number" 
-            className="w-full text-sm px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
+            className="w-full text-base px-4 py-6 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
             {...form.register("phone")}
           />
           {form.formState.errors.phone && (
@@ -135,13 +135,13 @@ export default function StudentRegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-400">Password</Label>
+          <Label htmlFor="password" className="text-sm font-bold uppercase tracking-wider text-slate-400">Password</Label>
           <div className="relative">
             <Input 
               id="password"
               type={showPassword ? "text" : "password"} 
               placeholder="Create secure password" 
-              className="w-full text-sm px-4 py-6 pr-12 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
+              className="w-full text-base px-4 py-6 pr-12 rounded-lg border-slate-200 bg-slate-50/50 font-medium text-slate-800" 
               {...form.register("password")}
             />
             <button
@@ -165,7 +165,7 @@ export default function StudentRegisterPage() {
               onCheckedChange={(checked) => form.setValue("terms", checked === true ? true : (undefined as any), { shouldValidate: true })}
               className="mt-1 border-slate-300 data-[state=checked]:bg-[#D00113] data-[state=checked]:border-[#D00113]" 
             />
-            <Label htmlFor="terms" className="text-xs text-slate-500 font-medium leading-normal cursor-pointer">
+            <Label htmlFor="terms" className="text-sm text-slate-500 font-medium leading-normal cursor-pointer">
               I agree to the Master Mocks terms of service and performance wallet allocation rules policies.
             </Label>
           </div>
@@ -177,7 +177,7 @@ export default function StudentRegisterPage() {
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="w-full py-6 bg-[#D00113] hover:bg-[#b0010f] text-white font-bold text-sm rounded-lg shadow-md transition-all mt-4"
+          className="w-full py-6 bg-[#D00113] hover:bg-[#b0010f] text-white font-bold text-base rounded-lg shadow-md transition-all mt-4"
         >
           {isLoading ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
@@ -187,14 +187,14 @@ export default function StudentRegisterPage() {
         </Button>
       </form>
 
-      <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500 font-medium">
+      <div className="text-center pt-4 border-t border-slate-100 text-sm text-slate-500 font-medium">
         Already registered?{" "}
         <Link href="/login" className="text-[#D00113] font-bold hover:underline">
           Sign In Instead
         </Link>
       </div>
 
-      <div className="text-center pt-2 text-xs text-slate-500 font-medium">
+      <div className="text-center pt-2 text-sm text-slate-500 font-medium">
         Administrator?{" "}
         <Link href="/admin/login" className="text-slate-900 font-bold hover:underline">
           Access Admin Portal

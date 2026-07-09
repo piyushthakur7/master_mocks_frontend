@@ -36,7 +36,7 @@ export default function AuthGroupLayout({ children }: { children: React.ReactNod
             <h2 className="text-2xl lg:text-3xl font-black text-white tracking-tight leading-snug">
               India&apos;s 1st Performance-Based Mock Platform
             </h2>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+            <p className="text-sm text-slate-400 font-medium leading-relaxed">
               Execute test modules at real exam-level rigor, secure target percentage thresholds, and claim your cashback rewards.
             </p>
           </div>

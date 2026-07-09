@@ -69,11 +69,11 @@ export default function Navbar() {
           {/* Text Matched Exactly to Logo Typo and Colors */}
           <span className="text-xl font-black tracking-tight font-sans">
             <span className="text-[#1A1A1A]">MASTER</span>
-            <span className="text-[#D00113]">MINDS</span>
+            <span className="text-[#D00113]">MOCKS</span>
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-600">
+        <nav className="hidden md:flex items-center gap-6 text-base font-bold text-slate-600">
           
           {navItems.map((item, idx) => (
             <div key={idx} className="relative group h-full flex items-center">
