@@ -82,10 +82,10 @@ export default function ForgotPasswordPage() {
       ) : (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-emerald-900 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-            <span>✉️</span> Transmission Dispatched
+            <span>✉️</span> Email Sent!
           </p>
           <p className="text-xs font-medium leading-relaxed">
-            If an active account maps to that entry, a password verification string has been directed to its inbox. Please monitor folders for activation paths.
+            If an account exists with this email, we've sent you a password reset link. Please check your inbox (and spam folder).
           </p>
         </div>
       )}
