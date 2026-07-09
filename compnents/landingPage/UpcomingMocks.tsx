@@ -5,8 +5,10 @@ import { useState, useEffect } from "react";
 import { mockTestService } from "@/services/mock-test.service";
 import { MockTest } from "@/types/mock-test";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function UpcomingMocks() {
+  const { isAuthenticated } = useAuth();
   const [upcomingMocks, setUpcomingMocks] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,10 +97,10 @@ export default function UpcomingMocks() {
                 </div>
 
                 <Link 
-                  href="/register" 
+                  href={isAuthenticated ? `/tests/${mock._id}` : `/register?returnUrl=/tests/${mock._id}`} 
                   className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-gradient-to-r hover:from-brand hover:to-orange-500 text-white font-bold text-sm text-center transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-brand/30 block"
                 >
-                  Register Now
+                  Take Test
                 </Link>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { authService } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
@@ -29,19 +29,23 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function StudentRegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login: setAuthUser, isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading && isAuthenticated) {
-      if (user?.role === "ADMIN") {
+      const returnUrl = searchParams.get("returnUrl");
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else if (user?.role === "ADMIN") {
         router.push("/admin/dashboard");
       } else {
         router.push("/dashboard");
       }
     }
-  }, [isAuthLoading, isAuthenticated, user, router]);
+  }, [isAuthLoading, isAuthenticated, user, router, searchParams]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -68,7 +72,12 @@ export default function StudentRegisterPage() {
       if (response.success && response.data) {
         setAuthUser(response.data.accessToken, response.data.user);
         toast.success("Account created successfully!");
-        router.push("/dashboard");
+        const returnUrl = searchParams.get("returnUrl");
+        if (returnUrl) {
+          router.push(returnUrl);
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to create account. Please try again.");
