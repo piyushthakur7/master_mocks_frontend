@@ -45,7 +45,7 @@ export default function UpcomingMocks() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Upcoming <span className="text-brand">PAID</span> Mocks
+              Featured <span className="text-brand">PAID</span> Hacks
             </h2>
             <p className="text-xl sm:text-2xl text-slate-600">
               Register early for our premium mocks and stand a chance to earn maximum cashback rewards!

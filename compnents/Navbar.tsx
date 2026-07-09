@@ -6,14 +6,14 @@ import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   {
-    title: "Free Mocks",
+    title: "Free Hacks",
     sections: [
       {
         category: "Banking & Insurance",
         links: [
-          { name: "Reasoning Ability", href: "/free-mocks/reasoning" },
-          { name: "Quantitative Aptitude", href: "/free-mocks/quant" },
-          { name: "Daily Current Affairs", href: "/free-mocks/current-affairs" },
+          { name: "Reasoning Ability", href: "/free-hacks/reasoning" },
+          { name: "Quantitative Aptitude", href: "/free-hacks/quant" },
+          { name: "Daily Current Affairs", href: "/free-hacks/current-affairs" },
         ]
       }
     ]
@@ -58,7 +58,7 @@ export default function Navbar() {
           <div className="relative w-9 h-9 overflow-hidden rounded-md">
             <Image
               src="/logo.jpeg" // Placed inside your public/ folder[cite: 1]
-              alt="Master Mocks Logo"
+              alt="Master Minds Logo"
               fill
               sizes="36px"
               className="object-cover group-hover:scale-105 transition-transform duration-200"
@@ -69,7 +69,7 @@ export default function Navbar() {
           {/* Text Matched Exactly to Logo Typo and Colors */}
           <span className="text-xl font-black tracking-tight font-sans">
             <span className="text-[#1A1A1A]">MASTER</span>
-            <span className="text-[#D00113]">MOCKS</span>
+            <span className="text-[#D00113]">MINDS</span>
           </span>
         </Link>
 
