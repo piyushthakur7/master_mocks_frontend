@@ -68,7 +68,14 @@ export default function AdminCreateTestPage() {
           categoryService.getAll(),
           courseService.getAll()
         ]);
-        if (catRes.success) setCategories(catRes.data.data || catRes.data);
+        if (catRes.success) {
+          const cats = catRes.data.data || catRes.data;
+          setCategories(cats);
+          const filteredCats = cats.filter((c: any) => c.name !== "Banking");
+          if (filteredCats.length > 0) {
+            setTestForm(prev => ({ ...prev, category: filteredCats[0]._id }));
+          }
+        }
         if (courseRes.success) setCourses(courseRes.data.data || courseRes.data);
       } catch (error) {
         toast.error("Failed to load categories/courses");
@@ -271,10 +278,11 @@ export default function AdminCreateTestPage() {
                 onChange={e => setTestForm({...testForm, category: e.target.value})}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
               >
-                <option value="">None</option>
-                {categories.map(c => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
+                {categories
+                  .filter(c => c.name !== "Banking")
+                  .map(c => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
               </select>
             </div>
 
