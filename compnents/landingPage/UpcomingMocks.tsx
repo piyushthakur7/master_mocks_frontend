@@ -37,9 +37,19 @@ export default function UpcomingMocks() {
   }
 
   if (upcomingMocks.length === 0) {
-    return null; // Don't show the section if there are no paid mocks
+    return (
+      <section className="py-24 bg-slate-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+            Featured <span className="text-brand">PAID</span> Hacks
+          </h2>
+          <p className="text-xl text-slate-600 mb-8">
+            Premium mock tests will be available here soon. Stay tuned!
+          </p>
+        </div>
+      </section>
+    );
   }
-
   return (
     <section className="py-24 bg-slate-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
