@@ -137,8 +137,8 @@ export default function AdminResourcesUploadPage() {
       {isFormVisible && (
         <div className="bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-xl space-y-4 animate-in slide-in-from-top-4 duration-200">
           <div>
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Configure New Material Asset Record</h3>
-            <p className="text-[11px] text-slate-400 font-medium">Assign access rules and metrics to deploy this component directly into student resource modules.</p>
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Configure New Resource</h3>
+            <p className="text-[11px] text-slate-400 font-medium">Assign access rules to deploy this resource to students.</p>
           </div>
 
           <form onSubmit={handleUploadSubmit} className="space-y-4">
@@ -250,10 +250,10 @@ export default function AdminResourcesUploadPage() {
               <button 
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2"
+                className="px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2"
               >
                 {isSubmitting && <Loader2 className="w-3 h-3 animate-spin" />}
-                🚀 Push Content Live
+                🚀 Save Resource
               </button>
             </div>
           </form>
