@@ -27,13 +27,13 @@ export default function LeaderboardPage({ params }: PageProps) {
           leaderboardService.getMyRank(unwrappedParams.testId)
         ]);
 
-        const lbData = lbRes.data?.data || lbRes.data;
+        const lbData = (lbRes.data as any)?.data || lbRes.data;
         if (lbRes.success && lbData) {
           setEntries(lbData.entries || []);
           setTotalPages(lbData.total_pages || 1);
         }
         
-        const rankData = rankRes.data?.data || rankRes.data;
+        const rankData = (rankRes.data as any)?.data || rankRes.data;
         if (rankRes.success && rankData) {
           setMyRank(rankData);
         }
