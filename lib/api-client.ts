@@ -47,7 +47,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle 401 and Token Refresh
+// Response Interceptor: Handle 401, 429, and Token Refresh
 apiClient.interceptors.response.use(
   (response) => {
     const body = response.data;
@@ -59,7 +59,27 @@ apiClient.interceptors.response.use(
     return body;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number };
+
+    // Handle 429 Too Many Requests — auto-retry with exponential backoff
+    // This handles both Express rate limiter and Hostinger infrastructure 429s
+    if (error.response?.status === 429 && originalRequest) {
+      const retryCount = originalRequest._retryCount || 0;
+      const MAX_RETRIES = 3;
+
+      if (retryCount < MAX_RETRIES) {
+        originalRequest._retryCount = retryCount + 1;
+        // Exponential backoff: 1s, 2s, 4s
+        // Also check Retry-After header if provided
+        const retryAfter = error.response?.headers?.["retry-after"];
+        const delay = retryAfter
+          ? Math.min(parseInt(retryAfter, 10) * 1000, 5000)
+          : Math.pow(2, retryCount) * 1000;
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return apiClient(originalRequest);
+      }
+    }
 
     // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -114,3 +134,4 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
