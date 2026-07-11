@@ -35,8 +35,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       const response = await userService.getMe();
-      if (response.success) {
-        setUser(response.data);
+      // Handle different wrapper formats robustly
+      const userData = response?.data?.user || response?.data || response;
+      if (response?.success || userData?.email || userData?._id) {
+        setUser(userData);
       } else {
         setAccessToken(null);
       }

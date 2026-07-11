@@ -43,12 +43,21 @@ export default function StudentResourcesVaultPage() {
     fetchResources();
   }, [selectedCategory]);
 
-  const handleDownload = async (resourceId: string, title: string) => {
+  const handleDownload = async (item: Resource) => {
     try {
-      const response = await resourceService.download(resourceId);
-      if (response.success && response.data) {
-        toast.success(`Downloading ${title}...`);
-        window.open(response.data.downloadUrl, "_blank");
+      const directUrl = item.file_url || item.fileUrl;
+      if (directUrl) {
+        toast.success(`Opening ${item.title}...`);
+        window.open(directUrl, "_blank");
+        return;
+      }
+      const response = await resourceService.download(item._id!);
+      const url = response?.data?.downloadUrl || (response as any)?.downloadUrl || (response as any)?.url;
+      if (url) {
+        toast.success(`Opening ${item.title}...`);
+        window.open(url, "_blank");
+      } else {
+        throw new Error("Invalid URL returned");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to download resource");
@@ -137,7 +146,7 @@ export default function StudentResourcesVaultPage() {
 
                   <div className="pt-4 mt-5">
                     <button
-                      onClick={() => handleDownload(item._id!, item.title)}
+                      onClick={() => handleDownload(item)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 group-hover:bg-[#1A1A1A] group-hover:text-white text-slate-700 rounded-xl transition-all text-xs font-black uppercase tracking-wider"
                     >
                       <Download className="w-3.5 h-3.5" /> Download / View

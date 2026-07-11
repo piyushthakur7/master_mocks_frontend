@@ -118,12 +118,20 @@ export default function Navbar() {
               Dashboard
             </Link>
           ) : (
-            <Link 
-              href="/register" 
-              className="px-5 py-2.5 rounded-md text-sm font-bold text-white bg-[#D00113] hover:bg-[#b0010f] transition-all shadow-sm"
-            >
-              Register
-            </Link>
+            <>
+              <Link 
+                href="/login" 
+                className="px-5 py-2.5 rounded-md text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all shadow-sm"
+              >
+                Log In
+              </Link>
+              <Link 
+                href="/register" 
+                className="px-5 py-2.5 rounded-md text-sm font-bold text-white bg-[#D00113] hover:bg-[#b0010f] transition-all shadow-sm"
+              >
+                Register
+              </Link>
+            </>
           )}
         </div>
       </div>

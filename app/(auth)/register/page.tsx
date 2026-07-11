@@ -98,7 +98,7 @@ export default function StudentRegisterPage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create Free Account</h1>
-        <p className="text-base text-slate-500 mt-1">Get access to live rankings, performance insights, and free mock downloads.</p>
+        <p className="text-base text-slate-500 mt-1">Get access to live rankings and performance insights.</p>
       </div>
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -191,7 +191,7 @@ export default function StudentRegisterPage() {
           {isLoading ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
           ) : (
-            "Register & Access Portal"
+            "Register"
           )}
         </Button>
       </form>
@@ -199,7 +199,7 @@ export default function StudentRegisterPage() {
       <div className="text-center pt-4 border-t border-slate-100 text-sm text-slate-500 font-medium">
         Already registered?{" "}
         <Link href="/login" className="text-[#D00113] font-bold hover:underline">
-          Sign In Instead
+          Sign In
         </Link>
       </div>
 
