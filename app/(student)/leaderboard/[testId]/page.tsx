@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { LeaderboardEntry, MyRankResponse } from "@/types/leaderboard";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Trophy, Medal } from "lucide-react";
+import { Loader2, ArrowLeft, Trophy, Medal, RefreshCw } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ testId: string }>;
@@ -16,36 +16,44 @@ export default function LeaderboardPage({ params }: PageProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<MyRankResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const [lbRes, rankRes] = await Promise.all([
-          leaderboardService.getLeaderboard(unwrappedParams.testId, { page, limit: 100 }),
-          leaderboardService.getMyRank(unwrappedParams.testId)
-        ]);
+  const fetchLeaderboard = useCallback(async () => {
+    setIsLoading(true);
+    setHasError(false);
+    try {
+      const [lbRes, rankRes] = await Promise.all([
+        leaderboardService.getLeaderboard(unwrappedParams.testId, { page, limit: 100 }),
+        leaderboardService.getMyRank(unwrappedParams.testId).catch(() => null)
+      ]);
 
-        const lbData = (lbRes.data as any)?.data || lbRes.data;
-        if (lbRes.success && lbData) {
-          setEntries(lbData.entries || []);
-          setTotalPages(lbData.total_pages || 1);
-        }
-        
-        const rankData = (rankRes.data as any)?.data || rankRes.data;
-        if (rankRes.success && rankData) {
+      // Extract leaderboard data — handle both { data: { entries } } and { data: { data: { entries } } }
+      const lbData = (lbRes as any)?.data?.data || (lbRes as any)?.data || lbRes;
+      if (lbData) {
+        setEntries(Array.isArray(lbData.entries) ? lbData.entries : []);
+        setTotalPages(lbData.total_pages || 1);
+      }
+
+      // Extract rank data
+      if (rankRes) {
+        const rankData = (rankRes as any)?.data?.data || (rankRes as any)?.data || rankRes;
+        if (rankData && rankData.rank != null) {
           setMyRank(rankData);
         }
-      } catch (error) {
-        toast.error("Failed to load leaderboard");
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchLeaderboard();
+    } catch (error) {
+      setHasError(true);
+      toast.error("Failed to load leaderboard");
+    } finally {
+      setIsLoading(false);
+    }
   }, [unwrappedParams.testId, page]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
@@ -64,6 +72,17 @@ export default function LeaderboardPage({ params }: PageProps) {
         <div className="space-y-4 py-8">
           <div className="h-24 bg-slate-200 rounded-2xl animate-pulse"></div>
           <div className="h-64 bg-slate-200 rounded-2xl animate-pulse"></div>
+        </div>
+      ) : hasError ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-12 text-center">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-6 h-6 text-red-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 mb-1">Couldn't Load Leaderboard</h3>
+          <p className="text-xs text-slate-500 mb-6 max-w-sm mx-auto">There was a problem loading the rankings. Please check your connection and try again.</p>
+          <button onClick={fetchLeaderboard} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D00113] text-white text-xs font-bold rounded-lg hover:bg-[#B00010] transition-colors">
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
         </div>
       ) : (
         <>
@@ -97,8 +116,8 @@ export default function LeaderboardPage({ params }: PageProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
-                {entries.length > 0 ? entries.map((entry) => (
-                  <tr key={entry.user._id} className="hover:bg-slate-50/60 transition-colors">
+                {entries.length > 0 ? entries.map((entry, idx) => (
+                  <tr key={entry?.user?._id || idx} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-4 px-6 text-center">
                       {entry.rank === 1 ? <Trophy className="w-5 h-5 text-amber-500 mx-auto" /> :
                        entry.rank === 2 ? <Medal className="w-5 h-5 text-slate-400 mx-auto" /> :
@@ -106,14 +125,14 @@ export default function LeaderboardPage({ params }: PageProps) {
                        <span className="font-black text-slate-400">#{entry.rank}</span>}
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-900">
-                      {entry.user.full_name}
+                      {entry.user?.full_name || "Anonymous"}
                     </td>
                     <td className="py-4 px-6 font-black text-slate-700 text-right">
-                      {entry.best_score.toFixed(2)}
+                      {(entry.best_score ?? 0).toFixed(2)}
                     </td>
                     <td className="py-4 px-6 text-right">
                       <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded font-bold">
-                        {entry.best_percentage}%
+                        {entry.best_percentage ?? 0}%
                       </span>
                     </td>
                   </tr>
