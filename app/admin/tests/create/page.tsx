@@ -519,7 +519,7 @@ export default function AdminCreateTestPage() {
             className="px-6 py-2.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center gap-2"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save & Publish Test Matrix
+            Save and Publish Test
           </button>
         </div>
 
