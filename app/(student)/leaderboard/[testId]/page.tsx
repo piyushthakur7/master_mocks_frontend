@@ -27,13 +27,15 @@ export default function LeaderboardPage({ params }: PageProps) {
           leaderboardService.getMyRank(unwrappedParams.testId)
         ]);
 
-        if (lbRes.success && lbRes.data) {
-          setEntries(lbRes.data.entries);
-          setTotalPages(lbRes.data.total_pages);
+        const lbData = lbRes.data?.data || lbRes.data;
+        if (lbRes.success && lbData) {
+          setEntries(lbData.entries || []);
+          setTotalPages(lbData.total_pages || 1);
         }
         
-        if (rankRes.success && rankRes.data) {
-          setMyRank(rankRes.data);
+        const rankData = rankRes.data?.data || rankRes.data;
+        if (rankRes.success && rankData) {
+          setMyRank(rankData);
         }
       } catch (error) {
         toast.error("Failed to load leaderboard");
@@ -59,8 +61,9 @@ export default function LeaderboardPage({ params }: PageProps) {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+        <div className="space-y-4 py-8">
+          <div className="h-24 bg-slate-200 rounded-2xl animate-pulse"></div>
+          <div className="h-64 bg-slate-200 rounded-2xl animate-pulse"></div>
         </div>
       ) : (
         <>

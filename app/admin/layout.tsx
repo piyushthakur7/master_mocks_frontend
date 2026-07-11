@@ -34,17 +34,17 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
 
   // All URL paths explicitly target the clear /admin sub-directory tree
   const adminNavItems = [
-    { name: "Overview Desk", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
+    { name: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "Manage Categories", href: "/admin/categories", icon: <FolderOpen size={18} /> },
-    { name: "Manage Mocks", href: "/admin/tests", icon: <FileEdit size={18} /> },
-    { name: "Aspirant Roster", href: "/admin/students", icon: <Users size={18} /> },
-    { name: "PDF Resources", href: "/admin/resources", icon: <FileText size={18} /> },
-    { name: "Payments & Audits", href: "/admin/reports", icon: <FileText size={18} /> },
-    { name: "System Config", href: "/admin/settings", icon: <Settings size={18} /> },
+    { name: "Manage Mock Tests", href: "/admin/tests", icon: <FileEdit size={18} /> },
+    { name: "Student Management", href: "/admin/students", icon: <Users size={18} /> },
+    { name: "Study Resources", href: "/admin/resources", icon: <FileText size={18} /> },
+    { name: "Payments & Reports", href: "/admin/reports", icon: <FileText size={18} /> },
+    { name: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row antialiased font-sans">
+    <div className="min-h-screen bg-[#0A0A0A] text-slate-100 flex flex-col md:flex-row antialiased font-sans">
       
       {/* ─── MOBILE ADMINISTRATIVE HEADER ─── */}
       <header className="md:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50 text-white">
@@ -82,8 +82,8 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
               );
             })}
             <div className="pt-4 mt-2 border-t border-slate-800">
-              <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-500 hover:text-red-400">
-                <LogOut size={18} /> Terminate Admin Token
+              <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-500 hover:text-red-400">
+                <LogOut size={18} /> Logout
               </button>
             </div>
           </nav>
@@ -104,9 +104,6 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
                 MASTER<span className="text-[#D00113]">MOCKS</span>
               </span>
             </Link>
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#D00113] bg-red-950/40 border border-red-900/40 px-2.5 py-1 rounded-md inline-block">
-              🛡️ Root Access Token
-            </div>
           </div>
 
           {/* Admin Command Nav Stack */}
@@ -117,9 +114,9 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
-                      ? "bg-[#D00113] text-white shadow-md shadow-red-600/10" 
+                      ? "bg-slate-800 text-white shadow-sm border border-slate-700" 
                       : "text-slate-400 hover:bg-slate-900 hover:text-white"
                   }`}
                 >
@@ -143,8 +140,8 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
                 )}
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-200 line-clamp-1">{user?.full_name || "SuperUser Node"}</p>
-                <p className="text-[9px] font-bold font-mono text-slate-500">SECURE_LEVEL//01</p>
+                <p className="text-sm font-medium text-slate-200 line-clamp-1">{user?.full_name || "Administrator"}</p>
+                <p className="text-xs text-slate-500">{user?.email || "admin@system.com"}</p>
               </div>
             </div>
             <button onClick={logout} className="text-slate-500 hover:text-[#D00113] text-xs transition-colors p-1" title="Logout">

@@ -39,7 +39,8 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
         }
         
         setTest(testRes.data);
-        setTimeLeft(testRes.data.duration_minutes * 60);
+        const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
+        setTimeLeft(duration * 60);
 
         // Start attempt
         const attemptRes = await attemptService.start(unwrappedParams.testId);
@@ -61,7 +62,8 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             const startTime = new Date(startTimestamp).getTime();
             const now = new Date().getTime();
             const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remaining = (testRes.data.duration_minutes * 60) - elapsedSeconds;
+            const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
+            const remaining = (duration * 60) - elapsedSeconds;
             setTimeLeft(remaining > 0 ? remaining : 0);
           }
         }
