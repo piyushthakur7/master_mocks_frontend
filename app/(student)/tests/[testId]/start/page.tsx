@@ -160,7 +160,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       {/* ─── SYSTEM HEADER ─── */}
       <header className="h-14 bg-[#1A1A1A] text-white px-6 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-black tracking-wider bg-[#D00113] px-2.5 py-1 rounded">LIVE RUNTIME</span>
+          <span className="text-xs font-black tracking-wider bg-[#D00113] px-2.5 py-1 rounded">LIVE EXAM</span>
           <span className="text-xs font-bold text-slate-300">{test.title} // Section: {typeof test.course === 'object' && test.course?.title ? test.course.title : "General"}</span>
         </div>
         <div className="flex items-center gap-4">
