@@ -129,7 +129,7 @@ export default function AdminResourcesUploadPage() {
             isFormVisible ? "bg-slate-700 hover:bg-slate-800" : "bg-[#D00113] hover:bg-[#b0010f]"
           }`}
         >
-          {isFormVisible ? "❌ Cancel Staging" : "➕ Add New Resource Capsule"}
+          {isFormVisible ? "❌ Cancel Staging" : "➕ Add New Resource"}
         </button>
       </div>
 
