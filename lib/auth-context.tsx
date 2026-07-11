@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       const response = await userService.getMe();
       // Handle different wrapper formats robustly
-      const userData = response?.data?.user || response?.data || response;
+      const userData = (response?.data as any)?.user || response?.data || response;
       if (response?.success || userData?.email || userData?._id) {
         setUser(userData);
       } else {
