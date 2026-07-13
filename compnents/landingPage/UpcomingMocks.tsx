@@ -11,16 +11,24 @@ export default function UpcomingMocks() {
   const { isAuthenticated } = useAuth();
   const [upcomingMocks, setUpcomingMocks] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPaidMocks = async () => {
       try {
         const response = await mockTestService.getAll({ access_type: 'paid', limit: 3 });
-        // @ts-ignore - response.data structure depends on API response
-        const data = Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+        
+        let data = [];
+        if (response?.data) {
+          data = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+        } else if (Array.isArray(response)) {
+          data = response;
+        }
+        
         setUpcomingMocks(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load upcoming mocks", err);
+        setErrorMsg(typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err), 2) : String(err));
       } finally {
         setLoading(false);
       }
@@ -32,6 +40,17 @@ export default function UpcomingMocks() {
     return (
       <section className="py-24 bg-slate-50/50 flex justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      </section>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <section className="py-24 bg-slate-50/50 flex justify-center items-center">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg font-semibold w-full max-w-4xl overflow-auto">
+          Error loading mocks:
+          <pre className="mt-2 text-xs bg-red-100 p-4 rounded">{errorMsg}</pre>
+        </div>
       </section>
     );
   }
