@@ -7,7 +7,6 @@ import Hero from "@/compnents/landingPage/hero";
 import WhyChooseUs from "@/compnents/landingPage/WhyChooseUs";
 import AboutUs from "@/compnents/landingPage/AboutUs";
 import UpcomingMocks from "@/compnents/landingPage/UpcomingMocks";
-import CourseCards from "@/compnents/landingPage/CourseCards";;
 import Testimonials from "@/compnents/landingPage/Testimonials";
 import Footer from "@/compnents/Footer";
 
