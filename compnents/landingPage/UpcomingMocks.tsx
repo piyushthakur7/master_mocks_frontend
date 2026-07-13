@@ -60,7 +60,7 @@ export default function UpcomingMocks() {
       <section className="py-24 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Featured <span className="text-brand">PAID</span> Hacks
+            Featured <span className="text-brand">PAID</span> Mocks
           </h2>
           <p className="text-xl text-slate-600 mb-8">
             Premium mock tests will be available here soon. Stay tuned!
@@ -76,7 +76,7 @@ export default function UpcomingMocks() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Featured <span className="text-brand">PAID</span> Hacks
+              Featured <span className="text-brand">PAID</span> Mocks
             </h2>
             <p className="text-xl sm:text-2xl text-slate-600">
               Register early for our premium mocks and stand a chance to earn maximum cashback rewards!
