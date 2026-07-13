@@ -18,7 +18,7 @@ export default function UpcomingMocks() {
       try {
         const response = await mockTestService.getAll({ access_type: 'paid', limit: 3 });
         
-        let data = [];
+        let data: MockTest[] = [];
         if (response?.data) {
           data = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
         } else if (Array.isArray(response)) {
