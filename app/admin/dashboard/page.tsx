@@ -47,7 +47,6 @@ export default function AdminDashboardOverviewPage() {
   const corporateMetrics = [
     { title: "Total Aspirants", value: d.totalStudents.toLocaleString(), icon: <Users className="w-5 h-5" />, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
     { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-    { title: "Active Courses", value: d.totalCourses.toString(), icon: <BookOpen className="w-5 h-5" />, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
     { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-500/10 border-red-500/20" }
   ];
 
