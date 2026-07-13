@@ -14,9 +14,9 @@ export default function HomePreview() {
       <Navbar />
       <main>
         <Hero />
+        <UpcomingMocks />
         <WhyChooseUs />
         <AboutUs />
-        <UpcomingMocks />
         <Testimonials />
       </main>
       <Footer />
