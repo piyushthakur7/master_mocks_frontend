@@ -89,6 +89,9 @@ export default function UpcomingMocks() {
                     <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider rounded">
                       {mock.duration_minutes} Mins
                     </span>
+                    <span className="px-2 py-1 bg-brand/10 text-brand text-[10px] font-black uppercase tracking-wider rounded">
+                      {mock.total_questions || mock.questions?.length || 0} Questions
+                    </span>
                   </div>
                   <span className="font-black text-brand text-xl">₹{mock.price}</span>
                 </div>
