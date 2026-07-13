@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   {
-    title: "Free Hacks",
+    title: "Free Mocks",
     sections: [
       {
         category: "Banking & Insurance",
