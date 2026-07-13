@@ -158,7 +158,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
   if (!test) return null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 mb-24 animate-in fade-in duration-300">
+    <div className="max-w-5xl mx-auto space-y-6 mb-24 animate-in fade-in duration-300 text-slate-900">
       
       <Link href="/admin/tests" className="text-xs font-black uppercase tracking-wider text-slate-400 hover:text-[#D00113] transition-colors inline-flex items-center gap-1">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Tests
@@ -419,7 +419,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
                     placeholder={`Option text...`}
                     value={option.text}
                     onChange={e => handleNewQuestionOptionChange(oIndex, e.target.value)}
-                    className="w-full bg-transparent border-none text-xs font-semibold focus:outline-none"
+                    className="w-full bg-transparent border-none text-xs font-semibold focus:outline-none text-slate-900"
                     required
                   />
                 </div>

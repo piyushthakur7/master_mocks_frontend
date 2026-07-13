@@ -75,7 +75,7 @@ export default function AdminTestsManagementPage() {
               <thead>
                 <tr className="bg-slate-900/50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800">
                   <th className="py-3.5 px-6">Test Configuration Metadata</th>
-                  <th className="py-3.5 px-6">Category / Course</th>
+                  <th className="py-3.5 px-6">Category</th>
                   <th className="py-3.5 px-6">Boundaries Matrix</th>
                   <th className="py-3.5 px-6">Environment Status</th>
                   <th className="py-3.5 px-6 text-right">Actions Panel</th>
@@ -92,11 +92,6 @@ export default function AdminTestsManagementPage() {
                       <span className="bg-slate-800 text-slate-300 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded mr-2">
                         {(test.category as any)?.name || "Uncategorized"}
                       </span>
-                      {test.course && (
-                        <span className="bg-blue-900/20 text-blue-400 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">
-                          {(test.course as any)?.title || "Course linked"}
-                        </span>
-                      )}
                     </td>
                     <td className="py-4 px-6 text-slate-500">
                       <div className="flex items-center gap-3">

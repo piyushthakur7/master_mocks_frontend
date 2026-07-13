@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
 import { categoryService } from "@/services/category.service";
-import { courseService } from "@/services/course.service";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft } from "lucide-react";
 
@@ -20,7 +19,6 @@ interface QuestionTemplate {
 export default function AdminCreateTestPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
   const [isLoadingForm, setIsLoadingForm] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +26,6 @@ export default function AdminCreateTestPage() {
     title: "",
     description: "",
     category: "",
-    course: "",
     difficulty: "medium",
     total_questions: 1,
     passing_marks: 1,
@@ -64,10 +61,7 @@ export default function AdminCreateTestPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catRes, courseRes] = await Promise.all([
-          categoryService.getAll(),
-          courseService.getAll()
-        ]);
+        const catRes = await categoryService.getAll();
         if (catRes.success) {
           const cats = catRes.data.data || catRes.data;
           setCategories(cats);
@@ -76,9 +70,8 @@ export default function AdminCreateTestPage() {
             setTestForm(prev => ({ ...prev, category: filteredCats[0]._id }));
           }
         }
-        if (courseRes.success) setCourses(courseRes.data.data || courseRes.data);
       } catch (error) {
-        toast.error("Failed to load categories/courses");
+        toast.error("Failed to load categories");
       } finally {
         setIsLoadingForm(false);
       }
@@ -181,8 +174,6 @@ export default function AdminCreateTestPage() {
 
       if (testForm.category) payload.category = testForm.category;
 
-      if (testForm.course) payload.course = testForm.course;
-
       const createRes = await mockTestService.create(payload);
       
       if (createRes.success && createRes.data) {
@@ -218,7 +209,7 @@ export default function AdminCreateTestPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 mb-24 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto space-y-6 mb-24 animate-in fade-in duration-300 text-slate-900">
       
       <Link href="/admin/tests" className="text-xs font-black uppercase tracking-wider text-slate-400 hover:text-[#D00113] transition-colors inline-flex items-center gap-1">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Tests
@@ -257,19 +248,7 @@ export default function AdminCreateTestPage() {
               />
             </div>
             
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Course Linked</label>
-              <select 
-                value={testForm.course}
-                onChange={e => setTestForm({...testForm, course: e.target.value})}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
-              >
-                <option value="">None (General Test)</option>
-                {courses.map(c => (
-                  <option key={c._id} value={c._id}>{c.title}</option>
-                ))}
-              </select>
-            </div>
+
 
             <div className="space-y-1.5">
               <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Category</label>
@@ -488,7 +467,7 @@ export default function AdminCreateTestPage() {
                           placeholder={`Option text...`}
                           value={option.text}
                           onChange={e => handleOptionTextChange(qIndex, oIndex, e.target.value)}
-                          className="w-full bg-transparent border-none text-xs font-semibold focus:outline-none"
+                          className="w-full bg-transparent border-none text-xs font-semibold focus:outline-none text-slate-900"
                           required
                         />
                       </div>
