@@ -46,7 +46,7 @@ export default function StudentResourcesVaultPage() {
   const handleDownload = async (item: Resource) => {
     try {
       const directUrl = item.file_url || item.fileUrl;
-      if (directUrl) {
+      if (directUrl && directUrl.startsWith('http')) {
         toast.success(`Opening ${item.title}...`);
         window.open(directUrl, "_blank");
         return;
