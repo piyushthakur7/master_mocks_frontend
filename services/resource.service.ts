@@ -11,9 +11,9 @@ export const resourceService = {
   getForCourse: (courseId: string) =>
     apiClient.get<any, PaginatedResponse<Resource>>(`/resources/course/${courseId}`),
   
-  // v2.0: Get signed download URL
+  // v2.0: Download resource directly as Blob
   download: (id: string) =>
-    apiClient.get<any, ApiResponse<{ downloadUrl: string }>>(`/resources/${id}/download`),
+    apiClient.get(`/resources/${id}/download`, { responseType: 'blob' }),
   
   // Admin only
   create: (data: FormData) => apiClient.post<any, ApiResponse<Resource>>("/resources", data, {

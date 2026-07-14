@@ -45,22 +45,56 @@ export default function StudentResourcesVaultPage() {
 
   const handleDownload = async (item: Resource) => {
     try {
+      // 1. Handle external HTTP links if they exist
       const directUrl = item.file_url || item.fileUrl;
       if (directUrl && directUrl.startsWith('http')) {
         toast.success(`Opening ${item.title}...`);
         window.open(directUrl, "_blank");
         return;
       }
+      
+      toast.info(`Fetching ${item.title}...`);
+      
+      // 2. Fetch the raw PDF stream from the backend
       const response = await resourceService.download(item._id!);
-      const url = response?.data?.downloadUrl || (response as any)?.downloadUrl || (response as any)?.url;
-      if (url) {
-        toast.success(`Opening ${item.title}...`);
-        window.open(url, "_blank");
-      } else {
-        throw new Error("Invalid URL returned");
-      }
+      
+      // 3. Convert the response to a Blob
+      const blob = new Blob([response as any], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // 4. Create a hidden link and trigger the download
+      const link = document.createElement('a');
+      link.style.display = 'none';
+      link.href = url;
+      link.setAttribute('download', `${item.title}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      toast.success("Download started!");
+      
+      // 5. Cleanup the object URL to prevent memory leaks
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+      
     } catch (error: any) {
-      toast.error(error.message || "Failed to download resource");
+      // IMPORTANT: Because we use responseType: 'blob', Axios will wrap JSON error responses 
+      // (like 404 File Not Found) inside a Blob. We must parse it back to text to read the message.
+      // Note: apiClient interceptor might unwrap error.response.data into error itself
+      const errorBlob = error instanceof Blob ? error : (error?.response?.data instanceof Blob ? error.response.data : null);
+      
+      if (errorBlob) {
+        const text = await errorBlob.text();
+        try {
+          const json = JSON.parse(text);
+          toast.error(json.message || "File could not be found or downloaded");
+        } catch(e) {
+          toast.error("File could not be found on the server");
+        }
+      } else {
+        toast.error(error?.response?.data?.message || error?.message || "Failed to download resource");
+      }
     }
   };
 

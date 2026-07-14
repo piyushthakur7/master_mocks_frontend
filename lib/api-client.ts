@@ -4,17 +4,11 @@ import { API_BASE_URL, ROUTES } from "./constants";
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Important for secure cookies if used
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-// We'll manage the access token in memory or localStorage.
-// For Next.js client components, localStorage is easy but not secure against XSS.
-// A better approach is HttpOnly cookies + a /api/auth proxy route or handling it purely via Next.js server actions.
-// Here we'll assume the backend issues JWTs that we manually attach,
-// or the backend uses HttpOnly cookies so we don't need to manually attach the token.
-// Assuming we store accessToken in memory/localStorage for this SPA-like behavior:
 
 export const setAccessToken = (token: string | null) => {
   if (typeof window !== "undefined") {
@@ -33,9 +27,28 @@ export const getAccessToken = (): string | null => {
   return null;
 };
 
-// Request Interceptor: Attach Token
+// -- Axios Refresh Queue State --
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Request Interceptor: Attach Token & Metadata
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig & { metadata?: any }) => {
+    config.metadata = { startTime: new Date().getTime() };
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -47,7 +60,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle 401, 429, and Token Refresh
+// Response Interceptor: Handle 401, 429, Token Refresh, and Errors
 apiClient.interceptors.response.use(
   (response) => {
     const body = response.data;
@@ -59,19 +72,33 @@ apiClient.interceptors.response.use(
     return body;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number; metadata?: any };
+
+    const duration = originalRequest?.metadata?.startTime
+      ? new Date().getTime() - originalRequest.metadata.startTime
+      : 0;
+
+    const correlationId = (error.response?.headers as any)?.['x-correlation-id'] || 'unknown';
+
+    // Priority 4 & 5: Log full error with correlation ID
+    console.error("API Request Failed", {
+      url: originalRequest?.url,
+      method: originalRequest?.method,
+      status: error.response?.status,
+      response: error.response?.data,
+      duration: `${duration}ms`,
+      correlationId,
+      stack: error.stack,
+    });
 
     // Handle 429 Too Many Requests — auto-retry with exponential backoff
-    // This handles both Express rate limiter and Hostinger infrastructure 429s
     if (error.response?.status === 429 && originalRequest) {
       const retryCount = originalRequest._retryCount || 0;
       const MAX_RETRIES = 3;
 
       if (retryCount < MAX_RETRIES) {
         originalRequest._retryCount = retryCount + 1;
-        // Exponential backoff: 1s, 2s, 4s
-        // Also check Retry-After header if provided
-        const retryAfter = error.response?.headers?.["retry-after"];
+        const retryAfter = (error.response?.headers as any)?.["retry-after"];
         const delay = retryAfter
           ? Math.min(parseInt(retryAfter, 10) * 1000, 5000)
           : Math.pow(2, retryCount) * 1000;
@@ -81,31 +108,48 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // If error is 401 and we haven't retried yet
+    // Priority 1 & 10: Handle 401 Unauthorized with Refresh Mutex Queue
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue this request instead of firing another refresh
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        // Attempt to refresh token using the refresh token
-        // This assumes the refresh token is stored in an HttpOnly cookie
-        // so withCredentials: true sends it automatically.
+        // Attempt to refresh token using the base axios instance
         const res = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
           {},
           { withCredentials: true }
         );
 
-        if (res.data?.data?.accessToken) {
-          setAccessToken(res.data.data.accessToken);
-          // Retry the original request
+        const newToken = res.data?.data?.accessToken;
+        if (newToken) {
+          setAccessToken(newToken);
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${res.data.data.accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
           }
-          const retryRes = await axios(originalRequest);
-          return retryRes.data; // Unpack
+          processQueue(null, newToken);
+          
+          // Retry the original request (returns normalized response)
+          return await apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh token failed or expired, log user out
+        processQueue(refreshError as Error, null);
         setAccessToken(null);
         if (typeof window !== "undefined") {
           const publicPaths = [
@@ -121,17 +165,38 @@ apiClient.interceptors.response.use(
           }
         }
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
-
-
-    // Unpack standard ApiError structure if possible
-    if (error.response?.data) {
+    // Priority 3: Blob download error handling bypass
+    // If the response is a blob, return it directly so the component can parse it
+    if (error.response?.data instanceof Blob) {
       return Promise.reject(error.response.data);
     }
-    
-    return Promise.reject(error);
+
+    // Priority 4 & 11: Standardize error object for friendly UX
+    let message = "Unable to connect to the server.";
+    if (error.response) {
+      if (error.response.status === 401) {
+        message = "Session expired. Reconnecting...";
+      } else if (error.response.status === 404) {
+        message = "The requested resource is unavailable.";
+      } else {
+        const responseData = error.response.data as any;
+        message = responseData?.message || error.message || "Unexpected error";
+      }
+    } else if (error.message) {
+      message = error.message;
+    }
+
+    return Promise.reject({
+      message,
+      correlationId,
+      status: error.response?.status,
+      route: originalRequest?.url,
+      originalError: error,
+    });
   }
 );
-
