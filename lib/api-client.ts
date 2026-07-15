@@ -91,22 +91,7 @@ apiClient.interceptors.response.use(
       stack: error.stack,
     });
 
-    // Handle 429 Too Many Requests — auto-retry with exponential backoff
-    if (error.response?.status === 429 && originalRequest) {
-      const retryCount = originalRequest._retryCount || 0;
-      const MAX_RETRIES = 3;
 
-      if (retryCount < MAX_RETRIES) {
-        originalRequest._retryCount = retryCount + 1;
-        const retryAfter = (error.response?.headers as any)?.["retry-after"];
-        const delay = retryAfter
-          ? Math.min(parseInt(retryAfter, 10) * 1000, 5000)
-          : Math.pow(2, retryCount) * 1000;
-
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return apiClient(originalRequest);
-      }
-    }
 
     // Priority 1 & 10: Handle 401 Unauthorized with Refresh Mutex Queue
     if (error.response?.status === 401 && !originalRequest._retry) {
