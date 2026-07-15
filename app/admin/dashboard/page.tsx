@@ -6,6 +6,7 @@ import { dashboardService } from "@/services/dashboard.service";
 import { toast } from "sonner";
 import { Loader2, Users, BookOpen, Flag, IndianRupee } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function AdminDashboardOverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -45,9 +46,9 @@ export default function AdminDashboardOverviewPage() {
   };
 
   const corporateMetrics = [
-    { title: "Total Aspirants", value: d.totalStudents.toLocaleString(), icon: <Users className="w-5 h-5" />, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-    { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-    { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-500/10 border-red-500/20" }
+    { title: "Total Aspirants", value: d.totalStudents.toLocaleString(), icon: <Users className="w-5 h-5" />, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+    { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
+    { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-50 border-red-100" }
   ];
 
   const mockRevenueData = [
@@ -72,10 +73,10 @@ export default function AdminDashboardOverviewPage() {
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* Upper Status Bar Panel Header */}
-      <div className="bg-[#141414] border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight">System Operational Overview</h1>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">Global configuration monitor tracking performance metrics and platform health.</p>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">System Operational Overview</h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Global configuration monitor tracking performance metrics and platform health.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/tests/create" className="px-4 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
@@ -87,9 +88,9 @@ export default function AdminDashboardOverviewPage() {
       {/* Aggregated Analytics Scoreboard Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {corporateMetrics.map((card, i) => (
-          <div key={i} className="bg-[#141414] border border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative group hover:border-slate-700 transition-all">
+          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative group hover:border-slate-300 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                 {card.title}
               </span>
               <span className={`w-9 h-9 rounded-lg flex items-center justify-center border ${card.bg} ${card.color}`}>
@@ -97,67 +98,63 @@ export default function AdminDashboardOverviewPage() {
               </span>
             </div>
             <div>
-              <p className="text-2xl font-black text-white tracking-tight">{card.value}</p>
-              {card.subtext && <p className="text-[10px] font-bold text-slate-400 mt-1">{card.subtext}</p>}
+              <p className="text-2xl font-black text-slate-900 tracking-tight">{card.value}</p>
+              {card.subtext && <p className="text-[10px] font-bold text-slate-500 mt-1">{card.subtext}</p>}
             </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between text-center min-h-[300px]">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between text-center min-h-[350px]">
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">Revenue Growth</h3>
-            <p className="text-xs text-slate-400 font-medium">Monthly revenue progression based on recent data.</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-2">Revenue Growth</h3>
+            <p className="text-xs text-slate-500 font-medium">Monthly revenue progression based on recent data.</p>
           </div>
-          <div className="w-full h-48 mt-6 flex items-end justify-between gap-2 px-2">
-            {mockRevenueData.map((item, idx) => {
-              const maxVal = Math.max(...mockRevenueData.map(d => d.value));
-              const heightPct = Math.max((item.value / maxVal) * 100, 10); // min height 10%
-              return (
-                <div key={idx} className="flex flex-col items-center gap-2 flex-1 group h-full">
-                  <div className="w-full relative flex justify-center h-full items-end">
-                    <div 
-                      className="w-full max-w-[40px] bg-emerald-500/20 group-hover:bg-emerald-500/40 border-t-2 border-emerald-500 rounded-t-sm transition-all duration-300"
-                      style={{ height: `${heightPct}%` }}
-                    >
-                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1A1A1A] border border-slate-700 text-white text-[10px] font-bold py-1 px-2 rounded shadow-xl whitespace-nowrap transition-opacity z-10">
-                        ₹{item.value.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">{item.month}</span>
-                </div>
-              );
-            })}
+          <div className="w-full h-64 mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={mockRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} tickFormatter={(val) => `₹${val}`} />
+                <Tooltip 
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#34d399' }}
+                  formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {mockRevenueData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill="#10b981" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
         
-        <div className="bg-[#141414] border border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between text-center min-h-[300px]">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between text-center min-h-[350px]">
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">Enrollment Activity</h3>
-            <p className="text-xs text-slate-400 font-medium">Recent user registrations and enrollments.</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-2">Enrollment Activity</h3>
+            <p className="text-xs text-slate-500 font-medium">Recent user registrations and enrollments.</p>
           </div>
-          <div className="w-full h-48 mt-6 flex items-end justify-between gap-2 px-2">
-            {mockEnrollmentData.map((item, idx) => {
-              const maxVal = Math.max(...mockEnrollmentData.map(d => d.value));
-              const heightPct = Math.max((item.value / maxVal) * 100, 10);
-              return (
-                <div key={idx} className="flex flex-col items-center gap-2 flex-1 group h-full">
-                  <div className="w-full relative flex justify-center h-full items-end">
-                    <div 
-                      className="w-full max-w-[40px] bg-blue-500/20 group-hover:bg-blue-500/40 border-t-2 border-blue-500 rounded-t-sm transition-all duration-300"
-                      style={{ height: `${heightPct}%` }}
-                    >
-                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1A1A1A] border border-slate-700 text-white text-[10px] font-bold py-1 px-2 rounded shadow-xl whitespace-nowrap transition-opacity z-10">
-                        {item.value} Users
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">{item.month}</span>
-                </div>
-              );
-            })}
+          <div className="w-full h-64 mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={mockEnrollmentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <Tooltip 
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#60a5fa' }}
+                  formatter={(value: number) => [`${value} Users`, 'Enrollments']}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {mockEnrollmentData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill="#3b82f6" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
