@@ -101,7 +101,8 @@ apiClient.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            if (originalRequest.headers) {
+            originalRequest._retry = true; // Prevent infinite loop for queued requests
+            if (originalRequest.headers && token) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
             return apiClient(originalRequest);
@@ -115,6 +116,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
+
         // Attempt to refresh token using the base axios instance
         const res = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
@@ -132,6 +134,8 @@ apiClient.interceptors.response.use(
           
           // Retry the original request (returns normalized response)
           return await apiClient(originalRequest);
+        } else {
+          throw new Error("Refresh token failed to return a new access token");
         }
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
