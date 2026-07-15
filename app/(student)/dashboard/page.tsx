@@ -124,7 +124,20 @@ export default function StudentDashboardPage() {
                   <Clock className="w-3.5 h-3.5" /> Available: {test.availableFrom ? formatDate(test.availableFrom) : 'Now'}
                 </p>
                 <div className="mt-4 pt-4 border-t border-slate-100">
-                  <Link href={`/tests/${test._id}`} className="w-full py-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-[#D00113] hover:text-white hover:border-[#D00113] text-center block text-xs font-bold rounded-lg transition-all">
+                  <Link 
+                    href={`/tests/${test._id}`}
+                    onClick={(e) => {
+                      const now = new Date();
+                      if (test.start_time && now < new Date(test.start_time)) {
+                        e.preventDefault();
+                        toast.error("Test Not Started Yet.");
+                      } else if (test.end_time && now > new Date(test.end_time)) {
+                        e.preventDefault();
+                        toast.error("The window to attempt this mock is Closed.");
+                      }
+                    }}
+                    className="w-full py-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-[#D00113] hover:text-white hover:border-[#D00113] text-center block text-xs font-bold rounded-lg transition-all"
+                  >
                     Prepare Now
                   </Link>
                 </div>
@@ -164,7 +177,20 @@ export default function StudentDashboardPage() {
                     <Clock className="w-3.5 h-3.5" /> {test.durationMinutes || test.duration_minutes || 60} Mins
                   </p>
                   <div className="mt-4 pt-4 border-t border-slate-100">
-                    <Link href={`/tests/${test._id}`} className="w-full py-2 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-lg transition-all">
+                    <Link 
+                      href={`/tests/${test._id}`}
+                      onClick={(e) => {
+                        const now = new Date();
+                        if (test.start_time && now < new Date(test.start_time)) {
+                          e.preventDefault();
+                          toast.error("Test Not Started Yet.");
+                        } else if (test.end_time && now > new Date(test.end_time)) {
+                          e.preventDefault();
+                          toast.error("The window to attempt this mock is Closed.");
+                        }
+                      }}
+                      className="w-full py-2 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-lg transition-all"
+                    >
                       {purchasedTestIds.includes(test._id) ? "Attempt Now" : "View details"}
                     </Link>
                   </div>

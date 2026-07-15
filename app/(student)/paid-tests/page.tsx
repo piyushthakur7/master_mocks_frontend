@@ -148,6 +148,16 @@ export default function StudentPaidTestsPage() {
               <div className="mt-6 pt-4 border-t border-slate-100">
                 <Link
                   href={`/tests/${test._id}`}
+                  onClick={(e) => {
+                    const now = new Date();
+                    if (test.start_time && now < new Date(test.start_time)) {
+                      e.preventDefault();
+                      toast.error("Test Not Started Yet.");
+                    } else if (test.end_time && now > new Date(test.end_time)) {
+                      e.preventDefault();
+                      toast.error("The window to attempt this mock is Closed.");
+                    }
+                  }}
                   className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
                 >
                   {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
