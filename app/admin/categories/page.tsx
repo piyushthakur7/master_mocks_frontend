@@ -27,7 +27,7 @@ export default function AdminCategoriesPage() {
     } catch (error: any) {
       if (error?.status === 404) {
         setCategories([]);
-      } else {
+      } else if (!error?._silent) {
         toast.error("Failed to load categories");
       }
     } finally {

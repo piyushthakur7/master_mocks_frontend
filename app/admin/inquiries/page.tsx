@@ -28,7 +28,7 @@ export default function AdminInquiriesPage() {
     } catch (error: any) {
       if (error?.status === 404) {
         setInquiries([]);
-      } else {
+      } else if (!error?._silent) {
         toast.error("Failed to load inquiries");
       }
     } finally {

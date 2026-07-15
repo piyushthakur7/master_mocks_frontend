@@ -51,7 +51,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
         router.push("/admin/tests");
       }
     } catch (error: any) {
-      if (error?.status !== 404) {
+      if (error?.status !== 404 && !error?._silent) {
         toast.error("Failed to load mock test");
       }
       router.push("/admin/tests");

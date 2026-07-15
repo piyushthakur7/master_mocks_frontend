@@ -34,6 +34,9 @@ let failedQueue: Array<{
   reject: (reason?: any) => void;
 }> = [];
 
+// Prevent redirect storms — only redirect once
+let isRedirecting = false;
+
 const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -60,7 +63,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle 401, 429, Token Refresh, and Errors
+// Response Interceptor: Handle 401, Token Refresh, and Errors
 apiClient.interceptors.response.use(
   (response) => {
     const body = response.data;
@@ -72,7 +75,7 @@ apiClient.interceptors.response.use(
     return body;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retryCount?: number; metadata?: any };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; metadata?: any };
 
     const duration = originalRequest?.metadata?.startTime
       ? new Date().getTime() - originalRequest.metadata.startTime
@@ -80,35 +83,40 @@ apiClient.interceptors.response.use(
 
     const correlationId = (error.response?.headers as any)?.['x-correlation-id'] || 'unknown';
 
-    // Priority 4 & 5: Log full error with correlation ID
-    console.error("API Request Failed", {
-      url: originalRequest?.url,
-      method: originalRequest?.method,
-      status: error.response?.status,
-      response: error.response?.data,
-      duration: `${duration}ms`,
-      correlationId,
-      stack: error.stack,
-    });
+    // Log error with correlation ID (but don't spam console for 401s handled by refresh)
+    if (error.response?.status !== 401) {
+      console.error("API Request Failed", {
+        url: originalRequest?.url,
+        method: originalRequest?.method,
+        status: error.response?.status,
+        response: error.response?.data,
+        duration: `${duration}ms`,
+        correlationId,
+      });
+    }
 
-
-
-    // Priority 1 & 10: Handle 401 Unauthorized with Refresh Mutex Queue
+    // Handle 401 Unauthorized with Refresh Mutex Queue
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // If already redirecting to login, don't bother refreshing
+      if (isRedirecting) {
+        return Promise.reject({ message: "Session expired", status: 401, _silent: true });
+      }
+
       if (isRefreshing) {
-        // Queue this request instead of firing another refresh
+        // Queue this request — wait for the ongoing refresh to finish
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest._retry = true; // Prevent infinite loop for queued requests
+            originalRequest._retry = true;
             if (originalRequest.headers && token) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
             return apiClient(originalRequest);
           })
-          .catch((err) => {
-            return Promise.reject(err);
+          .catch(() => {
+            // Silently reject queued requests — the redirect is already handled
+            return Promise.reject({ message: "Session expired", status: 401, _silent: true });
           });
       }
 
@@ -116,8 +124,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-
-        // Attempt to refresh token using the base axios instance
+        // Attempt to refresh token using the base axios instance (not apiClient)
         const res = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
           {},
@@ -135,12 +142,14 @@ apiClient.interceptors.response.use(
           // Retry the original request (returns normalized response)
           return await apiClient(originalRequest);
         } else {
-          throw new Error("Refresh token failed to return a new access token");
+          throw new Error("No access token in refresh response");
         }
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
         setAccessToken(null);
-        if (typeof window !== "undefined") {
+
+        // Redirect to login ONCE — prevent redirect storm
+        if (typeof window !== "undefined" && !isRedirecting) {
           const publicPaths = [
             ROUTES.HOME,
             ROUTES.LOGIN,
@@ -150,22 +159,22 @@ apiClient.interceptors.response.use(
             "/admin/login"
           ];
           if (!publicPaths.includes(window.location.pathname)) {
+            isRedirecting = true;
             window.location.href = ROUTES.LOGIN;
           }
         }
-        return Promise.reject(refreshError);
+        return Promise.reject({ message: "Session expired", status: 401, _silent: true });
       } finally {
         isRefreshing = false;
       }
     }
 
-    // Priority 3: Blob download error handling bypass
-    // If the response is a blob, return it directly so the component can parse it
+    // Blob download error handling bypass
     if (error.response?.data instanceof Blob) {
       return Promise.reject(error.response.data);
     }
 
-    // Priority 4 & 11: Standardize error object for friendly UX
+    // Standardize error object for friendly UX
     let message = "Unable to connect to the server.";
     if (error.response) {
       if (error.response.status === 401) {

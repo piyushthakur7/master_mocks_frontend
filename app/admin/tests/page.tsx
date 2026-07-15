@@ -25,7 +25,7 @@ export default function AdminTestsManagementPage() {
     } catch (error: any) {
       if (error?.status === 404) {
         setTests([]);
-      } else {
+      } else if (!error?._silent) {
         toast.error("Failed to load mock tests");
       }
     } finally {

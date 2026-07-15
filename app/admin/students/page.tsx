@@ -24,7 +24,7 @@ export default function AdminStudentsRosterPage() {
     } catch (error: any) {
       if (error?.status === 404) {
         setStudents([]);
-      } else {
+      } else if (!error?._silent) {
         toast.error("Failed to load students");
       }
     } finally {

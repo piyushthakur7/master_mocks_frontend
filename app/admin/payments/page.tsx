@@ -23,7 +23,7 @@ export default function AdminPaymentsPage() {
     } catch (error: any) {
       if (error?.status === 404) {
         setPurchases([]);
-      } else {
+      } else if (!error?._silent) {
         toast.error("Failed to load payment history");
       }
     } finally {
