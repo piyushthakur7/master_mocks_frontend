@@ -24,8 +24,12 @@ export default function AdminCategoriesPage() {
       if (response.success && response.data) {
         setCategories(response.data.data || response.data);
       }
-    } catch (error) {
-      toast.error("Failed to load categories");
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setCategories([]);
+      } else {
+        toast.error("Failed to load categories");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -18,11 +18,18 @@ export default function AdminReportsPage() {
   const fetchAttempts = async () => {
     try {
       const response = await attemptService.getAllAttempts();
-      if (response.success && response.data) {
-        setAttempts(response.data.data || response.data);
+      let data = [];
+      if (response && response.success) {
+        data = response.data?.data || response.data?.reports || response.data || [];
+        if (!Array.isArray(data)) data = [];
       }
-    } catch (error) {
-      toast.error("Failed to load attempt reports");
+      setAttempts(data);
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setAttempts([]);
+      } else {
+        toast.error("Failed to load attempt reports");
+      }
     } finally {
       setIsLoading(false);
     }

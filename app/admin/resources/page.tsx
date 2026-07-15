@@ -61,8 +61,10 @@ export default function AdminResourcesUploadPage() {
         });
       }
       setResources(allResources);
-    } catch (error) {
-      toast.error("Failed to load data");
+    } catch (error: any) {
+      if (error?.status !== 404) {
+        toast.error("Failed to load data");
+      }
     } finally {
       setIsLoading(false);
     }

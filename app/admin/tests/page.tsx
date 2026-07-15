@@ -22,8 +22,12 @@ export default function AdminTestsManagementPage() {
       if (response.success) {
         setTests(Array.isArray(response.data) ? response.data : response.data?.data || []);
       }
-    } catch (error) {
-      toast.error("Failed to load mock tests");
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setTests([]);
+      } else {
+        toast.error("Failed to load mock tests");
+      }
     } finally {
       setIsLoading(false);
     }

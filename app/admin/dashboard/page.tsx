@@ -19,8 +19,10 @@ export default function AdminDashboardOverviewPage() {
         if (response.success) {
           setData(response.data);
         }
-      } catch (error) {
-        toast.error("Failed to load dashboard data");
+      } catch (error: any) {
+        if (error?.status !== 404) {
+          toast.error("Failed to load dashboard data");
+        }
       } finally {
         setIsLoading(false);
       }

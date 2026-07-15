@@ -25,8 +25,12 @@ export default function AdminInquiriesPage() {
       if (response.success && response.data) {
         setInquiries(response.data.data || response.data);
       }
-    } catch (error) {
-      toast.error("Failed to load inquiries");
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setInquiries([]);
+      } else {
+        toast.error("Failed to load inquiries");
+      }
     } finally {
       setIsLoading(false);
     }

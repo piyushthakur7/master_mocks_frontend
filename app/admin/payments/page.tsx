@@ -20,8 +20,12 @@ export default function AdminPaymentsPage() {
       if (response.success && response.data) {
         setPurchases(response.data.data || response.data);
       }
-    } catch (error) {
-      toast.error("Failed to load payment history");
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setPurchases([]);
+      } else {
+        toast.error("Failed to load payment history");
+      }
     } finally {
       setIsLoading(false);
     }

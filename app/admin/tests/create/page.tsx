@@ -70,8 +70,10 @@ export default function AdminCreateTestPage() {
             setTestForm(prev => ({ ...prev, category: filteredCats[0]._id }));
           }
         }
-      } catch (error) {
-        toast.error("Failed to load categories");
+      } catch (error: any) {
+        if (error?.status !== 404) {
+          toast.error("Failed to load categories");
+        }
       } finally {
         setIsLoadingForm(false);
       }

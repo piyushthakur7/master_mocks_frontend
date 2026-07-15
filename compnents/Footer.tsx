@@ -39,7 +39,20 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-          <p>&copy; {new Date().getFullYear()} MASTER MOCKS. All rights reserved.</p>
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <p>&copy; {new Date().getFullYear()} MASTER MOCKS. All rights reserved.</p>
+            <p>
+              Made by{" "}
+              <a 
+                href="https://www.webtotalsolution.com" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-brand hover:underline transition-colors font-medium"
+              >
+                Web Total Solution
+              </a>
+            </p>
+          </div>
           <div className="flex gap-4">
             <a href="#" className="hover:text-brand transition-colors font-medium">YouTube</a>
             <a href="#" className="hover:text-brand transition-colors font-medium">Telegram</a>

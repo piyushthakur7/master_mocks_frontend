@@ -37,8 +37,10 @@ export default function AdminCoursesPage() {
       ]);
       if (coursesRes.success) setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : coursesRes.data?.data || []);
       if (catsRes.success) setCategories(Array.isArray(catsRes.data) ? catsRes.data : catsRes.data?.data || []);
-    } catch (error) {
-      toast.error("Failed to load data");
+    } catch (error: any) {
+      if (error?.status !== 404) {
+        toast.error("Failed to load data");
+      }
     } finally {
       setIsLoading(false);
     }

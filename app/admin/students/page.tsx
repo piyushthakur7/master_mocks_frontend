@@ -21,8 +21,12 @@ export default function AdminStudentsRosterPage() {
       if (response.success && response.data) {
         setStudents(Array.isArray(response.data) ? response.data : response.data?.data || []);
       }
-    } catch (error) {
-      toast.error("Failed to load students");
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setStudents([]);
+      } else {
+        toast.error("Failed to load students");
+      }
     } finally {
       setIsLoading(false);
     }

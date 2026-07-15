@@ -50,8 +50,10 @@ export default function AdminEditTestPage({ params }: PageProps) {
         toast.error("Test not found");
         router.push("/admin/tests");
       }
-    } catch (error) {
-      toast.error("Failed to load mock test");
+    } catch (error: any) {
+      if (error?.status !== 404) {
+        toast.error("Failed to load mock test");
+      }
       router.push("/admin/tests");
     } finally {
       setIsLoading(false);
