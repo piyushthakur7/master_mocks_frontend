@@ -4,7 +4,7 @@ import { API_BASE_URL, ROUTES } from "./constants";
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Important for secure cookies if used
-  timeout: 30000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
