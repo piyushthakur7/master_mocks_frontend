@@ -1,54 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { mockTestService } from "@/services/mock-test.service";
-import { attemptService } from "@/services/attempt.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, Clock, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { useAllMocks, usePurchasedMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentPaidTestsPage() {
   const [activeTab, setActiveTab] = useState<"Available" | "Attempted">("Available");
-  const [tests, setTests] = useState<MockTest[]>([]);
-  const [purchasedTestIds, setPurchasedTestIds] = useState<string[]>([]);
-  const [completedTestIds, setCompletedTestIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const { data: tests = [], isLoading: isMocksLoading } = useAllMocks(50);
+  const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
+  const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [testsRes, purchasedRes, attemptsRes] = await Promise.all([
-          mockTestService.getAll({ limit: 50, status: "PUBLISHED" }),
-          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] })),
-          attemptService.getMyAttempts({ status: "COMPLETED", limit: 100 }).catch(() => ({ success: false, data: [] }))
-        ]);
+  const isLoading = isMocksLoading || isPurchasesLoading || isAttemptsLoading;
 
-        if (testsRes.success) {
-          setTests(Array.isArray(testsRes.data) ? testsRes.data : testsRes.data?.data || []);
-        }
-
-        if (purchasedRes.success && purchasedRes.data) {
-          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : (purchasedRes as any).data?.data || [];
-          setPurchasedTestIds(purchased.map((t: any) => t._id));
-        }
-
-        if (attemptsRes.success && attemptsRes.data) {
-          const attempts = Array.isArray(attemptsRes.data) ? attemptsRes.data : attemptsRes.data?.data || [];
-          setCompletedTestIds(attempts.map((a: any) =>
-            typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
-          ).filter(Boolean));
-        }
-      } catch (error) {
-        toast.error("Failed to load mock tests");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const purchasedTestIds = purchasedMocks.map((t: any) => t._id);
+  const completedTestIds = completedAttempts.map((a: any) =>
+    typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
+  ).filter(Boolean);
 
   const filteredTests = activeTab === "Available"
     ? tests.filter((t) => t.access_type === "paid" && !completedTestIds.includes(t._id))

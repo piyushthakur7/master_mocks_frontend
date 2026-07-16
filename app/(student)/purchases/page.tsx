@@ -1,43 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { paymentService } from "@/services/payment.service";
-import { Purchase, Payment } from "@/types/payment";
 import { toast } from "sonner";
 import { Loader2, Receipt, ArrowRight, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useMyPurchases, useMyHistory } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentPurchasesPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [history, setHistory] = useState<Payment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"purchases" | "history">("purchases");
+  
+  const { data: purchases = [], isLoading: isPurchasesLoading } = useMyPurchases();
+  const { data: history = [], isLoading: isHistoryLoading } = useMyHistory();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [purchasesRes, historyRes] = await Promise.all([
-          paymentService.getMyPurchases(),
-          paymentService.getMyHistory()
-        ]);
-
-        if (purchasesRes.success && purchasesRes.data) {
-          setPurchases(purchasesRes.data);
-        }
-        
-        if (historyRes.success && historyRes.data) {
-          setHistory(historyRes.data);
-        }
-      } catch (error) {
-        toast.error("Failed to load billing history");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const isLoading = isPurchasesLoading || isHistoryLoading;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

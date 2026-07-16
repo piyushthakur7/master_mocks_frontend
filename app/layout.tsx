@@ -39,6 +39,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { QueryProvider } from "@/lib/query-provider";
+
 export default function RootLayout({
   children,
 }: {
@@ -47,10 +49,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", inter.variable)}>
       <body className="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </QueryProvider>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       </body>
     </html>

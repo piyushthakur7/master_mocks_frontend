@@ -1,62 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { dashboardService } from "@/services/dashboard.service";
-import { mockTestService } from "@/services/mock-test.service";
-import { attemptService } from "@/services/attempt.service";
 import { MockTest } from "@/types/mock-test";
-import { StudentDashboard } from "@/types/dashboard";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { 
+  useStudentDashboard, 
+  useAllMocks, 
+  usePurchasedMocks, 
+  useCompletedAttempts 
+} from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentDashboardPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<StudentDashboard | null>(null);
-  const [paidMocks, setPaidMocks] = useState<MockTest[]>([]);
-  const [purchasedTestIds, setPurchasedTestIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useStudentDashboard();
+  const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(10);
+  const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
+  const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const [dashRes, mocksRes, purchasedRes, attemptsRes] = await Promise.all([
-          dashboardService.getStudentDashboard(),
-          mockTestService.getAll({ limit: 10, status: "PUBLISHED" }).catch(() => ({ success: false, data: [] })),
-          mockTestService.getMyPurchased().catch(() => ({ success: false, data: [] })),
-          attemptService.getMyAttempts({ status: "COMPLETED", limit: 100 }).catch(() => ({ success: false, data: [] }))
-        ]);
-        
-        if (dashRes.success) {
-          setData(dashRes.data);
-        }
-        
-        if (mocksRes.success) {
-          const allMocks = Array.isArray(mocksRes.data) ? mocksRes.data : mocksRes.data?.data || [];
-          let completedIds: string[] = [];
-          if (attemptsRes && attemptsRes.success && attemptsRes.data) {
-            const attempts = Array.isArray(attemptsRes.data) ? attemptsRes.data : attemptsRes.data?.data || [];
-            completedIds = attempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
-          }
-          setPaidMocks(allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id)));
-        }
+  const isLoading = isDashboardLoading || isMocksLoading || isPurchasesLoading || isAttemptsLoading;
 
-        if (purchasedRes.success && purchasedRes.data) {
-          const purchased = Array.isArray(purchasedRes.data) ? purchasedRes.data : (purchasedRes as any).data?.data || [];
-          setPurchasedTestIds(purchased.map((t: any) => t._id));
-        }
-      } catch (error) {
-        // If API fails, we could set some fallback/empty state or show error
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  if (isDashboardError) {
+    toast.error("Failed to load dashboard data");
+  }
 
-    fetchDashboard();
-  }, []);
+  const completedIds = completedAttempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
+  const paidMocks = allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id));
+  const purchasedTestIds = purchasedMocks.map((t: any) => t._id);
+
+  // Fallback data if API returns empty
+  const d = dashboardData || {
+    totalAttempts: 0,
+    avgScore: "0",
+    recentActivity: [],
+    upcomingTests: []
+  };
 
   if (isLoading) {
     return (
@@ -65,14 +46,6 @@ export default function StudentDashboardPage() {
       </div>
     );
   }
-
-  // Fallback data if API returns empty
-  const d = data || {
-    totalAttempts: 0,
-    avgScore: "0",
-    recentActivity: [],
-    upcomingTests: []
-  };
 
   const metrics = [
     { title: "Average Score", value: `${parseFloat(d.avgScore || "0").toFixed(1)}%`, sub: "Across all attempts", icon: <Target className="w-6 h-6" />, statusColor: "text-[#D00113]" },

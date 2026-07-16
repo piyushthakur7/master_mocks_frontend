@@ -1,47 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { resourceService } from "@/services/resource.service";
 import { Resource } from "@/types/resource";
 import { toast } from "sonner";
 import { Loader2, Download, FileText, Video, Link as LinkIcon, BookOpen, Database } from "lucide-react";
+import { useResources } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentResourcesVaultPage() {
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const { data: allResources = [], isLoading } = useResources();
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchResources = async () => {
-      setIsLoading(true);
-      try {
-        const response = await resourceService.getAll({ 
-          ...(selectedCategory !== "ALL" && { category: selectedCategory })
-        });
-        
-        if (response.success && response.data) {
-          const resArray = Array.isArray(response.data) ? response.data : [];
-          setResources(resArray);
-          
-          // Extract unique categories if "ALL" is selected
-          if (selectedCategory === "ALL") {
-            const uniqueCats = Array.from(new Set(resArray.map((r: any) => {
-              if (typeof r.category === 'object' && r.category?.name) return r.category.name;
-              if (typeof r.category === 'string') return r.category;
-              return null;
-            }).filter(Boolean))) as string[];
-            setCategories(uniqueCats);
-          }
-        }
-      } catch (error) {
-        toast.error("Failed to load resources");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchResources();
-  }, [selectedCategory]);
+  const categories = Array.from(new Set(allResources.map((r: any) => {
+    if (typeof r.category === 'object' && r.category?.name) return r.category.name;
+    if (typeof r.category === 'string') return r.category;
+    return null;
+  }).filter(Boolean))) as string[];
+
+  const resources = selectedCategory === "ALL" 
+    ? allResources 
+    : allResources.filter((r: any) => {
+        const catName = typeof r.category === 'object' && r.category?.name ? r.category.name : r.category;
+        return catName === selectedCategory;
+      });
 
   const handleDownload = async (item: Resource) => {
     try {

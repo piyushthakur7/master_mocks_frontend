@@ -1,34 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { attemptService } from "@/services/attempt.service";
 import { TestAttempt } from "@/types/attempt";
 import { toast } from "sonner";
 import { Loader2, Activity, Target, CheckCircle, ArrowRight, Clock } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentResultsPage() {
-  const [attempts, setAttempts] = useState<TestAttempt[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAttempts = async () => {
-      try {
-        const response = await attemptService.getMyAttempts({ limit: 50 });
-        if (response.success && response.data) {
-          setAttempts(response.data?.data || []);
-        }
-      } catch (error) {
-        console.error("Failed to load attempt history:", error);
-        setAttempts([]); // Fallback to empty state which UI handles gracefully
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAttempts();
-  }, []);
+  const { data: attempts = [], isLoading } = useCompletedAttempts(50);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
