@@ -63,4 +63,5 @@ export interface AccessCheckResponse {
   access_type: "free" | "paid";
   price: number;
   reason: string;
+  attempt_exhausted?: boolean;
 }
