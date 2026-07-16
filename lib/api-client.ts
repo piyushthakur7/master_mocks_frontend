@@ -10,6 +10,45 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// -- In-Flight Request Deduplication (GET only) --
+const inFlightRequests = new Map<string, Promise<any>>();
+const originalGet = apiClient.get;
+
+apiClient.get = async function (url: string, config?: any) {
+  const key = url + JSON.stringify(config?.params || {});
+  
+  if (inFlightRequests.has(key)) {
+    console.log(`[Deduplicated In-Flight] Reuse GET: ${url}`);
+    return inFlightRequests.get(key);
+  }
+  
+  const promise = originalGet.apply(this, [url, config] as any);
+  inFlightRequests.set(key, promise);
+  
+  try {
+    return await promise;
+  } finally {
+    // Only deduplicate while request is in-flight. Do not cache completed responses.
+    inFlightRequests.delete(key);
+  }
+};
+
+// Utility to extract the caller component from the stack trace
+const getCallerComponent = () => {
+  try {
+    throw new Error();
+  } catch (e: any) {
+    if (!e.stack) return "Unknown";
+    const stackLines = e.stack.split('\\n');
+    for (let i = 2; i < stackLines.length; i++) {
+      if (!stackLines[i].includes('api-client.ts') && !stackLines[i].includes('axios')) {
+        return stackLines[i].trim();
+      }
+    }
+    return "Unknown component";
+  }
+};
+
 export const setAccessToken = (token: string | null) => {
   if (typeof window !== "undefined") {
     if (token) {
@@ -51,7 +90,13 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 // Request Interceptor: Attach Token & Metadata
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig & { metadata?: any }) => {
-    config.metadata = { startTime: new Date().getTime() };
+    config.metadata = { startTime: new Date().getTime(), caller: getCallerComponent() };
+    
+    console.log(
+      `[API Request] ${config.method?.toUpperCase()} ${config.url}\\n` +
+      `  Caller: ${config.metadata.caller}`
+    );
+    
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -66,6 +111,16 @@ apiClient.interceptors.request.use(
 // Response Interceptor: Handle 401, Token Refresh, and Errors
 apiClient.interceptors.response.use(
   (response) => {
+    const originalRequest = response.config as InternalAxiosRequestConfig & { metadata?: any };
+    const duration = originalRequest?.metadata?.startTime
+      ? new Date().getTime() - originalRequest.metadata.startTime
+      : 0;
+      
+    console.log(
+      `[API Response] ${response.status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\\n` +
+      `  Duration: ${duration}ms`
+    );
+
     const body = response.data;
     // Normalize backend response: backend returns { statusCode, data, message }
     // but frontend expects { success, data, message }

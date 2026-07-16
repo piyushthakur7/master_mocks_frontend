@@ -43,7 +43,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       
       {/* ─── MOBILE HEADER NAVIGATION ─── */}
       <header className="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" prefetch={false} className="flex items-center gap-2">
           <span className="text-base font-black tracking-tight">
             <span className="text-[#1A1A1A]">MASTER</span><span className="text-[#D00113]">MOCKS</span>
           </span>
@@ -71,6 +71,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                     isActive 
@@ -96,7 +97,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 sticky top-0 h-screen p-6 justify-between shrink-0">
         <div className="space-y-8">
           {/* Logo Brand Frame */}
-          <Link href="/dashboard" className="flex items-center gap-2 group">
+          <Link href="/dashboard" prefetch={false} className="flex items-center gap-2 group">
             <div className="relative w-7 h-7 overflow-hidden rounded-md">
               <Image src="/logo.jpeg" alt="Master Mocks Logo" fill sizes="28px" className="object-cover" />
             </div>
@@ -114,6 +115,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
                     isActive 
                       ? "bg-[#D00113] text-white shadow-md shadow-red-600/10" 

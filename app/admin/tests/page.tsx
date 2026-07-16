@@ -63,7 +63,7 @@ export default function AdminTestsManagementPage() {
           <h1 className="text-xl font-black text-white tracking-tight">Mock Assessment Repository</h1>
           <p className="text-xs text-slate-400 font-medium mt-0.5">Author new question parameters, audit completion parameters, or manipulate operational live states.</p>
         </div>
-        <Link href="/admin/tests/create" className="px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all text-center flex items-center gap-2">
+        <Link href="/admin/tests/create" prefetch={false} className="px-5 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all text-center flex items-center gap-2">
           <Plus className="w-4 h-4" /> Create New Mock
         </Link>
       </div>
@@ -126,6 +126,7 @@ export default function AdminTestsManagementPage() {
                         </button>
                         <Link 
                           href={`/admin/tests/${test._id}/edit`}
+                          prefetch={false}
                           className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-900/20 rounded transition-colors block"
                           title="Edit Test Matrix"
                         >
@@ -153,7 +154,7 @@ export default function AdminTestsManagementPage() {
           </div>
           <h3 className="text-lg font-bold text-white mb-2">No Mock Tests Available</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Create your first mock test to allow candidates to prepare effectively.</p>
-          <Link href="/admin/tests/create" className="inline-block px-6 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all">
+          <Link href="/admin/tests/create" prefetch={false} className="inline-block px-6 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all">
             Author New Test
           </Link>
         </div>

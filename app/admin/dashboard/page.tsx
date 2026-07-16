@@ -81,7 +81,7 @@ export default function AdminDashboardOverviewPage() {
           <p className="text-xs text-slate-500 font-medium mt-0.5">Global configuration monitor tracking performance metrics and platform health.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/tests/create" className="px-4 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
+          <Link href="/admin/tests/create" prefetch={false} className="px-4 py-2.5 bg-[#D00113] hover:bg-[#b0010f] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
             ➕ Author Mock Test
           </Link>
         </div>

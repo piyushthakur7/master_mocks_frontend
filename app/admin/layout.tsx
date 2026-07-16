@@ -48,7 +48,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
       
       {/* ─── MOBILE ADMINISTRATIVE HEADER ─── */}
       <header className="md:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50 text-white">
-        <Link href="/admin/dashboard" className="flex items-center gap-2">
+        <Link href="/admin/dashboard" prefetch={false} className="flex items-center gap-2">
           <span className="text-sm font-black tracking-wider text-red-500 bg-red-500/10 px-2 py-0.5 border border-red-500/20 rounded">ADMIN CONTROL</span>
         </Link>
         <button 
@@ -69,6 +69,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                     isActive 
@@ -96,7 +97,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
           
           {/* Logo Brand Frame */}
           <div className="space-y-2">
-            <Link href="/admin/dashboard" className="flex items-center gap-2 group">
+            <Link href="/admin/dashboard" prefetch={false} className="flex items-center gap-2 group">
               <div className="relative w-6 h-6 overflow-hidden rounded bg-white p-0.5">
                 <Image src="/logo.jpeg" alt="Master Mocks Logo" fill sizes="24px" className="object-cover" />
               </div>
@@ -114,6 +115,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive 
                       ? "bg-slate-800 text-white shadow-sm border border-slate-700" 
