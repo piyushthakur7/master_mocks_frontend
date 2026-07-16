@@ -18,10 +18,10 @@ export default function AdminReportsPage() {
   const fetchAttempts = async () => {
     try {
       const response = await attemptService.getAllAttempts();
-      let data = [];
+      let data: TestAttempt[] = [];
       if (response && response.success) {
-        data = response.data?.data || response.data?.reports || response.data || [];
-        if (!Array.isArray(data)) data = [];
+        const resData = response.data as any;
+        data = resData?.data || resData?.reports || (Array.isArray(resData) ? resData : []);
       }
       setAttempts(data);
     } catch (error: any) {

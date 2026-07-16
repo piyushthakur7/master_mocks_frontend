@@ -18,6 +18,8 @@ export interface StudentDashboard {
     title: string;
     courseName: string;
     availableFrom?: string;
+    start_time?: string;
+    end_time?: string;
   }>;
 }
 
