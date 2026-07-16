@@ -22,6 +22,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const [test, setTest] = useState<MockTest | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessReason, setAccessReason] = useState("");
+  const [isAttemptExhausted, setIsAttemptExhausted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -39,6 +40,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
           if (accessResponse.success && accessResponse.data) {
             setHasAccess(accessResponse.data.has_access);
             setAccessReason(accessResponse.data.reason || "");
+            setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
           }
         } else {
           toast.error("Test not found");
@@ -74,6 +76,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       if (accessResponse.success && accessResponse.data?.has_access) {
         setHasAccess(true);
         setAccessReason(accessResponse.data.reason || "");
+        setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
         return true;
       }
     } catch {}
@@ -355,6 +358,28 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                   }`}
                 >
                   Acknowledge & Start Test
+                </Link>
+              </div>
+            );
+          }
+
+          if (isAttemptExhausted) {
+            return (
+              <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
+                  <Target className="w-5 h-5 text-slate-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Test Completed</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    You have already completed this paid mock test. Paid tests can only be attempted once.
+                  </p>
+                </div>
+                <Link
+                  href={`/tests`}
+                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
+                >
+                  Return to Tests
                 </Link>
               </div>
             );
