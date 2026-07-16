@@ -181,6 +181,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
+      let newToken = null;
       try {
         // Attempt to refresh token using the base axios instance (not apiClient)
         const res = await axios.post(
@@ -189,17 +190,8 @@ apiClient.interceptors.response.use(
           { withCredentials: true }
         );
 
-        const newToken = res.data?.data?.accessToken;
-        if (newToken) {
-          setAccessToken(newToken);
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          }
-          processQueue(null, newToken);
-          
-          // Retry the original request (returns normalized response)
-          return await apiClient(originalRequest);
-        } else {
+        newToken = res.data?.data?.accessToken;
+        if (!newToken) {
           throw new Error("No access token in refresh response");
         }
       } catch (refreshError) {
@@ -224,6 +216,19 @@ apiClient.interceptors.response.use(
         return Promise.reject({ message: "Session expired", status: 401, _silent: true });
       } finally {
         isRefreshing = false;
+      }
+
+      if (newToken) {
+        setAccessToken(newToken);
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        processQueue(null, newToken);
+        
+        // Retry the original request (returns normalized response)
+        // Execute this outside the try-catch so that if the retry fails (e.g. 500/404),
+        // it doesn't accidentally trigger a logout!
+        return apiClient(originalRequest);
       }
     }
 
