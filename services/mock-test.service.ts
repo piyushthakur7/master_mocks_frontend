@@ -9,7 +9,9 @@ export const mockTestService = {
   getById: (id: string) => apiClient.get<any, ApiResponse<MockTest>>(`/hacks/${id}`),
   
   // v2.0: Check if user can start this test (free access or purchased)
-  checkAccess: (id: string) => apiClient.get<any, ApiResponse<AccessCheckResponse>>(`/hacks/${id}/check-access?_t=${Date.now()}`),
+  // No-store headers on apiClient already prevent browser caching; the unique
+  // _t= param was defeating in-flight request de-duplication on every call.
+  checkAccess: (id: string) => apiClient.get<any, ApiResponse<AccessCheckResponse>>(`/hacks/${id}/check-access`),
   
   // v2.0: Get tests the user has purchased
   getMyPurchased: () => apiClient.get<any, ApiResponse<MockTest[]>>("/hacks/my/purchased"),

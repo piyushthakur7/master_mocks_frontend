@@ -1,34 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { paymentService } from "@/services/payment.service";
-import { toast } from "sonner";
+import React from "react";
+import { useAdminPayments } from "@/hooks/queries/use-admin-queries";
 import { Loader2, IndianRupee, CreditCard, ArrowUpRight, TrendingUp } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
 export default function AdminPaymentsPage() {
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchPurchases();
-  }, []);
-
-  const fetchPurchases = async () => {
-    try {
-      const response = await paymentService.getAllPurchases();
-      if (response.success && response.data) {
-        setPurchases(response.data.data || response.data);
-      }
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setPurchases([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load payment history");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: purchases = [], isLoading } = useAdminPayments() as {
+    data: any[];
+    isLoading: boolean;
   };
 
   const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);

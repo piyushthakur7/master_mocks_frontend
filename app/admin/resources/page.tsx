@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { resourceService } from "@/services/resource.service";
-import { courseService } from "@/services/course.service";
-import { categoryService } from "@/services/category.service";
 import { toast } from "sonner";
+import { useAdminResourceManager } from "@/hooks/queries/use-admin-queries";
 import { Loader2, Plus, Trash2, FileText, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminResourcesUploadPage() {
-  const [resources, setResources] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, refetch } = useAdminResourceManager();
+  const resources = data?.resources ?? [];
+  const courses = data?.courses ?? [];
+  const categories = data?.categories ?? [];
+
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,50 +25,6 @@ export default function AdminResourcesUploadPage() {
     discount_price: 0,
     file: null as File | null,
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [courseResponse, catResponse] = await Promise.all([
-        courseService.getAll(),
-        categoryService.getAll()
-      ]);
-      
-      let fetchedCourses: any[] = [];
-      if (courseResponse.success) {
-        fetchedCourses = Array.isArray(courseResponse.data) ? courseResponse.data : courseResponse.data?.data || [];
-        setCourses(fetchedCourses);
-      }
-
-      if (catResponse.success) {
-        setCategories(Array.isArray(catResponse.data) ? catResponse.data : catResponse.data?.data || []);
-      }
-
-      // Fetch resources for all available courses sequentially or in parallel
-      const allResources: any[] = [];
-      if (fetchedCourses.length > 0) {
-        const resourcePromises = fetchedCourses.map(c => resourceService.getForCourse(c._id).catch(() => null));
-        const resourcesResponses = await Promise.all(resourcePromises);
-        
-        resourcesResponses.forEach(res => {
-          if (res && res.success) {
-            const arr = Array.isArray(res.data) ? res.data : res.data?.data || [];
-            allResources.push(...arr);
-          }
-        });
-      }
-      setResources(allResources);
-    } catch (error: any) {
-      if (error?.status !== 404 && !error?._silent) {
-        toast.error("Failed to load data");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -96,7 +52,7 @@ export default function AdminResourcesUploadPage() {
       
       setNewResource({ title: "", course: "", category: "", access_type: "paid", price: 0, discount_price: 0, file: null });
       setIsFormVisible(false);
-      fetchData();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to upload resource");
     } finally {
@@ -109,7 +65,7 @@ export default function AdminResourcesUploadPage() {
     try {
       await resourceService.delete(id);
       toast.success("Resource deleted successfully");
-      fetchData();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete resource");
     }

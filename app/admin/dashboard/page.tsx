@@ -1,34 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { dashboardService } from "@/services/dashboard.service";
-import { toast } from "sonner";
+import { useAdminDashboard } from "@/hooks/queries/use-admin-queries";
 import { Loader2, Users, BookOpen, Flag, IndianRupee } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function AdminDashboardOverviewPage() {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await dashboardService.getAdminDashboard();
-        if (response.success) {
-          setData(response.data);
-        }
-      } catch (error: any) {
-        if (error?.status !== 404 && !error?._silent) {
-          toast.error("Failed to load dashboard data");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDashboard();
-  }, []);
+  const { data, isLoading } = useAdminDashboard();
 
   if (isLoading) {
     return (

@@ -133,7 +133,7 @@ apiClient.interceptors.response.use(
     return body;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; metadata?: any };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retry429?: boolean; metadata?: any };
 
     const duration = originalRequest?.metadata?.startTime
       ? new Date().getTime() - originalRequest.metadata.startTime
@@ -230,6 +230,35 @@ apiClient.interceptors.response.use(
         // it doesn't accidentally trigger a logout!
         return apiClient(originalRequest);
       }
+    }
+
+    // Handle 429 Too Many Requests (usually emitted by an upstream proxy / WAF,
+    // not the Express app). Honor Retry-After for a single gentle backoff+retry;
+    // if the wait is too long or it fails again, reject with a friendly message
+    // instead of letting the UI show an empty failure. Never trigger a logout.
+    if (error.response?.status === 429 && !originalRequest._retry429) {
+      const retryAfterHeader = (error.response.headers as any)?.['retry-after'];
+      const parsed = Number(retryAfterHeader);
+      // Cap the wait so we never hang the UI for the full 30–60s lockout window.
+      const MAX_BACKOFF_MS = 5000;
+      const waitMs = Number.isFinite(parsed) && parsed > 0
+        ? Math.min(parsed * 1000, MAX_BACKOFF_MS)
+        : 1500;
+
+      // Only auto-retry when the backend told us the wait is short (or gave no
+      // hint). A long Retry-After means a real lockout — surface it, don't spin.
+      if (!Number.isFinite(parsed) || parsed * 1000 <= MAX_BACKOFF_MS) {
+        originalRequest._retry429 = true;
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        return apiClient(originalRequest);
+      }
+
+      return Promise.reject({
+        message: "Too many requests. Please wait a moment and try again.",
+        status: 429,
+        route: originalRequest?.url,
+        correlationId,
+      });
     }
 
     // Blob download error handling bypass

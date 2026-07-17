@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { courseService } from "@/services/course.service";
-import { categoryService } from "@/services/category.service";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
+import { useAdminCourseOptions } from "@/hooks/queries/use-admin-queries";
 import { Loader2, Plus, Edit, Trash2, BookOpen, Eye, EyeOff } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function AdminCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const { data, isLoading, refetch } = useAdminCourseOptions();
+  const courses = (data?.courses ?? []) as Course[];
+  const categories = data?.categories ?? [];
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,27 +24,6 @@ export default function AdminCoursesPage() {
     category: "",
     is_active: true
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [coursesRes, catsRes] = await Promise.all([
-        courseService.getAll(),
-        categoryService.getAll()
-      ]);
-      if (coursesRes.success) setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : coursesRes.data?.data || []);
-      if (catsRes.success) setCategories(Array.isArray(catsRes.data) ? catsRes.data : catsRes.data?.data || []);
-    } catch (error: any) {
-      if (error?.status !== 404 && !error?._silent) {
-        toast.error("Failed to load data");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +46,7 @@ export default function AdminCoursesPage() {
       }
       setIsFormOpen(false);
       resetForm();
-      fetchData();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to save course");
     } finally {
@@ -101,7 +80,7 @@ export default function AdminCoursesPage() {
         await courseService.publish(course._id!);
         toast.success("Course published");
       }
-      fetchData();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to update status");
     }
@@ -112,7 +91,7 @@ export default function AdminCoursesPage() {
     try {
       await courseService.delete(id);
       toast.success("Course deleted");
-      fetchData();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete course");
     }
