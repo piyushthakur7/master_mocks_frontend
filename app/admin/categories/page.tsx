@@ -1,39 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { categoryService } from "@/services/category.service";
 import { toast } from "sonner";
+import { useAdminCategories } from "@/hooks/queries/use-admin-queries";
 import { Loader2, Plus, Edit, Trash2, FolderOpen } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const { data: categories = [], isLoading, refetch } = useAdminCategories() as {
+    data: any[];
+    isLoading: boolean;
+    refetch: () => void;
+  };
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ id: "", name: "", description: "" });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await categoryService.getAll();
-      if (response.success && response.data) {
-        setCategories(response.data.data || response.data);
-      }
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setCategories([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load categories");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +31,7 @@ export default function AdminCategoriesPage() {
       }
       setIsFormOpen(false);
       setFormData({ id: "", name: "", description: "" });
-      fetchCategories();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to save category");
     } finally {
@@ -66,7 +49,7 @@ export default function AdminCategoriesPage() {
     try {
       await categoryService.delete(id);
       toast.success("Category deleted");
-      fetchCategories();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete category");
     }

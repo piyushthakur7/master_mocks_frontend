@@ -1,38 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { attemptService } from "@/services/attempt.service";
+import React from "react";
 import { TestAttempt } from "@/types/attempt";
-import { toast } from "sonner";
+import { useAdminAttempts } from "@/hooks/queries/use-admin-queries";
 import { Loader2, FileBarChart, Activity, Award, UserCheck } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminReportsPage() {
-  const [attempts, setAttempts] = useState<TestAttempt[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAttempts();
-  }, []);
-
-  const fetchAttempts = async () => {
-    try {
-      const response = await attemptService.getAllAttempts();
-      let data: TestAttempt[] = [];
-      if (response && response.success) {
-        const resData = response.data as any;
-        data = resData?.data || resData?.reports || (Array.isArray(resData) ? resData : []);
-      }
-      setAttempts(data);
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setAttempts([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load attempt reports");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: attempts = [], isLoading } = useAdminAttempts() as {
+    data: TestAttempt[];
+    isLoading: boolean;
   };
 
   const completedAttempts = attempts.filter(a => a.status === 'COMPLETED').length;

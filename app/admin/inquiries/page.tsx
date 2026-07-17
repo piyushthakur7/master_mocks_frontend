@@ -1,40 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { inquiryService } from "@/services/inquiry.service";
 import { Inquiry } from "@/types/inquiry";
 import { toast } from "sonner";
+import { useAdminInquiries } from "@/hooks/queries/use-admin-queries";
 import { Loader2, MessageSquare, CheckCircle, Clock, Search, Send, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminInquiriesPage() {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: inquiries = [], isLoading, refetch } = useAdminInquiries() as {
+    data: Inquiry[];
+    isLoading: boolean;
+    refetch: () => void;
+  };
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
-
-  useEffect(() => {
-    fetchInquiries();
-  }, []);
-
-  const fetchInquiries = async () => {
-    try {
-      const response = await inquiryService.getAll();
-      if (response.success && response.data) {
-        setInquiries(response.data.data || response.data);
-      }
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setInquiries([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load inquiries");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleReplySubmit = async (e: React.FormEvent, closeInquiry: boolean = false) => {
     e.preventDefault();
@@ -53,7 +36,7 @@ export default function AdminInquiriesPage() {
       toast.success(closeInquiry ? "Inquiry resolved and closed" : "Reply sent successfully");
       setReplyMessage("");
       setSelectedInquiry(null);
-      fetchInquiries();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to process reply");
     } finally {

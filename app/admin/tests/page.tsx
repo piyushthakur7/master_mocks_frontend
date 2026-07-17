@@ -1,43 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { mockTestService } from "@/services/mock-test.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
+import { useAdminTests } from "@/hooks/queries/use-admin-queries";
 import { Loader2, Plus, Edit, Trash2, CheckCircle2, Clock, Eye, EyeOff, BookOpen } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminTestsManagementPage() {
-  const [tests, setTests] = useState<MockTest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTests();
-  }, []);
-
-  const fetchTests = async () => {
-    try {
-      const response = await mockTestService.getAll();
-      if (response.success) {
-        setTests(Array.isArray(response.data) ? response.data : response.data?.data || []);
-      }
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setTests([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load mock tests");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: tests = [], isLoading, refetch } = useAdminTests() as {
+    data: MockTest[];
+    isLoading: boolean;
+    refetch: () => void;
   };
 
   const toggleTestStatus = async (test: MockTest) => {
     try {
       await mockTestService.update(test._id!, { is_active: !test.isActive });
       toast.success(`Test ${!test.isActive ? 'published' : 'unpublished'} successfully`);
-      fetchTests();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to update test status");
     }
@@ -48,7 +30,7 @@ export default function AdminTestsManagementPage() {
     try {
       await mockTestService.delete(id);
       toast.success("Test deleted successfully");
-      fetchTests();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete test");
     }

@@ -1,35 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { userService } from "@/services/user.service";
 import { User } from "@/types/user";
 import { toast } from "sonner";
+import { useAdminUsers } from "@/hooks/queries/use-admin-queries";
 import { Loader2, UserX, UserCheck, ShieldAlert, IndianRupee } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
 export default function AdminStudentsRosterPage() {
-  const [students, setStudents] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    try {
-      const response = await userService.getAllUsers({ role: "STUDENT" });
-      if (response.success && response.data) {
-        setStudents(Array.isArray(response.data) ? response.data : response.data?.data || []);
-      }
-    } catch (error: any) {
-      if (error?.status === 404) {
-        setStudents([]);
-      } else if (!error?._silent) {
-        toast.error("Failed to load students");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: students = [], isLoading, refetch } = useAdminUsers({ role: "STUDENT" }) as {
+    data: User[];
+    isLoading: boolean;
+    refetch: () => void;
   };
 
   const toggleUserStatus = async (user: User) => {
@@ -37,7 +20,7 @@ export default function AdminStudentsRosterPage() {
       const newStatus = user.status === "active" ? "suspended" : "active";
       await userService.updateUserStatus(user._id, { status: newStatus });
       toast.success(`User ${newStatus === "active" ? "activated" : "suspended"} successfully`);
-      fetchStudents();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to update user status");
     }
