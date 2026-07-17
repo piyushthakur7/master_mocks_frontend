@@ -17,19 +17,23 @@ export default function AdminDashboardOverviewPage() {
     );
   }
 
-  const d = data || {
-    totalStudents: 0,
-    totalCourses: 0,
-    totalTests: 0,
-    totalFreeTests: 0,
-    totalPaidTests: 0,
-    revenue: 0
+  // Coerce every field defensively: a non-null response that is missing a key
+  // (or uses snake_case) must not crash .toLocaleString()/.toString() below.
+  const raw = (data || {}) as any;
+  const d = {
+    totalStudents: Number(raw.totalStudents ?? raw.total_students ?? 0),
+    totalCourses: Number(raw.totalCourses ?? raw.total_courses ?? 0),
+    totalTests: Number(raw.totalTests ?? raw.total_tests ?? 0),
+    totalFreeTests: Number(raw.totalFreeTests ?? raw.total_free_tests ?? 0),
+    totalPaidTests: Number(raw.totalPaidTests ?? raw.total_paid_tests ?? 0),
+    revenue: Number(raw.revenue ?? 0),
   };
 
   const corporateMetrics = [
     { title: "Total Aspirants", value: d.totalStudents.toLocaleString(), icon: <Users className="w-5 h-5" />, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
-    { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-    { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-50 border-red-100" }
+    { title: "Total Courses", value: d.totalCourses.toLocaleString(), icon: <BookOpen className="w-5 h-5" />, color: "text-indigo-600", bg: "bg-indigo-50 border-indigo-100" },
+    { title: "Mock Tests", value: d.totalTests.toString(), subtext: `${d.totalFreeTests} Free / ${d.totalPaidTests} Paid`, icon: <Flag className="w-5 h-5" />, color: "text-[#D00113]", bg: "bg-red-50 border-red-100" },
+    { title: "Revenue", value: formatCurrency(d.revenue), icon: <IndianRupee className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" }
   ];
 
   const mockRevenueData = [

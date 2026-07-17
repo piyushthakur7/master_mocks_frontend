@@ -36,7 +36,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
              leaderboardService.getLeaderboard(testId, { page: 1, limit: 10 })
                .then(lbRes => {
                  if (lbRes.success && lbRes.data) {
-                   setLbEntries(lbRes.data.entries);
+                   setLbEntries(lbRes.data.entries || []);
                  }
                })
                .finally(() => setIsLbLoading(false));
@@ -204,16 +204,16 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
-              {lbEntries.length > 0 ? lbEntries.map((entry) => (
-                <tr key={entry.user._id} className="hover:bg-slate-50/60 transition-colors">
+              {lbEntries.length > 0 ? lbEntries.map((entry, idx) => (
+                <tr key={entry?.user?._id || idx} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-4 px-6 text-center">
                     {entry.rank === 1 ? <Trophy className="w-4 h-4 text-amber-500 mx-auto" /> : <span className="font-black text-slate-400">#{entry.rank}</span>}
                   </td>
                   <td className="py-4 px-6 font-bold text-slate-900">
-                    {entry.user.full_name}
+                    {entry.user?.full_name || "Anonymous"}
                   </td>
                   <td className="py-4 px-6 font-black text-[#D00113] text-right">
-                    {entry.best_score.toFixed(2)}
+                    {(entry.best_score ?? 0).toFixed(2)}
                   </td>
                 </tr>
               )) : (
