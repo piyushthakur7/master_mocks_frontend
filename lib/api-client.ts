@@ -232,29 +232,34 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle 429 Too Many Requests (usually emitted by an upstream proxy / WAF,
-    // not the Express app). Honor Retry-After for a single gentle backoff+retry;
-    // if the wait is too long or it fails again, reject with a friendly message
-    // instead of letting the UI show an empty failure. Never trigger a logout.
+    // Handle 429 Too Many Requests. Honor Retry-After for a single gentle
+    // backoff+retry, but ONLY for idempotent GET requests — auto-retrying a
+    // POST/PUT/PATCH/DELETE could double-submit (e.g. duplicate login or
+    // payment). A long Retry-After means a real lockout: surface the server's
+    // message instead of spinning. Never trigger a logout on a 429.
     if (error.response?.status === 429 && !originalRequest._retry429) {
+      const method = (originalRequest.method || "get").toLowerCase();
+      const isIdempotent = method === "get" || method === "head";
       const retryAfterHeader = (error.response.headers as any)?.['retry-after'];
       const parsed = Number(retryAfterHeader);
-      // Cap the wait so we never hang the UI for the full 30–60s lockout window.
+      // Cap the wait so we never hang the UI for the full lockout window.
       const MAX_BACKOFF_MS = 5000;
       const waitMs = Number.isFinite(parsed) && parsed > 0
         ? Math.min(parsed * 1000, MAX_BACKOFF_MS)
         : 1500;
 
-      // Only auto-retry when the backend told us the wait is short (or gave no
-      // hint). A long Retry-After means a real lockout — surface it, don't spin.
-      if (!Number.isFinite(parsed) || parsed * 1000 <= MAX_BACKOFF_MS) {
+      // Only auto-retry idempotent reads when the wait is short (or unhinted).
+      if (isIdempotent && (!Number.isFinite(parsed) || parsed * 1000 <= MAX_BACKOFF_MS)) {
         originalRequest._retry429 = true;
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         return apiClient(originalRequest);
       }
 
+      // Surface the server-provided message (e.g. "Too many login attempts…")
+      // when present, so auth screens show something actionable.
+      const serverMessage = (error.response.data as any)?.message;
       return Promise.reject({
-        message: "Too many requests. Please wait a moment and try again.",
+        message: serverMessage || "Too many requests. Please wait a moment and try again.",
         status: 429,
         route: originalRequest?.url,
         correlationId,
