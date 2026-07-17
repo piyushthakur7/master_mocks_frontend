@@ -4,13 +4,14 @@ import Link from "next/link";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight, CheckCircle2, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   useStudentDashboard, 
   useAllMocks, 
   usePurchasedMocks, 
-  useCompletedAttempts 
+  useCompletedAttempts,
+  useResources
 } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentDashboardPage() {
@@ -20,12 +21,15 @@ export default function StudentDashboardPage() {
   const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(10);
   const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
+  const { data: allResources = [], isLoading: isResourcesLoading } = useResources();
 
-  const isLoading = isDashboardLoading || isMocksLoading || isPurchasesLoading || isAttemptsLoading;
+  const isLoading = isDashboardLoading || isMocksLoading || isPurchasesLoading || isAttemptsLoading || isResourcesLoading;
 
   if (isDashboardError) {
     toast.error("Failed to load dashboard data");
   }
+
+  const pdfResources = allResources.filter((r: any) => r.resource_type === 'pdf' || r.type === 'pdf').slice(0, 3);
 
   const completedIds = completedAttempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
   const paidMocks = allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id));
@@ -216,6 +220,43 @@ export default function StudentDashboardPage() {
               <Link href="/results" className="text-xs font-bold text-slate-600 hover:text-[#D00113] transition-colors">
                 View Full History
               </Link>
+            </div>
+          </div>
+
+          {/* ─── FREE PDFS ─── */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">Free PDFs</h2>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">Study materials for you.</p>
+              </div>
+              <Link href="/resources" className="text-xs font-bold text-[#D00113] hover:underline flex items-center gap-1">
+                View All <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            
+            <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+              {pdfResources.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {pdfResources.map((pdf: any, idx: number) => (
+                    <Link key={pdf._id || idx} href="/resources" className="block p-4 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex gap-3">
+                        <div className="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-red-50 text-red-600">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800 line-clamp-2">{pdf.title}</p>
+                          <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{pdf.category?.name || pdf.category || 'General'}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-sm text-slate-500 font-medium">No PDFs available.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
