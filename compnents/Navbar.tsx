@@ -7,42 +7,15 @@ import { useAuth } from "@/hooks/use-auth";
 const navItems = [
   {
     title: "Free Mocks",
-    sections: [
-      {
-        category: "Banking & Insurance",
-        links: [
-          { name: "Reasoning Ability", href: "/free-hacks/reasoning" },
-          { name: "Quantitative Aptitude", href: "/free-hacks/quant" },
-          { name: "Daily Current Affairs", href: "/free-hacks/current-affairs" },
-        ]
-      }
-    ]
+    href: "/free-mocks"
   },
   {
     title: "Paid Mocks",
-    sections: [
-      {
-        category: "Banking & Insurance",
-        links: [
-          { name: "Reasoning Ability", href: "/paid-mocks/reasoning" },
-          { name: "Quantitative Aptitude", href: "/paid-mocks/quant" },
-          { name: "Daily Current Affairs", href: "/paid-mocks/current-affairs" },
-        ]
-      }
-    ]
+    href: "/paid-mocks"
   },
   {
     title: "Free PDFs",
-    sections: [
-      {
-        category: "Banking & Insurance",
-        links: [
-          { name: "Reasoning Ability", href: "/free-pdfs/reasoning" },
-          { name: "Quantitative Aptitude", href: "/free-pdfs/quant" },
-          { name: "Daily Current Affairs", href: "/free-pdfs/current-affairs" },
-        ]
-      }
-    ]
+    href: "/free-pdfs"
   }
 ];
 
@@ -76,33 +49,10 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-6 text-base font-bold text-slate-600">
           
           {navItems.map((item, idx) => (
-            <div key={idx} className="relative group h-full flex items-center">
-              <button className="flex items-center gap-1 hover:text-[#D00113] transition-colors outline-none focus:outline-none py-6">
+            <div key={idx} className="h-full flex items-center">
+              <Link href={item.href} className="flex items-center gap-1 hover:text-[#D00113] transition-colors py-6">
                 {item.title}
-                <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              
-              {/* Dropdown Container */}
-              <div className="absolute top-[100%] left-0 pt-2 w-64 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
-                <div className="bg-white rounded-lg shadow-xl border border-slate-100 p-3 transform origin-top translate-y-2 group-hover:translate-y-0 transition-all duration-200 max-h-96 overflow-y-auto">
-                  
-                  {item.sections.map((section, sIdx) => (
-                    <div key={sIdx} className={sIdx > 0 ? "mt-4" : ""}>
-                      <div className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50 rounded-md mb-2">
-                        {section.category}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        {section.links.map((link, lIdx) => (
-                          <Link key={lIdx} href={link.href} className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-[#D00113] rounded-md transition-colors block">
-                            {link.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  
-                </div>
-              </div>
+              </Link>
             </div>
           ))}
 
