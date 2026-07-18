@@ -157,11 +157,9 @@ export default function StudentDashboardPage() {
                     <Link 
                       href={`/tests/${test._id}`}
                       onClick={(e) => {
-                        const now = new Date();
-                        if (test.start_time && now < new Date(test.start_time)) {
-                          e.preventDefault();
-                          toast.error("Test Not Started Yet.");
-                        } else if (test.end_time && now > new Date(test.end_time)) {
+                        // Upcoming tests still open the details page (coming-soon
+                        // gate + pre-purchase live there); only ended is a dead end.
+                        if (test.end_time && new Date() > new Date(test.end_time)) {
                           e.preventDefault();
                           toast.error("The window to attempt this mock is Closed.");
                         }

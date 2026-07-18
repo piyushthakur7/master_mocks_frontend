@@ -58,11 +58,18 @@ export interface VerifyPaymentRequest {
   razorpay_signature: string;
 }
 
+export type ScheduleStatus = "unscheduled" | "upcoming" | "live" | "ended";
+
 export interface AccessCheckResponse {
-  has_access: boolean;
+  has_access: boolean;              // can the user start the test RIGHT NOW
   access_type: "free" | "paid";
   price: number;
   reason: string;
+  has_purchased?: boolean;          // paid tests: purchase exists (independent of window)
+  schedule_status?: ScheduleStatus; // server-computed window state
+  start_time?: string | null;
+  end_time?: string | null;
+  server_time?: string;             // for clock-skew-free countdowns
 
 
 

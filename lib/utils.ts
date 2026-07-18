@@ -23,6 +23,35 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export type TestScheduleStatus = "unscheduled" | "upcoming" | "live" | "ended";
+
+// Prefer the server-computed schedule_status when the API provided one;
+// fall back to the device clock only when it didn't.
+export function getTestScheduleStatus(test: {
+  start_time?: string | null;
+  end_time?: string | null;
+  schedule_status?: TestScheduleStatus;
+}): TestScheduleStatus {
+  if (test.schedule_status) return test.schedule_status;
+  if (!test.start_time && !test.end_time) return "unscheduled";
+  const now = new Date();
+  if (test.start_time && now < new Date(test.start_time)) return "upcoming";
+  if (test.end_time && now > new Date(test.end_time)) return "ended";
+  return "live";
+}
+
+// "18 Jul, 09:00 AM" — compact schedule label for cards and banners.
+export function formatScheduleTime(dateString: string | Date): string {
+  if (!dateString) return "-";
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(dateString));
+}
+
 export function getInitials(name: string): string {
   if (!name) return "U";
   const names = name.split(' ');
