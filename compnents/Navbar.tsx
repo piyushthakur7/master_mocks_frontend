@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 shadow-sm backdrop-blur-md bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -60,7 +60,9 @@ export default function Navbar() {
 
         {/* Primary Call to Action */}
         <div className="flex items-center gap-4">
-          {isAuthenticated ? (
+          {isLoading ? (
+            <div className="w-24 h-10 rounded-md bg-slate-100 animate-pulse" aria-hidden="true" />
+          ) : isAuthenticated ? (
             <Link 
               href={user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard"}
               className="px-5 py-2.5 rounded-md text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm"

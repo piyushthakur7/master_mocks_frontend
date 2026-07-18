@@ -1,7 +1,6 @@
 "use client";
 
 
-import { useAuth } from "@/hooks/use-auth";
 import Navbar from "@/compnents/Navbar";
 import Hero from "@/compnents/landingPage/hero";
 import WhyChooseUs from "@/compnents/landingPage/WhyChooseUs";
@@ -11,16 +10,9 @@ import Testimonials from "@/compnents/landingPage/Testimonials";
 import Footer from "@/compnents/Footer";
 
 export default function Home() {
-  const { isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-[#D00113] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
+  // Deliberately NOT gated on auth isLoading: the landing content is public,
+  // and gating it made the prerendered HTML an empty spinner — any JS failure
+  // then showed a blank page. Navbar/Hero handle auth state themselves.
   return (
     <div className="min-h-screen bg-white text-slate-900 antialiased">
       <Navbar />
