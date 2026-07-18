@@ -10,12 +10,26 @@ const nextConfig: NextConfig = {
     return [
       {
         // Everything except the content-hashed static assets (those are
-        // immutable and must keep their year-long cache).
-        source: "/((?!_next/static|_next/image).*)",
+        // immutable and must keep their year-long cache) and the API proxy.
+        // /api/v1/* is excluded deliberately: it is rewritten to the backend
+        // and carries per-user authenticated payloads (profile, attempts,
+        // purchases). Marking those "public, s-maxage=300" invites a shared
+        // CDN to serve one student's response to the next student.
+        source: "/((?!_next/static|_next/image|api/).*)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, s-maxage=300, stale-while-revalidate=60",
+          },
+        ],
+      },
+      {
+        // Per-user API responses must never be stored by a shared cache.
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-store",
           },
         ],
       },

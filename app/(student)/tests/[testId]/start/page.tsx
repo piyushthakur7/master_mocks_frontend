@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
@@ -26,6 +26,11 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
   const [timeLeft, setTimeLeft] = useState(0); 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // The timer's auto-submit must fire at most once. Without this, a failed
+  // auto-submit set isSubmitting back to false, which re-ran the timer effect
+  // with timeLeft still <= 0 and submitted again — an endless retry loop
+  // hammering the API with no way for the student to stop it.
+  const hasAutoSubmitted = useRef(false);
 
   useEffect(() => {
     const initializeTest = async () => {
@@ -83,7 +88,10 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     if (isLoading || isSubmitting || !test) return;
     
     if (timeLeft <= 0) {
-      handleFinalSubmit();
+      if (!hasAutoSubmitted.current) {
+        hasAutoSubmitted.current = true;
+        handleFinalSubmit();
+      }
       return;
     }
     
@@ -116,15 +124,21 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     setIsSubmitting(true);
     
     try {
+      // A 400 here means the attempt was already submitted/evaluated (e.g. the
+      // answer-sync race, or a retry after a flaky network) — that is a success
+      // from the student's point of view, so swallow it and move on. The
+      // rejection shape from api-client is { message, status }, NOT statusCode:
+      // reading the wrong field made every 400 rethrow and stranded students on
+      // the exam screen with "Failed to submit" after a successful submit.
       try {
         await attemptService.submit(attempt._id);
       } catch (e: any) {
-        if (e.statusCode !== 400) throw e;
+        if (e?.status !== 400) throw e;
       }
       try {
         await attemptService.evaluate(attempt._id);
       } catch (e: any) {
-        if (e.statusCode !== 400) throw e;
+        if (e?.status !== 400) throw e;
       }
       toast.success("Test submitted successfully!");
       router.push(`/results/${attempt._id}`);
@@ -200,7 +214,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
             {/* Multiple Choice Radio List */}
             <div className="space-y-3 pt-2">
-              {currentQObj.options.map((option, idx) => {
+              {(currentQObj.options || []).map((option, idx) => {
                 const isSelected = selectedAnswers[currentQObj._id!] === option._id;
                 return (
                   <button

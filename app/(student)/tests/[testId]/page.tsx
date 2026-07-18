@@ -216,12 +216,24 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 setHasAccess(true);
                 isCheckoutOpen.current = false;
                 setIsProcessingPayment(false);
-                
+
                 if (rzp && typeof rzp.close === 'function') {
                   try { rzp.close(); } catch (e) {}
                 }
-                
+
                 router.push("/payment-success");
+              } else {
+                // A 2xx that reports success:false still means the payment did
+                // not verify. Without this branch the spinner and the checkout
+                // lock stayed on forever, leaving a student who had just been
+                // charged with no feedback and no way to retry.
+                toast.dismiss('processing-toast');
+                toast.error(
+                  verifyRes.message ||
+                    "We could not confirm your payment. If money was debited it will be reconciled — please check Purchases before paying again."
+                );
+                isCheckoutOpen.current = false;
+                setIsProcessingPayment(false);
               }
             } catch (err: any) {
               toast.dismiss('processing-toast');

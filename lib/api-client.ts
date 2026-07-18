@@ -43,7 +43,7 @@ const getCallerComponent = () => {
     throw new Error();
   } catch (e: any) {
     if (!e.stack) return "Unknown";
-    const stackLines = e.stack.split('\\n');
+    const stackLines = e.stack.split('\n');
     for (let i = 2; i < stackLines.length; i++) {
       if (!stackLines[i].includes('api-client.ts') && !stackLines[i].includes('axios')) {
         return stackLines[i].trim();
@@ -127,7 +127,7 @@ apiClient.interceptors.request.use(
     config.metadata = { startTime: new Date().getTime(), caller: getCallerComponent() };
     
     console.log(
-      `[API Request] ${config.method?.toUpperCase()} ${config.url}\\n` +
+      `[API Request] ${config.method?.toUpperCase()} ${config.url}\n` +
       `  Caller: ${config.metadata.caller}`
     );
     
@@ -151,7 +151,7 @@ apiClient.interceptors.response.use(
       : 0;
       
     console.log(
-      `[API Response] ${response.status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\\n` +
+      `[API Response] ${response.status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\n` +
       `  Duration: ${duration}ms`
     );
 

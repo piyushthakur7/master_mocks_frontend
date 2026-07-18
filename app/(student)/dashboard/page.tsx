@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
@@ -23,9 +24,14 @@ export default function StudentDashboardPage() {
 
   const isLoading = isDashboardLoading || isMocksLoading || isAttemptsLoading || isResourcesLoading;
 
-  if (isDashboardError) {
-    toast.error("Failed to load dashboard data");
-  }
+  // Toasting straight from the render body fired a fresh toast on every
+  // re-render and mutated external state during render. Keep it in an effect,
+  // with a fixed id so repeated renders update one toast instead of stacking.
+  useEffect(() => {
+    if (isDashboardError) {
+      toast.error("Failed to load dashboard data", { id: "dashboard-load-error" });
+    }
+  }, [isDashboardError]);
 
   const pdfResources = allResources.filter((r: any) => r.resource_type === 'pdf' || r.type === 'pdf').slice(0, 3);
 
