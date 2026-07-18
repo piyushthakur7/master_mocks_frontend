@@ -6,10 +6,9 @@ import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Loader2, Wallet, Target, Flag, BookOpen, Clock, Activity, ArrowRight, CheckCircle2, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  useStudentDashboard, 
-  useAllMocks, 
-  usePurchasedMocks, 
+import {
+  useStudentDashboard,
+  useAllMocks,
   useCompletedAttempts,
   useResources
 } from "@/hooks/queries/use-dashboard-queries";
@@ -19,11 +18,10 @@ export default function StudentDashboardPage() {
   
   const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useStudentDashboard();
   const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(10);
-  const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
   const { data: allResources = [], isLoading: isResourcesLoading } = useResources();
 
-  const isLoading = isDashboardLoading || isMocksLoading || isPurchasesLoading || isAttemptsLoading || isResourcesLoading;
+  const isLoading = isDashboardLoading || isMocksLoading || isAttemptsLoading || isResourcesLoading;
 
   if (isDashboardError) {
     toast.error("Failed to load dashboard data");
@@ -33,7 +31,6 @@ export default function StudentDashboardPage() {
 
   const completedIds = completedAttempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
   const paidMocks = allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id));
-  const purchasedTestIds = purchasedMocks.map((t: any) => t._id);
 
   // Fallback data if API returns empty
   const d = dashboardData || {
@@ -166,7 +163,7 @@ export default function StudentDashboardPage() {
                       }}
                       className="w-full py-2 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-lg transition-all"
                     >
-                      {purchasedTestIds.includes(test._id) ? "Attempt Now" : "View details"}
+                      Attempt Now
                     </Link>
                   </div>
                 </div>
