@@ -3,7 +3,8 @@ import { User } from "@/types/user";
 import { ApiResponse, PaginatedResponse } from "@/types/api";
 
 export const userService = {
-  getMe: () => apiClient.get<any, ApiResponse<User>>("/users/me"),
+  getMe: (config?: Record<string, unknown>) =>
+    apiClient.get<any, ApiResponse<User>>("/users/me", config),
   
   updateAccount: (data: any) => apiClient.patch<any, ApiResponse<User>>("/users/update-account", data),
   
