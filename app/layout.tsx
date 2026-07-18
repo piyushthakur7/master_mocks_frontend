@@ -6,8 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 
-export const dynamic = 'force-dynamic';
-
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
