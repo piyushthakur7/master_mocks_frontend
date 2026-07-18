@@ -263,9 +263,16 @@ apiClient.interceptors.response.use(
       const serverMessage = (error.response.data as any)?.message;
       const message = serverMessage || "Too many requests, please wait a moment";
 
-      // Fixed toast id: a burst of 429s updates one toast instead of stacking.
-      // Never log out here — the session is fine, the host is just throttling.
-      if (typeof window !== "undefined") {
+      // Global toast only for background reads: mutations (login, submit,
+      // payment) surface the rejection through their own form handling, and
+      // toasting here too produced stacked duplicates. Requests marked
+      // _silent429 (session bootstrap) never toast. Fixed id so a burst
+      // updates one toast. Never log out here — the host is just throttling.
+      if (
+        typeof window !== "undefined" &&
+        isIdempotent &&
+        !(originalRequest as any)._silent429
+      ) {
         toast.error(message, { id: "rate-limit-429" });
       }
 
@@ -277,13 +284,18 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // A 429 that already used its one retry lands here — same toast, no
-    // further retries, and never a logout.
+    // A 429 that already used its one retry lands here — same rules: toast
+    // only for non-silent background reads, no further retries, never a logout.
     if (error.response?.status === 429) {
+      const method = (originalRequest?.method || "get").toLowerCase();
       const message =
         (error.response.data as any)?.message ||
         "Too many requests, please wait a moment";
-      if (typeof window !== "undefined") {
+      if (
+        typeof window !== "undefined" &&
+        (method === "get" || method === "head") &&
+        !(originalRequest as any)?._silent429
+      ) {
         toast.error(message, { id: "rate-limit-429" });
       }
       return Promise.reject({

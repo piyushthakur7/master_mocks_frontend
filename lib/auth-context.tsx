@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         return;
       }
-      const response = await userService.getMe();
+      // _silent429: the background session check must never surface a
+      // rate-limit toast on page load.
+      const response = await userService.getMe({ _silent429: true });
       // Handle different wrapper formats robustly
       const userData = (response?.data as any)?.user || response?.data || response;
       if (response?.success || userData?.email || userData?._id) {
@@ -43,11 +45,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(null);
       }
     } catch (error: any) {
-      // Avoid logging empty objects or expected 401s to the console
-      if (error?.status !== 401) {
-        console.warn("Failed to fetch user session or session expired");
+      // Drop the token ONLY on a real auth failure (401). A 429/5xx/network
+      // error is transient — clearing the token here silently logged the
+      // user out whenever the host throttled a page-load burst.
+      if (error?.status === 401) {
+        setAccessToken(null);
+      } else {
+        console.warn("Session check failed transiently; keeping session");
       }
-      setAccessToken(null);
     } finally {
       setIsLoading(false);
     }
