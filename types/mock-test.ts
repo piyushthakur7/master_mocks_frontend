@@ -42,6 +42,8 @@ export interface MockTest {
   is_active: boolean;
   start_time?: string;                 // v2.0: ISO timestamp
   end_time?: string;                   // v2.0: ISO timestamp
+  schedule_status?: "unscheduled" | "upcoming" | "live" | "ended"; // server-computed
+  server_time?: string;                // server clock at fetch time
   // Legacy camelCase aliases (still used in some UI code)
   durationMinutes?: number;
   totalMarks?: number;

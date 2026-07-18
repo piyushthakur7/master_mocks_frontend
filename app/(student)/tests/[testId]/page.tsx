@@ -7,8 +7,9 @@ import { mockTestService } from "@/services/mock-test.service";
 import { paymentService } from "@/services/payment.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Clock, HelpCircle, Target, Lock } from "lucide-react";
+import { Loader2, ArrowLeft, Clock, HelpCircle, Target, Lock, CalendarClock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { formatScheduleTime } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ testId: string }>;
@@ -18,15 +19,23 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const unwrappedParams = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [test, setTest] = useState<MockTest | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessReason, setAccessReason] = useState("");
   const [isAttemptExhausted, setIsAttemptExhausted] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const isCheckoutOpen = useRef(false);
+
+  // Server-clock-corrected countdown state for scheduled tests. The offset is
+  // captured from check-access's server_time so a wrong device clock can't
+  // show a live test as upcoming (or vice versa). Enforcement stays server-side.
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  const didAutoFlipLive = useRef(false);
 
   useEffect(() => {
     const fetchTestDetails = async () => {
@@ -34,13 +43,17 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         const response = await mockTestService.getById(unwrappedParams.testId);
         if (response.success && response.data) {
           setTest(response.data);
-          
+
           // Check access
           const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
           if (accessResponse.success && accessResponse.data) {
             setHasAccess(accessResponse.data.has_access);
             setAccessReason(accessResponse.data.reason || "");
             setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
+            setHasPurchased(accessResponse.data.has_purchased || false);
+            if (accessResponse.data.server_time) {
+              setClockOffsetMs(new Date(accessResponse.data.server_time).getTime() - Date.now());
+            }
           }
         } else {
           toast.error("Test not found");
@@ -56,6 +69,45 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
     fetchTestDetails();
   }, [unwrappedParams.testId, router]);
+
+  // Tick every second while a schedule window exists, driving the countdown
+  // and the automatic upcoming -> live / live -> ended transitions.
+  useEffect(() => {
+    if (!test?.start_time && !test?.end_time) return;
+    const interval = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [test?.start_time, test?.end_time]);
+
+  const correctedNow = nowTs + clockOffsetMs;
+  const scheduleStatus: "unscheduled" | "upcoming" | "live" | "ended" = (() => {
+    if (!test || (!test.start_time && !test.end_time)) return "unscheduled";
+    if (test.start_time && correctedNow < new Date(test.start_time).getTime()) return "upcoming";
+    if (test.end_time && correctedNow > new Date(test.end_time).getTime()) return "ended";
+    return "live";
+  })();
+
+  // The moment the window opens, re-ask the server for access so the Start
+  // button appears without a manual refresh.
+  useEffect(() => {
+    if (scheduleStatus === "live" && !hasAccess && !isAttemptExhausted && !didAutoFlipLive.current) {
+      didAutoFlipLive.current = true;
+      recheckAccess();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleStatus]);
+
+  const formatCountdown = (targetIso: string) => {
+    let totalSeconds = Math.max(0, Math.floor((new Date(targetIso).getTime() - correctedNow) / 1000));
+    const days = Math.floor(totalSeconds / 86400);
+    totalSeconds -= days * 86400;
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds -= hours * 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds - minutes * 60;
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  };
 
   const handleStart = (e: React.MouseEvent) => {
     if (!hasAccess) {
@@ -73,11 +125,17 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const recheckAccess = async (): Promise<boolean> => {
     try {
       const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
-      if (accessResponse.success && accessResponse.data?.has_access) {
-        setHasAccess(true);
-        setAccessReason(accessResponse.data.reason || "");
-        setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
-        return true;
+      if (accessResponse.success && accessResponse.data) {
+        setHasPurchased(accessResponse.data.has_purchased || false);
+        if (accessResponse.data.server_time) {
+          setClockOffsetMs(new Date(accessResponse.data.server_time).getTime() - Date.now());
+        }
+        if (accessResponse.data.has_access) {
+          setHasAccess(true);
+          setAccessReason(accessResponse.data.reason || "");
+          setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
+          return true;
+        }
       }
     } catch {}
     return false;
@@ -262,13 +320,33 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
         
         {test.start_time && test.end_time && (
-          <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex flex-col gap-1.5 mb-6">
-            <span className="text-xs font-black uppercase text-orange-600 tracking-wider">Scheduled Window</span>
-            <span className="text-sm font-bold text-slate-700">
-              {new Date(test.start_time).toLocaleDateString()} {new Date(test.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              {" - "}
-              {new Date(test.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <div className={`rounded-xl p-4 flex flex-col gap-1.5 mb-6 border ${
+            scheduleStatus === "live"
+              ? "bg-emerald-50 border-emerald-100"
+              : "bg-orange-50 border-orange-100"
+          }`}>
+            <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${
+              scheduleStatus === "live" ? "text-emerald-600" : "text-orange-600"
+            }`}>
+              <CalendarClock className="w-3.5 h-3.5" />
+              {scheduleStatus === "upcoming" && "Test Coming Soon"}
+              {scheduleStatus === "live" && "Live Now"}
+              {scheduleStatus === "ended" && "Window Closed"}
+              {scheduleStatus === "unscheduled" && "Scheduled Window"}
             </span>
+            <span className="text-sm font-bold text-slate-700">
+              {formatScheduleTime(test.start_time)} — {formatScheduleTime(test.end_time)}
+            </span>
+            {scheduleStatus === "upcoming" && (
+              <span className="text-lg font-black text-orange-600 tabular-nums">
+                Starts in {formatCountdown(test.start_time)}
+              </span>
+            )}
+            {scheduleStatus === "live" && (
+              <span className="text-xs font-bold text-emerald-700 tabular-nums">
+                Closes in {formatCountdown(test.end_time)}
+              </span>
+            )}
           </div>
         )}
 
@@ -310,24 +388,55 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
 
         {/* Dynamic Launch Triggers / Access Gate */}
         {(() => {
-          const isBeforeWindow = test.start_time ? new Date() < new Date(test.start_time) : false;
-          const isAfterWindow = test.end_time ? new Date() > new Date(test.end_time) : false;
-          const isOutsideWindow = isBeforeWindow || isAfterWindow;
-
-          if (isOutsideWindow) {
+          if (scheduleStatus === "ended") {
             return (
               <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
                 <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
                   <Clock className="w-5 h-5 text-slate-500" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                    {isBeforeWindow ? "Test Not Started Yet" : "Test Window Closed"}
-                  </h3>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Test Window Closed</h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    {isBeforeWindow ? "Please wait for the scheduled start time to begin." : "The scheduled time window for this test has ended."}
+                    The scheduled time window for this test has ended.
                   </p>
                 </div>
+              </div>
+            );
+          }
+
+          if (scheduleStatus === "upcoming") {
+            const needsPurchase = test.access_type === "paid" && !hasPurchased && !isAttemptExhausted;
+            return (
+              <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                  <CalendarClock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Test Coming Soon</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    {test.start_time
+                      ? `This test goes live at ${formatScheduleTime(test.start_time)}. The attempt option will unlock automatically at the start time.`
+                      : "This test has not started yet."}
+                  </p>
+                </div>
+                {needsPurchase && (
+                  <button
+                    onClick={handlePurchase}
+                    disabled={isProcessingPayment}
+                    className="px-6 py-3 bg-[#D00113] hover:bg-[#b0010f] disabled:bg-slate-400 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
+                  >
+                    {isProcessingPayment ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                    ) : (
+                      `Pre-book Now — ₹${test.price}`
+                    )}
+                  </button>
+                )}
+                {test.access_type === "paid" && hasPurchased && (
+                  <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+                    ✓ Purchased — come back at the start time
+                  </p>
+                )}
               </div>
             );
           }

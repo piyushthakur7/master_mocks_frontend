@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
-import { Loader2, Clock, CheckCircle2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { Loader2, Clock, CheckCircle2, CalendarClock } from "lucide-react";
+import { formatCurrency, getTestScheduleStatus, formatScheduleTime } from "@/lib/utils";
 import { useAllMocks, usePurchasedMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentPaidTestsPage() {
   const [activeTab, setActiveTab] = useState<"Available" | "Attempted">("Available");
-  
+  // Re-render every 30s so "coming soon" cards flip to live (and ended tests
+  // disappear) without a page reload.
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setClockTick((t) => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const { data: tests = [], isLoading: isMocksLoading } = useAllMocks(50);
   const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
@@ -22,8 +29,15 @@ export default function StudentPaidTestsPage() {
     typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
   ).filter(Boolean);
 
+  // Ended scheduled tests are filtered server-side too; this guard covers
+  // cached data and the moment the window closes between refetches.
+  // Note: schedule state is recomputed from the device clock here (cached
+  // server status goes stale), so the 30s tick can flip cards live.
+  const scheduleStatusOf = (t: MockTest) =>
+    getTestScheduleStatus({ start_time: t.start_time, end_time: t.end_time });
+
   const filteredTests = activeTab === "Available"
-    ? tests.filter((t) => t.access_type === "paid" && !completedTestIds.includes(t._id))
+    ? tests.filter((t) => t.access_type === "paid" && !completedTestIds.includes(t._id) && scheduleStatusOf(t) !== "ended")
     : tests.filter((t) => t.access_type === "paid" && completedTestIds.includes(t._id));
 
   return (
@@ -90,14 +104,25 @@ export default function StudentPaidTestsPage() {
 
                 {/* Schedule Box */}
                 {test.start_time && test.end_time && (
-                  <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase text-orange-600 tracking-wider">Scheduled Window:</span>
-                    <span className="text-xs font-bold text-slate-700">
-                      {new Date(test.start_time).toLocaleDateString()} {new Date(test.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {" - "}
-                      {new Date(test.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
+                  scheduleStatusOf(test) === "upcoming" ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" /> Test Coming Soon
+                      </span>
+                      <span className="text-xs font-bold text-slate-700">
+                        Live from {formatScheduleTime(test.start_time)} to {formatScheduleTime(test.end_time)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex flex-col gap-1">
+                      <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" /> Live Now
+                      </span>
+                      <span className="text-xs font-bold text-slate-700">
+                        Closes at {formatScheduleTime(test.end_time)}
+                      </span>
+                    </div>
+                  )
                 )}
 
                 {/* Target Reward Ledger Metric Box */}
@@ -118,24 +143,37 @@ export default function StudentPaidTestsPage() {
 
               {/* Launch trigger action wire route */}
               <div className="mt-6 pt-4 border-t border-slate-100">
-                <Link
-                  href={`/tests/${test._id}`}
-                  onClick={(e) => {
-                    const now = new Date();
-                    if (test.start_time && now < new Date(test.start_time)) {
-                      e.preventDefault();
-                      toast.error("Test Not Started Yet.");
-                    } else if (test.end_time && now > new Date(test.end_time)) {
-                      e.preventDefault();
-                      toast.error("The window to attempt this mock is Closed.");
-                    }
-                  }}
-                  className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
-                >
-                  {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
-                    ? `View details — ₹${test.price}`
-                    : "Attempt Now"}
-                </Link>
+                {scheduleStatusOf(test) === "upcoming" ? (
+                  // No direct attempt before the window opens. Unpurchased paid
+                  // tests still link to details so students can buy in advance.
+                  !purchasedTestIds.includes(test._id) ? (
+                    <Link
+                      href={`/tests/${test._id}`}
+                      className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
+                    >
+                      View details — ₹{test.price}
+                    </Link>
+                  ) : (
+                    <div className="w-full py-2.5 bg-slate-100 text-slate-400 text-center text-xs font-black uppercase tracking-wider rounded-xl cursor-not-allowed select-none">
+                      Starts {test.start_time ? formatScheduleTime(test.start_time) : "soon"}
+                    </div>
+                  )
+                ) : (
+                  <Link
+                    href={`/tests/${test._id}`}
+                    onClick={(e) => {
+                      if (scheduleStatusOf(test) === "ended") {
+                        e.preventDefault();
+                        toast.error("The window to attempt this mock is Closed.");
+                      }
+                    }}
+                    className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
+                  >
+                    {!purchasedTestIds.includes(test._id)
+                      ? `View details — ₹${test.price}`
+                      : "Attempt Now"}
+                  </Link>
+                )}
               </div>
             </div>
           ))}
