@@ -1,15 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Navbar from "@/compnents/Navbar";
 import Footer from "@/compnents/Footer";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { categoryService } from "@/services/category.service";
-import { mockTestService } from "@/services/mock-test.service";
-import { resourceService } from "@/services/resource.service";
-import { MockTest } from "@/types/mock-test";
-import { Resource } from "@/types/resource";
+import { useCategories, useCategoryItems } from "@/hooks/queries/use-public-queries";
 
 interface CategoryPageTemplateProps {
   title: string;
@@ -24,51 +19,15 @@ export default function CategoryPageTemplate({
   resourceType,
   categoryName,
 }: CategoryPageTemplateProps) {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const category = categories.find((c: any) => c.name === categoryName);
+  const { data: items = [], isLoading: itemsLoading } = useCategoryItems(
+    accessType,
+    resourceType,
+    category?._id
+  );
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // 1. Fetch all categories
-        const catRes = await categoryService.getAll();
-        const categories = Array.isArray(catRes.data?.data) ? catRes.data.data : [];
-        
-        // 2. Find the correct category by name
-        const category = categories.find((c: any) => c.name === categoryName);
-        
-        let fetchedItems: any[] = [];
-
-        if (category) {
-          // 3. Fetch items based on resourceType
-          if (resourceType === 'mock') {
-            const res = await mockTestService.getAll({ 
-              access_type: accessType, 
-              category: category._id 
-            });
-            fetchedItems = Array.isArray(res.data?.data) ? res.data.data : [];
-          } else if (resourceType === 'pdf') {
-            const res = await resourceService.getAll({ 
-              access_type: accessType, 
-              category: category._id,
-              resource_type: 'pdf'
-            });
-            const resData: any = res.data;
-            fetchedItems = Array.isArray(resData?.data) ? resData.data : (Array.isArray(resData) ? resData : []);
-          }
-        }
-
-        setItems(fetchedItems);
-      } catch (err) {
-        console.error("Failed to load category data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [accessType, resourceType, categoryName]);
+  const loading = categoriesLoading || (!!category && itemsLoading);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">

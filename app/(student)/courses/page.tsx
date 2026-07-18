@@ -1,34 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { courseService } from "@/services/course.service";
-import { Course } from "@/types/course";
-import { toast } from "sonner";
 import { Loader2, BookOpen, Clock, Users, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { usePublishedCourses } from "@/hooks/queries/use-public-queries";
 
 export default function StudentCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await courseService.getAll({ status: "PUBLISHED" });
-        if (response.success) {
-          const courseList = Array.isArray(response.data) ? response.data : response.data?.data || [];
-          setCourses(courseList.filter((c: Course) => !c.description?.includes("Utility course automatically generated")));
-        }
-      } catch (error) {
-        toast.error("Failed to load courses");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
+  const { data: courses = [], isLoading } = usePublishedCourses();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

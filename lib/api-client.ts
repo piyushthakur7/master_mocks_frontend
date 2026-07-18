@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
+import { toast } from "sonner";
 import { API_BASE_URL, ROUTES } from "./constants";
 
 export const apiClient: AxiosInstance = axios.create({
@@ -69,25 +70,55 @@ export const getAccessToken = (): string | null => {
   return null;
 };
 
-// -- Axios Refresh Queue State --
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
-}> = [];
+// -- Single-Flight Token Refresh --
+// All 401'd requests await this one shared promise; only one POST
+// /auth/refresh-token can ever be in flight at a time.
+let refreshPromise: Promise<string> | null = null;
 
 // Prevent redirect storms — only redirect once
 let isRedirecting = false;
 
-const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
+// Requests to auth endpoints must never trigger a token refresh:
+// a 401 from /auth/login means "wrong credentials", not "expired session",
+// and a 401 from /auth/refresh-token itself means the session is dead.
+const isAuthEndpoint = (url?: string) => !!url && url.includes("/auth/");
+
+const performTokenRefresh = async (): Promise<string> => {
+  // Use the base axios instance (not apiClient) so this call can never
+  // recurse into these interceptors. The endpoint sets the accessToken
+  // cookie itself and returns { accessToken, refreshToken } in the body
+  // (refreshToken unchanged — rotation was removed server-side).
+  const res = await axios.post(
+    `${API_BASE_URL}/auth/refresh-token`,
+    {},
+    { withCredentials: true }
+  );
+  const token = res.data?.data?.accessToken ?? res.data?.accessToken;
+  if (!token) {
+    // A 2xx with no token means the session is unusable — treat as auth
+    // failure so the caller logs out rather than retrying forever.
+    throw Object.assign(new Error("No access token in refresh response"), {
+      status: 401,
+    });
+  }
+  setAccessToken(token);
+  return token;
+};
+
+const redirectToLoginOnce = () => {
+  if (typeof window === "undefined" || isRedirecting) return;
+  const publicPaths = [
+    ROUTES.HOME,
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    ROUTES.FORGOT_PASSWORD,
+    "/home",
+    "/admin/login",
+  ];
+  if (!publicPaths.includes(window.location.pathname)) {
+    isRedirecting = true;
+    window.location.href = ROUTES.LOGIN;
+  }
 };
 
 // Request Interceptor: Attach Token & Metadata
@@ -153,82 +184,54 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // Handle 401 Unauthorized with Refresh Mutex Queue
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 Unauthorized with a single-flight refresh.
+    // Auth endpoints are excluded: their 401s are credential errors, not
+    // expired sessions, and must surface to the caller unchanged.
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       // If already redirecting to login, don't bother refreshing
       if (isRedirecting) {
         return Promise.reject({ message: "Session expired", status: 401, _silent: true });
       }
 
-      if (isRefreshing) {
-        // Queue this request — wait for the ongoing refresh to finish
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest._retry = true;
-            if (originalRequest.headers && token) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return apiClient(originalRequest);
-          })
-          .catch(() => {
-            // Silently reject queued requests — the redirect is already handled
-            return Promise.reject({ message: "Session expired", status: 401, _silent: true });
-          });
-      }
-
+      // Each request retries at most once, no matter how the refresh goes.
       originalRequest._retry = true;
-      isRefreshing = true;
 
-      let newToken = null;
-      try {
-        // Attempt to refresh token using the base axios instance (not apiClient)
-        const res = await axios.post(
-          `${API_BASE_URL}/auth/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
-
-        newToken = res.data?.data?.accessToken;
-        if (!newToken) {
-          throw new Error("No access token in refresh response");
-        }
-      } catch (refreshError) {
-        processQueue(refreshError as Error, null);
-        setAccessToken(null);
-
-        // Redirect to login ONCE — prevent redirect storm
-        if (typeof window !== "undefined" && !isRedirecting) {
-          const publicPaths = [
-            ROUTES.HOME,
-            ROUTES.LOGIN,
-            ROUTES.REGISTER,
-            ROUTES.FORGOT_PASSWORD,
-            "/home",
-            "/admin/login"
-          ];
-          if (!publicPaths.includes(window.location.pathname)) {
-            isRedirecting = true;
-            window.location.href = ROUTES.LOGIN;
-          }
-        }
-        return Promise.reject({ message: "Session expired", status: 401, _silent: true });
-      } finally {
-        isRefreshing = false;
+      if (!refreshPromise) {
+        refreshPromise = performTokenRefresh().finally(() => {
+          refreshPromise = null;
+        });
       }
 
-      if (newToken) {
-        setAccessToken(newToken);
+      try {
+        const token = await refreshPromise;
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers.Authorization = `Bearer ${token}`;
         }
-        processQueue(null, newToken);
-        
-        // Retry the original request (returns normalized response)
-        // Execute this outside the try-catch so that if the retry fails (e.g. 500/404),
-        // it doesn't accidentally trigger a logout!
+        // Retried outside performTokenRefresh so a failing retry (404/500)
+        // can never be mistaken for a refresh failure and trigger a logout.
         return apiClient(originalRequest);
+      } catch (refreshError: any) {
+        const refreshStatus =
+          refreshError?.response?.status ?? refreshError?.status;
+
+        // Log out ONLY when the refresh call itself came back 401 — the
+        // session is truly dead. A 429/403/5xx/network failure during
+        // refresh is transient: keep the token and let the request fail.
+        if (refreshStatus === 401) {
+          setAccessToken(null);
+          redirectToLoginOnce();
+          return Promise.reject({ message: "Session expired", status: 401, _silent: true });
+        }
+
+        return Promise.reject({
+          message: "Could not reach the server. Please try again.",
+          status: refreshStatus,
+          route: originalRequest?.url,
+        });
       }
     }
 
@@ -258,8 +261,33 @@ apiClient.interceptors.response.use(
       // Surface the server-provided message (e.g. "Too many login attempts…")
       // when present, so auth screens show something actionable.
       const serverMessage = (error.response.data as any)?.message;
+      const message = serverMessage || "Too many requests, please wait a moment";
+
+      // Fixed toast id: a burst of 429s updates one toast instead of stacking.
+      // Never log out here — the session is fine, the host is just throttling.
+      if (typeof window !== "undefined") {
+        toast.error(message, { id: "rate-limit-429" });
+      }
+
       return Promise.reject({
-        message: serverMessage || "Too many requests. Please wait a moment and try again.",
+        message,
+        status: 429,
+        route: originalRequest?.url,
+        correlationId,
+      });
+    }
+
+    // A 429 that already used its one retry lands here — same toast, no
+    // further retries, and never a logout.
+    if (error.response?.status === 429) {
+      const message =
+        (error.response.data as any)?.message ||
+        "Too many requests, please wait a moment";
+      if (typeof window !== "undefined") {
+        toast.error(message, { id: "rate-limit-429" });
+      }
+      return Promise.reject({
+        message,
         status: 429,
         route: originalRequest?.url,
         correlationId,

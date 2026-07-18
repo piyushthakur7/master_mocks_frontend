@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Navbar from "@/compnents/Navbar";
 import Footer from "@/compnents/Footer";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { categoryService } from "@/services/category.service";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 
 interface CategoryListPageTemplateProps {
   title: string;
@@ -18,25 +17,7 @@ export default function CategoryListPageTemplate({
   description,
   basePath,
 }: CategoryListPageTemplateProps) {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        const catRes = await categoryService.getAll();
-        const cats = Array.isArray(catRes.data?.data) ? catRes.data.data : [];
-        setCategories(cats);
-      } catch (err) {
-        console.error("Failed to load categories", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  const { data: categories = [], isLoading: loading } = useCategories();
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">

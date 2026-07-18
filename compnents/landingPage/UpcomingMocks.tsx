@@ -1,40 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { mockTestService } from "@/services/mock-test.service";
-import { MockTest } from "@/types/mock-test";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useUpcomingPaidMocks } from "@/hooks/queries/use-public-queries";
 
 export default function UpcomingMocks() {
   const { isAuthenticated } = useAuth();
-  const [upcomingMocks, setUpcomingMocks] = useState<MockTest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchPaidMocks = async () => {
-      try {
-        const response = await mockTestService.getAll({ access_type: 'paid', limit: 3 });
-        
-        let data: MockTest[] = [];
-        if (response?.data) {
-          data = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
-        } else if (Array.isArray(response)) {
-          data = response;
-        }
-        
-        setUpcomingMocks(data);
-      } catch (err: any) {
-        console.error("Failed to load upcoming mocks", err);
-        setErrorMsg(typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err), 2) : String(err));
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPaidMocks();
-  }, []);
+  const { data: upcomingMocks = [], isLoading: loading, error } = useUpcomingPaidMocks(3);
+  const errorMsg = error
+    ? (error as any)?.message || "Failed to load upcoming mocks"
+    : null;
 
   if (loading) {
     return (
