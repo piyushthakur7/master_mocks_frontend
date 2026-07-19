@@ -22,37 +22,39 @@ const navItems = [
 export default function Navbar() {
   const { isAuthenticated, user } = useAuth();
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 shadow-sm backdrop-blur-md bg-white/95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-slate-200/50 bg-white/70 backdrop-blur-xl transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
         {/* Branding Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          {/* Logo Image Wrapper - Added 'sizes' to fix the browser warning */}
-          <div className="relative w-9 h-9 overflow-hidden rounded-md">
+        <Link href="/" className="flex items-center gap-3 group">
+          {/* Logo Image Wrapper */}
+          <div className="relative w-10 h-10 overflow-hidden rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300">
             <Image
-              src="/logo.jpeg" // Placed inside your public/ folder[cite: 1]
+              src="/logo.jpeg"
               alt="Master Minds Logo"
               fill
-              sizes="36px"
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
+              sizes="40px"
+              className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
               priority
             />
           </div>
 
           {/* Text Matched Exactly to Logo Typo and Colors */}
-          <span className="text-xl font-black tracking-tight font-sans">
-            <span className="text-[#1A1A1A]">MASTER</span>
-            <span className="text-[#D00113]">MOCKS</span>
+          <span className="text-2xl font-black tracking-tight font-sans flex items-center">
+            <span className="text-slate-900 drop-shadow-sm">MASTER</span>
+            <span className="text-brand drop-shadow-sm">MOCKS</span>
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-base font-bold text-slate-600">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
           
           {navItems.map((item, idx) => (
-            <div key={idx} className="h-full flex items-center">
-              <Link href={item.href} className="flex items-center gap-1 hover:text-[#D00113] transition-colors py-6">
+            <div key={idx} className="relative h-full flex items-center group/nav">
+              <Link href={item.href} className="flex items-center gap-1 text-slate-600 hover:text-brand transition-colors duration-300 py-6">
                 {item.title}
               </Link>
+              {/* Animated underline */}
+              <div className="absolute bottom-4 left-0 w-full h-[3px] bg-brand scale-x-0 origin-left group-hover/nav:scale-x-100 transition-transform duration-300 ease-out rounded-full" />
             </div>
           ))}
 
@@ -63,7 +65,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <Link 
               href={user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard"}
-              className="px-5 py-2.5 rounded-md text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm"
+              className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 duration-300"
             >
               Dashboard
             </Link>
@@ -71,13 +73,13 @@ export default function Navbar() {
             <>
               <Link 
                 href="/login" 
-                className="px-5 py-2.5 rounded-md text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all shadow-sm"
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all duration-300"
               >
                 Log In
               </Link>
               <Link 
                 href="/register" 
-                className="px-5 py-2.5 rounded-md text-sm font-bold text-white bg-[#D00113] hover:bg-[#b0010f] transition-all shadow-sm"
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-brand hover:bg-brand-hover transition-all shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:-translate-y-0.5 active:translate-y-0 duration-300"
               >
                 Register
               </Link>

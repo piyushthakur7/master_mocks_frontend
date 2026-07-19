@@ -17,13 +17,21 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#D00113", // Your signature crimson red[cite: 1]
+          DEFAULT: "#D00113",
           hover: "#b0010f",   
           light: "#fff5f5",   
         },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],
+      },
+      keyframes: {
+        shine: {
+          "100%": { left: "125%" },
+        },
+      },
+      animation: {
+        shine: "shine 1.5s ease-in-out infinite",
       },
     },
   },
