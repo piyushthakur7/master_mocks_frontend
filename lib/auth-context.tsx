@@ -27,6 +27,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // "logged out" while a perfectly valid token sits in localStorage. The
 // backend remains the authority: a real 401 clears this cache.
 const CACHED_USER_KEY = "cachedUser";
+const CACHED_USER_AT_KEY = "cachedUserAt";
+// If the profile was validated against the server within this window, rapid
+// reloads reuse it without a network round-trip at all — the single biggest
+// source of page-load requests on a hair-trigger rate-limited host.
+const REVALIDATE_AFTER_MS = 2 * 60 * 1000;
 
 const readCachedUser = (): User | null => {
   if (typeof window === "undefined") return null;
@@ -38,13 +43,21 @@ const readCachedUser = (): User | null => {
   }
 };
 
+const cachedUserAgeMs = (): number => {
+  if (typeof window === "undefined") return Infinity;
+  const at = Number(localStorage.getItem(CACHED_USER_AT_KEY) || 0);
+  return at > 0 ? Date.now() - at : Infinity;
+};
+
 const writeCachedUser = (user: User | null) => {
   if (typeof window === "undefined") return;
   try {
     if (user) {
       localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+      localStorage.setItem(CACHED_USER_AT_KEY, String(Date.now()));
     } else {
       localStorage.removeItem(CACHED_USER_KEY);
+      localStorage.removeItem(CACHED_USER_AT_KEY);
     }
   } catch {}
 };
@@ -68,6 +81,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (cached) {
       setUser(cached);
       setIsLoading(false);
+      // Recently validated — skip the network check entirely. If the token
+      // has actually expired, the first real API call refreshes it anyway.
+      if (cachedUserAgeMs() < REVALIDATE_AFTER_MS) {
+        return;
+      }
     }
 
     try {

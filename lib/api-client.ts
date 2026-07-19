@@ -37,6 +37,34 @@ apiClient.get = async function (url: string, config?: any) {
   }
 };
 
+// -- Global Request Pacing --
+// The Hostinger/LiteSpeed host punishes bursts: probing showed connection
+// resets after just a few rapid requests. Space every outgoing request so a
+// page's parallel queries drip onto the wire instead of arriving together.
+const REQUEST_GAP_MS = 250;
+let nextSlotAt = 0;
+const waitForSlot = (): Promise<void> => {
+  const now = Date.now();
+  const slot = Math.max(now, nextSlotAt);
+  nextSlotAt = slot + REQUEST_GAP_MS;
+  return slot > now
+    ? new Promise((resolve) => setTimeout(resolve, slot - now))
+    : Promise.resolve();
+};
+
+// -- 429 Circuit Breaker --
+// When the host imposes a real lockout (a long Retry-After, or a 429 that
+// survived its one retry), sending more requests only deepens it. During the
+// cooldown every request fails fast locally with a countdown message instead
+// of touching the network. Capped so a bogus header can't brick the app.
+let blockedUntil = 0;
+const COOLDOWN_CAP_MS = 120_000;
+const cooldownSecondsLeft = () =>
+  Math.max(1, Math.ceil((blockedUntil - Date.now()) / 1000));
+const enterCooldown = (ms: number) => {
+  blockedUntil = Math.max(blockedUntil, Date.now() + Math.min(ms, COOLDOWN_CAP_MS));
+};
+
 // Utility to extract the caller component from the stack trace
 const getCallerComponent = () => {
   try {
@@ -121,9 +149,25 @@ const redirectToLoginOnce = () => {
   }
 };
 
-// Request Interceptor: Attach Token & Metadata
+// Request Interceptor: Circuit Breaker, Pacing, Attach Token & Metadata
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig & { metadata?: any }) => {
+  async (config: InternalAxiosRequestConfig & { metadata?: any }) => {
+    // Fail fast during an active rate-limit cooldown — don't touch the wire.
+    if (Date.now() < blockedUntil) {
+      const message = `Server is busy. Please try again in ${cooldownSecondsLeft()}s.`;
+      if (typeof window !== "undefined" && !(config as any)._silent429) {
+        toast.error(message, { id: "rate-limit-429" });
+      }
+      return Promise.reject({
+        message,
+        status: 429,
+        _cooldown: true,
+        route: config.url,
+      });
+    }
+
+    await waitForSlot();
+
     config.metadata = { startTime: new Date().getTime(), caller: getCallerComponent() };
     
     console.log(
@@ -164,7 +208,13 @@ apiClient.interceptors.response.use(
     return body;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retry429?: boolean; metadata?: any };
+    // Rejections manufactured by the circuit breaker are already in their
+    // final shape — pass them through untouched.
+    if ((error as any)?._cooldown) {
+      return Promise.reject(error);
+    }
+
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retry429?: boolean; _retryNet?: boolean; metadata?: any };
 
     const duration = originalRequest?.metadata?.startTime
       ? new Date().getTime() - originalRequest.metadata.startTime
@@ -258,6 +308,12 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       }
 
+      // Reaching here means a real lockout (long Retry-After, or a throttled
+      // mutation). Arm the circuit breaker so the app stops feeding it.
+      enterCooldown(
+        Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : 15_000
+      );
+
       // Surface the server-provided message (e.g. "Too many login attempts…")
       // when present, so auth screens show something actionable.
       const serverMessage = (error.response.data as any)?.message;
@@ -284,9 +340,14 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // A 429 that already used its one retry lands here — same rules: toast
-    // only for non-silent background reads, no further retries, never a logout.
+    // A 429 that already used its one retry lands here — the host is firmly
+    // throttling us. Arm the circuit breaker: same rules otherwise (toast only
+    // for non-silent background reads, no further retries, never a logout).
     if (error.response?.status === 429) {
+      const retryAfter2 = Number((error.response.headers as any)?.["retry-after"]);
+      enterCooldown(
+        Number.isFinite(retryAfter2) && retryAfter2 > 0 ? retryAfter2 * 1000 : 15_000
+      );
       const method = (originalRequest?.method || "get").toLowerCase();
       const message =
         (error.response.data as any)?.message ||
@@ -304,6 +365,23 @@ apiClient.interceptors.response.use(
         route: originalRequest?.url,
         correlationId,
       });
+    }
+
+    // The host also sheds load by dropping connections outright (observed as
+    // resets, not 429s). For idempotent reads, one gentle retry recovers these
+    // blips instead of surfacing a scary "Unable to connect" to the student.
+    if (
+      !error.response &&
+      !axios.isCancel(error) &&
+      originalRequest &&
+      !originalRequest._retryNet
+    ) {
+      const method = (originalRequest.method || "get").toLowerCase();
+      if (method === "get" || method === "head") {
+        originalRequest._retryNet = true;
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        return apiClient(originalRequest);
+      }
     }
 
     // Blob download error handling bypass
