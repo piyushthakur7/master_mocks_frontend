@@ -1,12 +1,153 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, FileText, BookOpen, BarChart2, Settings, LogOut, Menu, X, Bell, CreditCard } from "lucide-react";
+import { LayoutDashboard, FileText, BookOpen, BarChart2, Settings, LogOut, Menu, X, Bell, CreditCard, ChevronDown } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { useCategories } from "@/hooks/queries/use-public-queries";
+
+const navigationItems = [
+  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} />, hasCategories: false },
+  { name: "Free Mocks", href: "/tests", icon: <FileText size={18} />, hasCategories: true },
+  { name: "Paid Mock Test", href: "/paid-tests", icon: <FileText size={18} />, hasCategories: true },
+  { name: "Free Pdfs", href: "/resources", icon: <BookOpen size={18} />, hasCategories: true },
+  { name: "My Results", href: "/results", icon: <BarChart2 size={18} />, hasCategories: false },
+  { name: "My Purchases", href: "/purchases", icon: <CreditCard size={18} />, hasCategories: false },
+  { name: "Portal Settings", href: "/settings", icon: <Settings size={18} />, hasCategories: false },
+];
+
+// Sidebar/mobile navigation with expandable category dropdowns. Clicking a
+// section marked hasCategories unfolds every category; clicking a category
+// opens that section pre-filtered (?category=<id>). Separate component
+// because useSearchParams requires a Suspense boundary around its caller.
+function SidebarNav({
+  variant,
+  onNavigate,
+}: {
+  variant: "desktop" | "mobile";
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeCategoryId = searchParams.get("category");
+  const { data: categories = [] } = useCategories();
+  const visibleCategories = categories.filter((c: any) => c?.isActive !== false);
+
+  const activeGroupHref =
+    navigationItems.find(
+      (item) =>
+        item.hasCategories &&
+        (pathname === item.href || pathname.startsWith(item.href + "/"))
+    )?.href ?? null;
+  const [openGroup, setOpenGroup] = useState<string | null>(activeGroupHref);
+  // Keep the group for the section the student is browsing unfolded.
+  useEffect(() => {
+    if (activeGroupHref) setOpenGroup(activeGroupHref);
+  }, [activeGroupHref]);
+
+  const isMobile = variant === "mobile";
+
+  const parentClass = (isActive: boolean) =>
+    isMobile
+      ? `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
+          isActive ? "bg-red-50 text-[#D00113]" : "text-slate-600 hover:bg-slate-50"
+        }`
+      : `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+          isActive
+            ? "bg-[#D00113] text-white shadow-md shadow-red-600/10"
+            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+        }`;
+
+  const iconClass = (isActive: boolean) =>
+    isMobile
+      ? isActive ? "text-[#D00113]" : "text-slate-400"
+      : isActive ? "text-white" : "text-slate-400";
+
+  const subClass = (isActive: boolean) =>
+    `block px-3 py-2 rounded-lg font-bold transition-all ${
+      isMobile ? "text-sm" : "text-[11px] uppercase tracking-wider"
+    } ${
+      isActive
+        ? "bg-red-50 text-[#D00113]"
+        : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+    }`;
+
+  return (
+    <>
+      {navigationItems.map((item) => {
+        const isSectionActive =
+          pathname === item.href || pathname.startsWith(item.href + "/");
+
+        if (!item.hasCategories) {
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              onClick={onNavigate}
+              className={parentClass(isSectionActive)}
+            >
+              <span className={iconClass(isSectionActive)}>{item.icon}</span>
+              {item.name}
+            </Link>
+          );
+        }
+
+        const isOpen = openGroup === item.href;
+        return (
+          <div key={item.href}>
+            <button
+              type="button"
+              onClick={() => setOpenGroup(isOpen ? null : item.href)}
+              className={`${parentClass(isSectionActive)} justify-between`}
+            >
+              <span className="flex items-center gap-3">
+                <span className={iconClass(isSectionActive)}>{item.icon}</span>
+                {item.name}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isOpen && (
+              <div className={`mt-1 space-y-0.5 border-l-2 border-slate-100 ${isMobile ? "ml-6 pl-3" : "ml-5 pl-3"}`}>
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  onClick={onNavigate}
+                  className={subClass(isSectionActive && !activeCategoryId)}
+                >
+                  All {item.name}
+                </Link>
+                {visibleCategories.map((cat: any) => (
+                  <Link
+                    key={cat._id}
+                    href={`${item.href}?category=${cat._id}`}
+                    prefetch={false}
+                    onClick={onNavigate}
+                    className={subClass(isSectionActive && activeCategoryId === cat._id)}
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+                {visibleCategories.length === 0 && (
+                  <span className={`block px-3 py-2 font-bold text-slate-300 ${isMobile ? "text-xs" : "text-[10px] uppercase tracking-wider"}`}>
+                    No categories yet
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,16 +174,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </div>
     );
   }
-
-  const navigationItems = [
-    { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "Free Mocks", href: "/tests", icon: <FileText size={18} /> },
-    { name: "Paid Mock Test", href: "/paid-tests", icon: <FileText size={18} /> },
-    { name: "Free Pdfs", href: "/resources", icon: <BookOpen size={18} /> },
-    { name: "My Results", href: "/results", icon: <BarChart2 size={18} /> },
-    { name: "My Purchases", href: "/purchases", icon: <CreditCard size={18} /> },
-    { name: "Portal Settings", href: "/settings", icon: <Settings size={18} /> },
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row antialiased font-sans">
@@ -71,25 +202,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-x-0 top-[53px] bg-white border-b border-slate-200 z-40 shadow-lg animate-in slide-in-from-top duration-200">
           <nav className="p-4 space-y-1">
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch={false}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
-                    isActive 
-                      ? "bg-red-50 text-[#D00113]" 
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <span className={isActive ? "text-[#D00113]" : "text-slate-400"}>{item.icon}</span>
-                  {item.name}
-                </Link>
-              );
-            })}
+            <Suspense fallback={null}>
+              <SidebarNav variant="mobile" onNavigate={() => setIsMobileMenuOpen(false)} />
+            </Suspense>
             <div className="pt-4 mt-2 border-t border-slate-100">
               <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-500 hover:text-red-600 transition-colors">
                 <LogOut size={18} /> Exit Workspace
@@ -115,26 +230,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
           {/* Nav Stack Links */}
           <nav className="space-y-1.5">
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch={false}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                    isActive 
-                      ? "bg-[#D00113] text-white shadow-md shadow-red-600/10" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <span className={isActive ? "text-white" : "text-slate-400 group-hover:text-slate-900"}>
-                    {item.icon}
-                  </span>
-                  {item.name}
-                </Link>
-              );
-            })}
+            <Suspense fallback={null}>
+              <SidebarNav variant="desktop" />
+            </Suspense>
           </nav>
         </div>
 

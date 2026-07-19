@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
-import { Loader2, Clock, CheckCircle2, CalendarClock } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, CalendarClock, X } from "lucide-react";
 import { formatCurrency, getTestScheduleStatus, formatScheduleTime } from "@/lib/utils";
 import { useAllMocks, usePurchasedMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 
-export default function StudentTestsPage() {
+function StudentTestsContent() {
   const [activeTab, setActiveTab] = useState<"Available" | "Attempted">("Available");
   // Re-render every 30s so "coming soon" cards flip to live (and ended tests
   // disappear) without a page reload.
@@ -22,6 +24,26 @@ export default function StudentTestsPage() {
   const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
 
+  // Sidebar category links land here as ?category=<id>.
+  const searchParams = useSearchParams();
+  const categoryId = searchParams.get("category");
+  const { data: categories = [] } = useCategories();
+  const activeCategory = categoryId
+    ? categories.find((c: any) => c?._id === categoryId)
+    : null;
+
+  // Tests may carry their category as a populated object or a bare id, and
+  // some legacy records store the name — match on any of them.
+  const matchesCategory = (t: MockTest): boolean => {
+    if (!categoryId) return true;
+    const cat: any = (t as any).category;
+    if (!cat) return false;
+    if (typeof cat === "object") {
+      return cat._id === categoryId || (!!activeCategory && cat.name === activeCategory.name);
+    }
+    return cat === categoryId || (!!activeCategory && cat === activeCategory.name);
+  };
+
   const isLoading = isMocksLoading || isPurchasesLoading || isAttemptsLoading;
 
   const purchasedTestIds = purchasedMocks.map((t: any) => t._id);
@@ -34,9 +56,10 @@ export default function StudentTestsPage() {
   const scheduleStatusOf = (t: MockTest) =>
     getTestScheduleStatus({ start_time: t.start_time, end_time: t.end_time });
 
-  const filteredTests = activeTab === "Available"
+  const filteredTests = (activeTab === "Available"
     ? tests.filter((t) => t.access_type === "free" && scheduleStatusOf(t) !== "ended")
-    : tests.filter((t) => t.access_type === "free" && completedTestIds.includes(t._id));
+    : tests.filter((t) => t.access_type === "free" && completedTestIds.includes(t._id))
+  ).filter(matchesCategory);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -45,6 +68,19 @@ export default function StudentTestsPage() {
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Free Mock Assessments</h1>
         <p className="text-xs text-slate-500 font-medium mt-0.5">Select a testing matrix below to start practicing for free.</p>
+        {categoryId && (
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-red-50 text-[#D00113] border border-red-100 rounded-md">
+              Category: {activeCategory?.name || "Selected"}
+            </span>
+            <Link
+              href="/tests"
+              className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-[#D00113] transition-colors"
+            >
+              <X className="w-3 h-3" /> Clear filter
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Categorical Filtering Tabs */}
@@ -177,5 +213,21 @@ export default function StudentTestsPage() {
       )}
 
     </div>
+  );
+}
+
+// useSearchParams (read in StudentTestsContent) requires a Suspense boundary
+// so the rest of the route can still be prerendered.
+export default function StudentTestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+        </div>
+      }
+    >
+      <StudentTestsContent />
+    </Suspense>
   );
 }

@@ -1,15 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { resourceService } from "@/services/resource.service";
 import { Resource } from "@/types/resource";
 import { toast } from "sonner";
 import { Loader2, Download, FileText, Video, Link as LinkIcon, BookOpen, Database } from "lucide-react";
 import { useResources } from "@/hooks/queries/use-dashboard-queries";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 
-export default function StudentResourcesVaultPage() {
+function StudentResourcesVaultContent() {
   const { data: allResources = [], isLoading } = useResources();
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  // Sidebar category links land here as ?category=<id>. Resources are
+  // filtered by category NAME on this page, so resolve the id first and
+  // preselect the matching filter chip.
+  const searchParams = useSearchParams();
+  const categoryId = searchParams.get("category");
+  const { data: categoryList = [] } = useCategories();
+  useEffect(() => {
+    if (!categoryId) {
+      setSelectedCategory("ALL");
+      return;
+    }
+    const cat = categoryList.find((c: any) => c?._id === categoryId);
+    if (cat?.name) setSelectedCategory(cat.name);
+  }, [categoryId, categoryList]);
 
   const categories = Array.from(new Set(allResources.map((r: any) => {
     if (typeof r.category === 'object' && r.category?.name) return r.category.name;
@@ -182,5 +199,21 @@ export default function StudentResourcesVaultPage() {
         </>
       )}
     </div>
+  );
+}
+
+// useSearchParams (read in StudentResourcesVaultContent) requires a Suspense
+// boundary so the rest of the route can still be prerendered.
+export default function StudentResourcesVaultPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+        </div>
+      }
+    >
+      <StudentResourcesVaultContent />
+    </Suspense>
   );
 }
