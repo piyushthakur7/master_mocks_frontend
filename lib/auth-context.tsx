@@ -22,18 +22,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Last-known-good profile, persisted so a throttled (429) or flaky session
+// check on page load can fall back to it instead of rendering the app
+// "logged out" while a perfectly valid token sits in localStorage. The
+// backend remains the authority: a real 401 clears this cache.
+const CACHED_USER_KEY = "cachedUser";
+
+const readCachedUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedUser = (user: User | null) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(CACHED_USER_KEY);
+    }
+  } catch {}
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUser = async () => {
+  const fetchUser = async (attempt = 0) => {
+    const token = getAccessToken();
+    if (!token) {
+      writeCachedUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Hydrate instantly from the cached profile so reloads never flash a
+    // logged-out state; the network check below revalidates in the background.
+    const cached = readCachedUser();
+    if (cached) {
+      setUser(cached);
+      setIsLoading(false);
+    }
+
     try {
-      const token = getAccessToken();
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
       // _silent429: the background session check must never surface a
       // rate-limit toast on page load.
       const response = await userService.getMe({ _silent429: true });
@@ -41,20 +78,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userData = (response?.data as any)?.user || response?.data || response;
       if (response?.success || userData?.email || userData?._id) {
         setUser(userData);
-      } else {
+        writeCachedUser(userData);
+      } else if (!cached) {
         setAccessToken(null);
       }
+      setIsLoading(false);
     } catch (error: any) {
-      // Drop the token ONLY on a real auth failure (401). A 429/5xx/network
-      // error is transient — clearing the token here silently logged the
-      // user out whenever the host throttled a page-load burst.
+      // Drop the session ONLY on a real auth failure (401). A 429/5xx/network
+      // error is transient — clearing state here logged the user out whenever
+      // the host throttled a page-load burst.
       if (error?.status === 401) {
         setAccessToken(null);
-      } else {
-        console.warn("Session check failed transiently; keeping session");
+        writeCachedUser(null);
+        setUser(null);
+        setIsLoading(false);
+        return;
       }
-    } finally {
-      setIsLoading(false);
+
+      console.warn("Session check failed transiently; keeping session");
+      if (cached) {
+        // Cached profile already rendered above — nothing else to do.
+        setIsLoading(false);
+      } else if (attempt < 2) {
+        // Token exists but we have no profile yet (first login on this
+        // device) and the check was throttled: retry with backoff instead of
+        // settling into a null user, which the layouts read as "logged out".
+        setTimeout(() => fetchUser(attempt + 1), 4000 * (attempt + 1));
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -65,6 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = (token: string, userData: User) => {
     setAccessToken(token);
     setUser(userData);
+    writeCachedUser(userData);
   };
 
   const logout = async () => {
@@ -75,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // We don't need to log this as an error since we're clearing the state anyway.
     } finally {
       setAccessToken(null);
+      writeCachedUser(null);
       setUser(null);
       router.push(ROUTES.LOGIN);
     }

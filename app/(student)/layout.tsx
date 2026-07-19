@@ -7,15 +7,6 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, FileText, BookOpen, BarChart2, Settings, LogOut, Menu, X, Bell, CreditCard } from "lucide-react";
 import { getInitials } from "@/lib/utils";
-import { 
-  useStudentDashboard, 
-  useAllMocks, 
-  usePurchasedMocks, 
-  useCompletedAttempts, 
-  useResources, 
-  useMyPurchases,
-  useMyHistory 
-} from "@/hooks/queries/use-dashboard-queries";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,31 +14,17 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Global Prefetching: Fire off all dashboard requests in parallel on layout mount
-  // Since these hooks use React Query with staleTime > 0, they will fetch once and cache.
-  // The pages will then instantly render using this cached data.
-  const { refetch: prefetchDashboard } = useStudentDashboard();
-  const { refetch: prefetchMocks } = useAllMocks(50);
-  const { refetch: prefetchPurchased } = usePurchasedMocks();
-  const { refetch: prefetchAttempts } = useCompletedAttempts(100);
-  const { refetch: prefetchResources } = useResources();
-  const { refetch: prefetchMyPurchases } = useMyPurchases();
-  const { refetch: prefetchHistory } = useMyHistory();
-
+  // NOTE: this layout used to mount seven dashboard query hooks and then
+  // force-refetch() all of them as a "prefetch". refetch() bypasses the
+  // cache, so every hard reload fired ~15 requests before the page's own
+  // queries ran — enough for the host's rate limiter to 429 the session
+  // check and bounce the student to /login. Pages fetch their own data
+  // through the same shared React Query cache; no layout prefetch needed.
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login");
-    } else if (isAuthenticated) {
-      // Trigger background fetches if authenticated
-      prefetchDashboard();
-      prefetchMocks();
-      prefetchPurchased();
-      prefetchAttempts();
-      prefetchResources();
-      prefetchMyPurchases();
-      prefetchHistory();
     }
-  }, [isLoading, isAuthenticated, router, prefetchDashboard, prefetchMocks, prefetchPurchased, prefetchAttempts, prefetchResources, prefetchMyPurchases, prefetchHistory]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading || !isAuthenticated) {
     return (
