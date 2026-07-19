@@ -7,7 +7,7 @@ import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, Clock, CheckCircle2, CalendarClock, X } from "lucide-react";
 import { formatCurrency, getTestScheduleStatus, formatScheduleTime } from "@/lib/utils";
-import { useAllMocks, usePurchasedMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
+import { useAllMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
 import { useCategories } from "@/hooks/queries/use-public-queries";
 
 function StudentTestsContent() {
@@ -20,8 +20,9 @@ function StudentTestsContent() {
     return () => clearInterval(interval);
   }, []);
 
+  // This page renders FREE tests only — purchase state is irrelevant here,
+  // so it deliberately does not fetch purchased mocks (one request saved).
   const { data: tests = [], isLoading: isMocksLoading } = useAllMocks(50);
-  const { data: purchasedMocks = [], isLoading: isPurchasesLoading } = usePurchasedMocks();
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
 
   // Sidebar category links land here as ?category=<id>.
@@ -44,9 +45,8 @@ function StudentTestsContent() {
     return cat === categoryId || (!!activeCategory && cat === activeCategory.name);
   };
 
-  const isLoading = isMocksLoading || isPurchasesLoading || isAttemptsLoading;
+  const isLoading = isMocksLoading || isAttemptsLoading;
 
-  const purchasedTestIds = purchasedMocks.map((t: any) => t._id);
   const completedTestIds = completedAttempts.map((a: any) =>
     typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test
   ).filter(Boolean);
@@ -193,9 +193,7 @@ function StudentTestsContent() {
                     }}
                     className="w-full py-2.5 bg-[#1A1A1A] hover:bg-[#D00113] text-white text-center block text-xs font-black uppercase tracking-wider rounded-xl transition-all"
                   >
-                    {test.access_type === "paid" && !purchasedTestIds.includes(test._id)
-                      ? `View details — ₹${test.price}`
-                      : "Attempt Now"}
+                    Attempt Now
                   </Link>
                 )}
               </div>

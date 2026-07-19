@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { mockTestService } from "@/services/mock-test.service";
 import { attemptService } from "@/services/attempt.service";
 import { MockTest } from "@/types/mock-test";
@@ -17,6 +18,7 @@ interface PageProps {
 export default function InteractiveTestEnginePage({ params }: PageProps) {
   const unwrappedParams = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   
   const [test, setTest] = useState<MockTest | null>(null);
   const [attempt, setAttempt] = useState<TestAttempt | null>(null);
@@ -140,6 +142,11 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       } catch (e: any) {
         if (e?.status !== 400) throw e;
       }
+      // The attempt list and dashboard stats just changed — mark their cached
+      // queries stale so the next visit refetches instead of serving the
+      // 15-minute-fresh cache without this submission.
+      queryClient.invalidateQueries({ queryKey: ["completed-attempts"] });
+      queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
       toast.success("Test submitted successfully!");
       router.push(`/results/${attempt._id}`);
     } catch (error: any) {

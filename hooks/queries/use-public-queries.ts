@@ -16,6 +16,9 @@ import { Course } from "@/types/course";
 export const useCategories = () => {
   return useQuery<any[]>({
     queryKey: ["categories"],
+    // Mounted by the sidebar on every student page — categories change only
+    // when the admin edits them, so treat them as fresh for 6 hours.
+    staleTime: 6 * 60 * 60 * 1000,
     queryFn: async () => {
       const res = await categoryService.getAll();
       return Array.isArray(res.data?.data) ? res.data.data : [];

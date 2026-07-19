@@ -2,6 +2,15 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "ax
 import { toast } from "sonner";
 import { API_BASE_URL, ROUTES } from "./constants";
 
+// When NEXT_PUBLIC_API_URL points the browser straight at the backend
+// (bypassing the Next.js proxy so each user gets their own rate-limit
+// bucket), a CORS misconfiguration would surface as network errors on every
+// call. Rather than brick the site, flip to the same-origin proxy path for
+// the rest of the session — it always works, just shares one IP bucket.
+const PROXY_BASE = "/api/v1";
+const IS_DIRECT_BASE = /^https?:\/\//i.test(API_BASE_URL);
+let useProxyFallback = false;
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Important for secure cookies if used
@@ -116,8 +125,10 @@ const performTokenRefresh = async (): Promise<string> => {
   // recurse into these interceptors. The endpoint sets the accessToken
   // cookie itself and returns { accessToken, refreshToken } in the body
   // (refreshToken unchanged — rotation was removed server-side).
+  const refreshBase =
+    IS_DIRECT_BASE && useProxyFallback ? PROXY_BASE : API_BASE_URL;
   const res = await axios.post(
-    `${API_BASE_URL}/auth/refresh-token`,
+    `${refreshBase}/auth/refresh-token`,
     {},
     { withCredentials: true }
   );
@@ -167,6 +178,10 @@ apiClient.interceptors.request.use(
     }
 
     await waitForSlot();
+
+    if (IS_DIRECT_BASE && useProxyFallback) {
+      config.baseURL = PROXY_BASE;
+    }
 
     config.metadata = { startTime: new Date().getTime(), caller: getCallerComponent() };
     
@@ -376,9 +391,18 @@ apiClient.interceptors.response.use(
       originalRequest &&
       !originalRequest._retryNet
     ) {
+      // In direct-to-backend mode a network error may mean CORS is broken:
+      // switch the whole session to the same-origin proxy before retrying.
+      if (IS_DIRECT_BASE && !useProxyFallback) {
+        useProxyFallback = true;
+        console.warn("[api-client] Direct backend unreachable; falling back to proxy");
+      }
       const method = (originalRequest.method || "get").toLowerCase();
       if (method === "get" || method === "head") {
         originalRequest._retryNet = true;
+        if (IS_DIRECT_BASE && useProxyFallback) {
+          originalRequest.baseURL = PROXY_BASE;
+        }
         await new Promise((resolve) => setTimeout(resolve, 800));
         return apiClient(originalRequest);
       }

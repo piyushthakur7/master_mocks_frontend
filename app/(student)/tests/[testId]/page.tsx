@@ -3,6 +3,7 @@
 import React, { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { mockTestService } from "@/services/mock-test.service";
 import { paymentService } from "@/services/payment.service";
 import { MockTest } from "@/types/mock-test";
@@ -18,7 +19,17 @@ interface PageProps {
 export default function StudentTestInstructionsPage({ params }: PageProps) {
   const unwrappedParams = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // After a confirmed purchase the cached purchase/mock lists are wrong for
+  // up to staleTime — mark them stale so the next visit refetches.
+  const invalidatePurchaseCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ["purchased-mocks"] });
+    queryClient.invalidateQueries({ queryKey: ["my-purchases"] });
+    queryClient.invalidateQueries({ queryKey: ["payment-history"] });
+    queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
+  };
 
   const [test, setTest] = useState<MockTest | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
@@ -214,6 +225,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 toast.dismiss('processing-toast');
                 toast.success(verifyRes.message || "Payment verified. Redirecting...");
                 setHasAccess(true);
+                invalidatePurchaseCaches();
                 isCheckoutOpen.current = false;
                 setIsProcessingPayment(false);
 
@@ -261,6 +273,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 if (res.data?.status === 'SUCCESS') {
                   toast.success("Payment verified! Redirecting...");
                   setHasAccess(true);
+                  invalidatePurchaseCaches();
                   router.push("/payment-success");
                 } else {
                   isCheckoutOpen.current = false;

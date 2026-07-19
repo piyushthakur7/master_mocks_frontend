@@ -28,10 +28,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // backend remains the authority: a real 401 clears this cache.
 const CACHED_USER_KEY = "cachedUser";
 const CACHED_USER_AT_KEY = "cachedUserAt";
-// If the profile was validated against the server within this window, rapid
-// reloads reuse it without a network round-trip at all — the single biggest
-// source of page-load requests on a hair-trigger rate-limited host.
-const REVALIDATE_AFTER_MS = 2 * 60 * 1000;
+// If the profile was validated against the server within this window, page
+// loads reuse it without a network round-trip at all — the single biggest
+// source of page-load requests on a hair-trigger rate-limited host. Profile
+// data rarely changes, and an expired token is healed by the refresh
+// interceptor on the first real API call anyway.
+const REVALIDATE_AFTER_MS = 10 * 60 * 1000;
 
 const readCachedUser = (): User | null => {
   if (typeof window === "undefined") return null;

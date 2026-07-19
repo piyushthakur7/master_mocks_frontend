@@ -18,7 +18,9 @@ export default function StudentDashboardPage() {
   const { user } = useAuth();
   
   const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useStudentDashboard();
-  const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(10);
+  // Same limit as the tests pages so all three share ONE cache entry —
+  // useAllMocks(10) here created a second, near-duplicate request.
+  const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(50);
   const { data: completedAttempts = [], isLoading: isAttemptsLoading } = useCompletedAttempts(100);
   const { data: allResources = [], isLoading: isResourcesLoading } = useResources();
 
@@ -36,7 +38,9 @@ export default function StudentDashboardPage() {
   const pdfResources = allResources.filter((r: any) => r.resource_type === 'pdf' || r.type === 'pdf').slice(0, 3);
 
   const completedIds = completedAttempts.map((a: any) => typeof a.mock_test === 'object' ? a.mock_test._id : a.mock_test).filter(Boolean);
-  const paidMocks = allMocks.filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id));
+  const paidMocks = allMocks
+    .filter((m: any) => m.access_type === "paid" && !completedIds.includes(m._id))
+    .slice(0, 10);
 
   // Fallback data if API returns empty
   const d = dashboardData || {

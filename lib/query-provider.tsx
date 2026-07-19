@@ -3,7 +3,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { useState } from "react";
 
 // Bump this string on deploys that change API shapes — it discards any
@@ -16,13 +16,20 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            // Data is served from cache without any request for this long.
+            // Mock lists / resources / attempts don't change minute-to-minute,
+            // and every avoided request matters on this rate-limited host.
+            staleTime: 15 * 60 * 1000,
             // Keep data around long enough to survive reloads via the
             // localStorage persister below. With the default 5-minute gcTime,
             // persisted entries were garbage-collected almost immediately.
             gcTime: 24 * 60 * 60 * 1000,
             refetchOnWindowFocus: false, // Prevent refetch on tab switch/window focus
-            refetchOnMount: false, // Prevent refetch on component remount if data is fresh
+            // Deliberately NOT refetchOnMount:false — combined with the
+            // persisted cache that froze data for up to 24h. Default behavior
+            // refetches on mount ONLY when data is older than staleTime.
+            // A network reconnect must not burst-refetch every active query.
+            refetchOnReconnect: false,
             // Never retry client errors (4xx). Retrying a 429 just deepens the
             // rate-limit hole; retrying other 4xx is pointless. Only retry once
             // for transient network / 5xx failures.
@@ -43,7 +50,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   // exactly the burst the host's rate limiter punishes. With persistence,
   // a reload renders from the stored cache and only stale queries refetch.
   const [persister] = useState(() =>
-    createSyncStoragePersister({
+    // The async persister happily wraps synchronous storage (localStorage);
+    // its sync sibling is deprecated in this version.
+    createAsyncStoragePersister({
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
       key: "mm-query-cache",
       throttleTime: 2000,
