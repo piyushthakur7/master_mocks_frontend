@@ -12,6 +12,7 @@ export default function AdminResourcesUploadPage() {
   const resources = data?.resources ?? [];
   const courses = data?.courses ?? [];
   const categories = data?.categories ?? [];
+  const categoriesFailed = data?.categoriesFailed ?? false;
 
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,12 +49,12 @@ export default function AdminResourcesUploadPage() {
       formData.append("file", newResource.file);
       formData.append("resource_type", "pdf");
 
-      if (!newResource.course) {
-        formData.append("access_type", newResource.access_type);
-        if (newResource.access_type === "paid") {
-          formData.append("price", String(newResource.price));
-          formData.append("discount_price", String(newResource.discount_price));
-        }
+      // access_type always goes up: the student "Free PDFs" view filters on it,
+      // so omitting it for course-linked uploads hid them from every bucket.
+      formData.append("access_type", newResource.access_type);
+      if (!newResource.course && newResource.access_type === "paid") {
+        formData.append("price", String(newResource.price));
+        formData.append("discount_price", String(newResource.discount_price));
       }
 
       await resourceService.create(formData);
@@ -148,52 +149,61 @@ export default function AdminResourcesUploadPage() {
                     <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
+                {categoriesFailed ? (
+                  <p className="text-[10px] font-bold text-red-600">
+                    Couldn&apos;t load categories (the server may be rate limiting). Reload to retry.
+                  </p>
+                ) : categories.length === 0 ? (
+                  <p className="text-[10px] font-bold text-slate-400">
+                    No categories exist yet — create them in Manage Categories.
+                  </p>
+                ) : null}
+              </div>
+
+              {/* Always visible: free/paid decides which student menu this PDF
+                  lands in, so it must be set even for course-linked uploads. */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Access Type</label>
+                <select
+                  value={newResource.access_type}
+                  onChange={e => setNewResource({...newResource, access_type: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-[#D00113]"
+                >
+                  <option value="free">Free</option>
+                  <option value="paid">Paid</option>
+                </select>
               </div>
             </div>
 
-            {!newResource.course && (
+            {!newResource.course && newResource.access_type === 'paid' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-red-50/50 border border-red-100 rounded-xl">
                 <div className="md:col-span-3 pb-2 border-b border-red-100">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Standalone Configuration</h3>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Standalone Pricing</h3>
                   <p className="text-xs text-slate-500 font-medium">Configure this independent resource to be sold individually.</p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Access Type</label>
-                  <select 
-                    value={newResource.access_type}
-                    onChange={e => setNewResource({...newResource, access_type: e.target.value})}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
-                  >
-                    <option value="free">Free</option>
-                    <option value="paid">Paid</option>
-                  </select>
-                </div>
-
-                {newResource.access_type === 'paid' && (
-                  <div className="space-y-1.5 md:col-span-1 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
-                      <input 
-                        type="number" 
-                        value={newResource.price}
-                        onChange={e => setNewResource({...newResource, price: Number(e.target.value)})}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
-                        min={0}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Discount (₹)</label>
-                      <input 
-                        type="number" 
-                        value={newResource.discount_price}
-                        onChange={e => setNewResource({...newResource, discount_price: Number(e.target.value)})}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
-                        min={0}
-                      />
-                    </div>
+                <div className="space-y-1.5 md:col-span-1 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
+                    <input
+                      type="number"
+                      value={newResource.price}
+                      onChange={e => setNewResource({...newResource, price: Number(e.target.value)})}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                      min={0}
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Discount (₹)</label>
+                    <input
+                      type="number"
+                      value={newResource.discount_price}
+                      onChange={e => setNewResource({...newResource, discount_price: Number(e.target.value)})}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
+                      min={0}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

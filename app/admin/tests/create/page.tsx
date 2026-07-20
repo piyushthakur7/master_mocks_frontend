@@ -63,11 +63,10 @@ export default function AdminCreateTestPage() {
       try {
         const catRes = await categoryService.getAll();
         if (catRes.success) {
-          const cats = catRes.data.data || catRes.data;
+          const cats = catRes.data?.data || catRes.data || [];
           setCategories(cats);
-          const filteredCats = cats.filter((c: any) => c.name !== "Banking");
-          if (filteredCats.length > 0) {
-            setTestForm(prev => ({ ...prev, category: filteredCats[0]._id }));
+          if (cats.length > 0) {
+            setTestForm(prev => ({ ...prev, category: cats[0]._id }));
           }
         }
       } catch (error: any) {
@@ -263,11 +262,9 @@ export default function AdminCreateTestPage() {
                 onChange={e => setTestForm({...testForm, category: e.target.value})}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
               >
-                {categories
-                  .filter(c => c.name !== "Banking")
-                  .map(c => (
-                    <option key={c._id} value={c._id}>{c.name}</option>
-                  ))}
+                {categories.map(c => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
               </select>
             </div>
 

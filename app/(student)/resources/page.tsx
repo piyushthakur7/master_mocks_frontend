@@ -28,18 +28,28 @@ function StudentResourcesVaultContent() {
     if (cat?.name) setSelectedCategory(cat.name);
   }, [categoryId, categoryList]);
 
-  const categories = Array.from(new Set(allResources.map((r: any) => {
-    if (typeof r.category === 'object' && r.category?.name) return r.category.name;
-    if (typeof r.category === 'string') return r.category;
-    return null;
-  }).filter(Boolean))) as string[];
+  // Every active category shows as a chip, not just ones that already have a
+  // PDF — an empty category must still be selectable (and land on "none yet").
+  const categories = categoryList
+    .filter((c: any) => c?.isActive !== false)
+    .map((c: any) => c.name)
+    .filter(Boolean) as string[];
 
-  const resources = selectedCategory === "ALL" 
-    ? allResources 
-    : allResources.filter((r: any) => {
-        const catName = typeof r.category === 'object' && r.category?.name ? r.category.name : r.category;
-        return catName === selectedCategory;
-      });
+  // A resource's category may arrive populated, as a bare id, or (legacy) as a
+  // name. Resolve the selected chip to both id and name and accept any of them,
+  // otherwise an unpopulated category silently hides the PDF from every bucket.
+  const selected = categoryList.find((c: any) => c?.name === selectedCategory);
+  const matchesCategory = (r: any): boolean => {
+    if (selectedCategory === "ALL") return true;
+    const cat: any = r.category;
+    if (!cat) return false;
+    if (typeof cat === "object") {
+      return cat.name === selectedCategory || (!!selected && cat._id === selected._id);
+    }
+    return cat === selectedCategory || (!!selected && cat === selected._id);
+  };
+
+  const resources = allResources.filter(matchesCategory);
 
   const handleDownload = async (item: Resource) => {
     try {

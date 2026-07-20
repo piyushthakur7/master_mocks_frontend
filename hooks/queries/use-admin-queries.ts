@@ -131,22 +131,26 @@ export const useAdminResourceManager = () => {
   return useQuery({
     queryKey: ["admin-resource-manager"],
     queryFn: async () => {
+      // Each request fails independently: one rejection (a 429 from the
+      // shared-IP bucket is routine here) must not blank out the whole form.
+      // Previously an unguarded reject left BOTH dropdowns silently empty.
       const [coursesRes, catsRes, allResourcesRes] = await Promise.all([
-        courseService.getAll(),
-        categoryService.getAll(),
+        courseService.getAll().catch(() => null),
+        categoryService.getAll().catch(() => null),
         resourceService.getAll().catch(() => null),
       ]);
 
-      const courses = coursesRes.success ? toArray(coursesRes.data) : [];
-      const categories = catsRes.success ? toArray(catsRes.data) : [];
+      const courses = coursesRes?.success ? toArray(coursesRes.data) : [];
+      const categories = catsRes?.success ? toArray(catsRes.data) : [];
 
-      // Merge by _id: getAll() covers standalone (course-less) resources,
-      // getForCourse covers ones the "all" listing may not expose per-course.
       const resourceMap = new Map<string, any>();
       if (allResourcesRes?.success) {
         toArray(allResourcesRes.data).forEach((r: any) => resourceMap.set(r._id, r));
       }
-      if (courses.length > 0) {
+      // Only fall back to the per-course fan-out when the flat listing gave us
+      // nothing — firing one request per course on every load is what pushes
+      // this page into rate limiting in the first place.
+      if (resourceMap.size === 0 && courses.length > 0) {
         const responses = await Promise.all(
           courses.map((c: any) => resourceService.getForCourse(c._id).catch(() => null))
         );
@@ -157,7 +161,14 @@ export const useAdminResourceManager = () => {
         });
       }
 
-      return { resources: Array.from(resourceMap.values()), courses, categories };
+      return {
+        resources: Array.from(resourceMap.values()),
+        courses,
+        categories,
+        // Let the UI distinguish "fetch failed" from "genuinely empty".
+        categoriesFailed: !catsRes?.success,
+        coursesFailed: !coursesRes?.success,
+      };
     },
   });
 };
