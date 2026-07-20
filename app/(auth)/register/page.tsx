@@ -64,7 +64,7 @@ export default function StudentRegisterPage() {
       const response = await authService.register({
         full_name: data.name,
         email: data.email,
-        phone: data.phone,
+        phone_number: data.phone,
         password: data.password,
         role: "STUDENT"
       });
