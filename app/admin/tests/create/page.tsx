@@ -191,8 +191,12 @@ export default function AdminCreateTestPage() {
 
         // Bulk insert questions
         await mockTestService.addQuestionsBulk(testId!, { questions: questionsPayload });
-        
-        toast.success("Mock test created successfully!");
+
+        // Button says "Save and Publish" — actually publish it, otherwise
+        // the test sits as an invisible Draft until someone toggles it later.
+        await mockTestService.publish(testId!);
+
+        toast.success("Mock test created and published!");
         router.push("/admin/tests");
       }
     } catch (error: any) {
