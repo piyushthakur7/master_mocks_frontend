@@ -12,7 +12,9 @@ export default function AdminPaymentsPage() {
   };
 
   const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const successfulPurchases = purchases.filter(p => p.status === 'COMPLETED').length;
+  // Purchase.status is 'ACTIVE' | 'EXPIRED' | 'REFUNDED' — there is no
+  // 'COMPLETED' value, so this always evaluated to 0 regardless of revenue.
+  const successfulPurchases = purchases.filter(p => p.status === 'ACTIVE').length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -76,12 +78,12 @@ export default function AdminPaymentsPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-900">
-                      {purchase.user?.fullName || "Unknown User"}
+                      {purchase.user?.full_name || "Unknown User"}
                       <p className="text-[10px] font-mono text-slate-400 mt-0.5 font-medium">{purchase.user?.email}</p>
                     </td>
                     <td className="py-4 px-6">
                       <span className="bg-slate-100 text-slate-700 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">
-                        {purchase.course?.title || "Unknown Course"}
+                        {purchase.item_id?.title || "Unknown Item"}
                       </span>
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-900">
@@ -90,9 +92,9 @@ export default function AdminPaymentsPage() {
                     <td className="py-4 px-6 text-slate-500">{formatDate(purchase.createdAt)}</td>
                     <td className="py-4 px-6 text-right">
                       <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded border ${
-                        purchase.status === 'COMPLETED' 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
-                          : purchase.status === 'FAILED'
+                        purchase.status === 'ACTIVE'
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : purchase.status === 'REFUNDED'
                           ? "bg-red-50 text-[#D00113] border-red-100"
                           : "bg-amber-50 text-amber-700 border-amber-100"
                       }`}>

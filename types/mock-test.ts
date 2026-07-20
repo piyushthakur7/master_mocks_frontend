@@ -5,7 +5,7 @@ import { Course } from "./course";
 export interface Option {
   _id?: string;
   text: string;
-  isCorrect: boolean;
+  is_correct: boolean;
 }
 
 export interface Question {

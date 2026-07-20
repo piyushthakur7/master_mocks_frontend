@@ -7,13 +7,13 @@ export interface Course {
   title: string;
   description?: string;
   category: Category | string;
-  instructor: User | string;
+  instructor?: User | string;
   price: number;
-  accessType: AccessType;
+  access_type: AccessType;
   thumbnailUrl?: string;
-  isActive: boolean;
-  totalEnrollments: number;
-  features: string[];
+  is_active: boolean;
+  totalEnrollments?: number;
+  features?: string[];
   createdAt: string;
   updatedAt: string;
 }

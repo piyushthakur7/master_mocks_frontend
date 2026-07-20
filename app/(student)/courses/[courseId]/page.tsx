@@ -156,7 +156,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
         <div className="lg:col-span-1">
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm sticky top-6 overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-100 p-6 text-center">
-              {course.accessType === "free" ? (
+              {course.access_type === "free" ? (
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Free Access</span>
                   <p className="text-3xl font-black text-slate-900 mt-3">₹0</p>
@@ -195,10 +195,10 @@ export default function CourseDetailsPage({ params }: PageProps) {
                     className="w-full py-3.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-center text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-red-600/10 transition-all flex items-center justify-center gap-2"
                   >
                     {isEnrolling && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {course.accessType === "free" ? "Enroll for Free" : "Purchase Course"}
+                    {course.access_type === "free" ? "Enroll for Free" : "Purchase Course"}
                   </button>
                   <p className="text-[10px] text-center font-medium text-slate-400 px-4">
-                    {course.accessType === "free" ? "No credit card required for free courses." : "Amount will be deducted from your wallet balance."}
+                    {course.access_type === "free" ? "No credit card required for free courses." : "Amount will be deducted from your wallet balance."}
                   </p>
                 </div>
               )}

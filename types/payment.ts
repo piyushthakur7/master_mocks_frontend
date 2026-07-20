@@ -7,7 +7,7 @@ export interface Payment {
   _id: string;
   user: User | string;
   item_id: MockTest | Course | string;   // v2.0: generic item reference
-  item_type: "MockTest" | "Course";       // v2.0: item type discriminator
+  item_type: "Hack" | "Course";           // backend stores/returns "Hack", not "MockTest"
   amount: number;
   currency: string;
   razorpay_order_id?: string;
@@ -25,7 +25,7 @@ export interface Purchase {
   _id: string;
   user: User | string;
   item_id: MockTest | Course | string;    // v2.0: populated when fetched
-  item_type: "MockTest" | "Course";       // v2.0: item type discriminator
+  item_type: "Hack" | "Course";           // backend stores/returns "Hack", not "MockTest"
   payment: Payment | string;
   amount: number;
   status: "ACTIVE" | "EXPIRED" | "REFUNDED";

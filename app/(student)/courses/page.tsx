@@ -32,7 +32,7 @@ export default function StudentCoursesPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
                     {(course.category as any)?.name || "General"}
                   </span>
-                  {course.accessType === "free" || course.price === 0 ? (
+                  {course.access_type === "free" || course.price === 0 ? (
                     <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-md">
                       Free Course
                     </span>
@@ -65,7 +65,7 @@ export default function StudentCoursesPage() {
                 </div>
 
                 {/* Pricing Box */}
-                {course.accessType !== "free" && course.price > 0 && (
+                {course.access_type !== "free" && course.price > 0 && (
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between mt-2">
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Course Fee</span>
                     <div className="flex items-center gap-2">

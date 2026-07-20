@@ -17,8 +17,8 @@ export default function AdminTestsManagementPage() {
 
   const toggleTestStatus = async (test: MockTest) => {
     try {
-      await mockTestService.update(test._id!, { is_active: !test.isActive });
-      toast.success(`Test ${!test.isActive ? 'published' : 'unpublished'} successfully`);
+      await mockTestService.update(test._id!, { is_active: !test.is_active });
+      toast.success(`Test ${!test.is_active ? 'published' : 'unpublished'} successfully`);
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to update test status");
@@ -81,30 +81,30 @@ export default function AdminTestsManagementPage() {
                     </td>
                     <td className="py-4 px-6 text-slate-500">
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.durationMinutes}m</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {test.duration_minutes}m</span>
                         <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.questions?.length || 0} Qs</span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
-                        test.isActive 
+                        test.is_active 
                           ? "bg-emerald-900/20 text-emerald-400 border-emerald-900" 
                           : "bg-slate-800 text-slate-400 border-slate-700"
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${test.isActive ? "bg-emerald-500" : "bg-slate-500"}`} />
-                        {test.isActive ? "Published" : "Draft"}
+                        <span className={`w-1.5 h-1.5 rounded-full ${test.is_active ? "bg-emerald-500" : "bg-slate-500"}`} />
+                        {test.is_active ? "Published" : "Draft"}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => toggleTestStatus(test)}
-                          title={test.isActive ? "Unpublish" : "Publish"}
+                          title={test.is_active ? "Unpublish" : "Publish"}
                           className={`p-1.5 rounded transition-colors ${
-                            test.isActive ? "text-amber-500 hover:bg-amber-900/20" : "text-emerald-500 hover:bg-emerald-900/20"
+                            test.is_active ? "text-amber-500 hover:bg-amber-900/20" : "text-emerald-500 hover:bg-emerald-900/20"
                           }`}
                         >
-                          {test.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {test.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                         <Link 
                           href={`/admin/tests/${test._id}/edit`}

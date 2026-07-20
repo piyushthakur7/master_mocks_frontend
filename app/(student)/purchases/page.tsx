@@ -65,7 +65,7 @@ export default function StudentPurchasesPage() {
                   <h3 className="font-bold text-slate-900 text-base mb-1">
                     {(purchase.item_id as any)?.title || "Premium Content"}
                   </h3>
-                  <p className="text-xs text-slate-500">{purchase.item_type}</p>
+                  <p className="text-xs text-slate-500">{purchase.item_type === "Hack" ? "Mock Test" : purchase.item_type}</p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
                   <span className="font-black text-[#D00113]">{formatCurrency(purchase.amount)}</span>
