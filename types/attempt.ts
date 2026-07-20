@@ -21,6 +21,8 @@ export interface TestAttempt {
   user: User | string;
   mock_test: MockTest | string;          // v2.0: snake_case
   started_at: string;                    // v2.0: snake_case
+  expires_at?: string;                   // hard deadline the server enforces (may be clamped below the test's nominal duration for scheduled windows)
+  completed_at?: string;
   status: AttemptStatus;
   answers: Answer[];
   score?: number;

@@ -46,14 +46,12 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
         }
         
         setTest(testRes.data);
-        const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
-        setTimeLeft(duration * 60);
 
         // Start attempt
         const attemptRes = await attemptService.start(unwrappedParams.testId);
         if (attemptRes.success && attemptRes.data) {
           setAttempt(attemptRes.data);
-          
+
           // Pre-fill any existing answers if the attempt was already started and resumed
           if (attemptRes.data.answers) {
             const answersMap: Record<string, string> = {};
@@ -62,16 +60,20 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             });
             setSelectedAnswers(answersMap);
           }
-          
-          // Adjust time left based on started_at if it's a resumed attempt
-          const startTimestamp = attemptRes.data.started_at || attemptRes.data.startTime;
-          if (startTimestamp) {
-            const startTime = new Date(startTimestamp).getTime();
-            const now = new Date().getTime();
-            const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
-            const remaining = (duration * 60) - elapsedSeconds;
+
+          // The server clamps a scheduled test's real deadline (expires_at)
+          // below the test's nominal duration_minutes once the window is
+          // closing, and that clamped value — not the nominal duration — is
+          // what it actually enforces on every answer save. Always derive
+          // the countdown from expires_at so a student who starts late in
+          // the window isn't shown time the server has already cut off.
+          const expiresAt = attemptRes.data.expires_at;
+          if (expiresAt) {
+            const remaining = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
             setTimeLeft(remaining > 0 ? remaining : 0);
+          } else {
+            const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
+            setTimeLeft(duration * 60);
           }
         }
       } catch (error: any) {
