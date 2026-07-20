@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
+import { categoryService } from "@/services/category.service";
 import { MockTest, Question } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
@@ -15,8 +16,9 @@ interface PageProps {
 export default function AdminEditTestPage({ params }: PageProps) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  
+
   const [test, setTest] = useState<MockTest | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,6 +41,11 @@ export default function AdminEditTestPage({ params }: PageProps) {
 
   useEffect(() => {
     fetchTest();
+    categoryService.getAll()
+      .then(res => {
+        if (res.success) setCategories(res.data.data || res.data || []);
+      })
+      .catch(() => {});
   }, [unwrappedParams.testId]);
 
   const fetchTest = async () => {
@@ -76,6 +83,9 @@ export default function AdminEditTestPage({ params }: PageProps) {
         access_type: test.access_type,
         price: Number(test.price || 0),
       };
+
+      const categoryId = typeof test.category === "string" ? test.category : test.category?._id;
+      if (categoryId) payload.category = categoryId;
 
       if (test.access_type === 'paid') {
         if (test.start_time) payload.start_time = new Date(test.start_time).toISOString();
@@ -188,6 +198,20 @@ export default function AdminEditTestPage({ params }: PageProps) {
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-[#D00113]"
                 required
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Category</label>
+              <select
+                value={typeof test.category === "string" ? test.category : test.category?._id || ""}
+                onChange={e => setTest({ ...test, category: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+              >
+                <option value="">None</option>
+                {categories.map(c => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-red-50/50 border border-red-100 rounded-xl">
