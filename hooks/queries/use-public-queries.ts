@@ -21,7 +21,13 @@ export const useCategories = () => {
     staleTime: 6 * 60 * 60 * 1000,
     queryFn: async () => {
       const res = await categoryService.getAll();
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      return Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res)
+            ? (res as any)
+            : [];
     },
   });
 };
@@ -38,13 +44,19 @@ export const useCategoryItems = (
     enabled: !!categoryId,
     queryFn: async () => {
       if (resourceType === "mock") {
-        const res = await mockTestService.getAll({
+        const res: any = await mockTestService.getAll({
           access_type: accessType,
           category: categoryId,
         });
-        return Array.isArray(res.data?.data) ? res.data.data : [];
+        return Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+            ? res.data
+            : Array.isArray(res)
+              ? res
+              : [];
       }
-      const res = await resourceService.getAll({
+      const res: any = await resourceService.getAll({
         access_type: accessType,
         category: categoryId,
         resource_type: "pdf",
@@ -54,7 +66,9 @@ export const useCategoryItems = (
         ? resData.data
         : Array.isArray(resData)
           ? resData
-          : [];
+          : Array.isArray(res)
+            ? res
+            : [];
     },
   });
 };
