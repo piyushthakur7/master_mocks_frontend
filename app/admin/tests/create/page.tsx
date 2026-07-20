@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
-import { categoryService } from "@/services/category.service";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft } from "lucide-react";
 
@@ -18,8 +18,8 @@ interface QuestionTemplate {
 
 export default function AdminCreateTestPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<any[]>([]);
-  const [isLoadingForm, setIsLoadingForm] = useState(true);
+  // Shared 15-min cache — usually already warm from the sidebar/other screens.
+  const { data: categories = [], isLoading: isLoadingForm } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [testForm, setTestForm] = useState({
@@ -58,27 +58,14 @@ export default function AdminCreateTestPage() {
     }
   ]);
 
+  // Preselect the first category once the shared cache resolves, without
+  // clobbering a choice the admin has already made.
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const catRes = await categoryService.getAll();
-        if (catRes.success) {
-          const cats = catRes.data?.data || catRes.data || [];
-          setCategories(cats);
-          if (cats.length > 0) {
-            setTestForm(prev => ({ ...prev, category: cats[0]._id }));
-          }
-        }
-      } catch (error: any) {
-        if (error?.status !== 404 && !error?._silent) {
-          toast.error("Failed to load categories");
-        }
-      } finally {
-        setIsLoadingForm(false);
-      }
-    };
-    fetchData();
-  }, []);
+    if (categories.length === 0) return;
+    setTestForm(prev =>
+      prev.category ? prev : { ...prev, category: categories[0]._id }
+    );
+  }, [categories]);
 
   const handleAddQuestionNode = () => {
     setQuestions([...questions, { 

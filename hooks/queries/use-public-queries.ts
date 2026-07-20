@@ -29,10 +29,6 @@ export const useCategories = () => {
             ? (res as any)
             : [];
     },
-    // A 429 cooldown blocks every request for up to 120s. Back off past it
-    // rather than leaving the sidebar/admin dropdowns empty until a reload.
-    retry: 3,
-    retryDelay: (attempt) => Math.min(5000 * 2 ** attempt, 45000),
   });
 };
 

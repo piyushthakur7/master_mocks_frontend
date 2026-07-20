@@ -5,13 +5,15 @@ import { courseService } from "@/services/course.service";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
 import { useAdminCourseOptions } from "@/hooks/queries/use-admin-queries";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 import { Loader2, Plus, Edit, Trash2, BookOpen, Eye, EyeOff } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function AdminCoursesPage() {
   const { data, isLoading, refetch } = useAdminCourseOptions();
   const courses = (data?.courses ?? []) as Course[];
-  const categories = data?.categories ?? [];
+  // Shared 15-min cache — no extra request for the same endpoint.
+  const { data: categories = [] } = useCategories();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +150,7 @@ export default function AdminCoursesPage() {
                   required
                 >
                   <option value="">Select Category...</option>
-                  {categories.map(cat => (
+                  {categories.map((cat: any) => (
                     <option key={cat._id} value={cat._id}>{cat.name}</option>
                   ))}
                 </select>

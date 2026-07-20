@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mockTestService } from "@/services/mock-test.service";
-import { categoryService } from "@/services/category.service";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 import { MockTest, Question } from "@/types/mock-test";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
@@ -18,7 +18,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
   const router = useRouter();
 
   const [test, setTest] = useState<MockTest | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
+  // Shared 15-min cache — no request when the sidebar already loaded these.
+  const { data: categories = [] } = useCategories();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,11 +42,6 @@ export default function AdminEditTestPage({ params }: PageProps) {
 
   useEffect(() => {
     fetchTest();
-    categoryService.getAll()
-      .then(res => {
-        if (res.success) setCategories(res.data.data || res.data || []);
-      })
-      .catch(() => {});
   }, [unwrappedParams.testId]);
 
   const fetchTest = async () => {

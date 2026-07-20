@@ -60,9 +60,12 @@ export const useAdminCourses = (params?: any) => {
   });
 };
 
+// Shares the ["categories"] cache entry with the student-facing useCategories()
+// hook: same endpoint, same data. Keying it separately meant every admin screen
+// refetched categories the sidebar had already loaded.
 export const useAdminCategories = () => {
   return useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["categories"],
     queryFn: async () => {
       const res = await categoryService.getAll();
       if (!res.success) throw new Error(res.message);
@@ -107,17 +110,16 @@ export const useAdminAttempts = (params?: any) => {
 // Courses + categories are shared metadata used by several admin screens.
 // Folding them into a single cached query means rapid navigation between
 // Courses / Resources / Tests reuses one result instead of refetching.
+// Courses only. Categories deliberately are NOT bundled here — they come from
+// the shared ["categories"] cache, so the same endpoint isn't fetched twice
+// under two different keys on every visit to this screen.
 export const useAdminCourseOptions = () => {
   return useQuery({
     queryKey: ["admin-course-options"],
     queryFn: async () => {
-      const [coursesRes, catsRes] = await Promise.all([
-        courseService.getAll(),
-        categoryService.getAll(),
-      ]);
+      const coursesRes = await courseService.getAll();
       return {
         courses: coursesRes.success ? toArray(coursesRes.data) : [],
-        categories: catsRes.success ? toArray(catsRes.data) : [],
       };
     },
   });
@@ -168,12 +170,7 @@ export const useAdminResourceManager = () => {
         coursesFailed: !coursesRes?.success,
       };
     },
-    // This page is navigated back to often; refetching the whole fan-out on
-    // every mount is what pushes the shared-IP bucket into a 429 lockout.
-    staleTime: 5 * 60 * 1000,
-    // A cooldown rejection is transient — back off past it instead of
-    // stranding the admin on an error until they manually reload.
-    retry: 2,
-    retryDelay: (attempt) => Math.min(4000 * 2 ** attempt, 30000),
+    // Inherits the global 15-min staleTime and the "never retry 4xx" policy —
+    // retrying a 429 only deepens the shared-IP lockout.
   });
 };
