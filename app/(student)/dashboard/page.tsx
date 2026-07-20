@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
@@ -17,7 +16,7 @@ import {
 export default function StudentDashboardPage() {
   const { user } = useAuth();
   
-  const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useStudentDashboard();
+  const { data: dashboardData, isLoading: isDashboardLoading } = useStudentDashboard();
   // Same limit as the tests pages so all three share ONE cache entry —
   // useAllMocks(10) here created a second, near-duplicate request.
   const { data: allMocks = [], isLoading: isMocksLoading } = useAllMocks(50);
@@ -25,15 +24,6 @@ export default function StudentDashboardPage() {
   const { data: allResources = [], isLoading: isResourcesLoading } = useResources();
 
   const isLoading = isDashboardLoading || isMocksLoading || isAttemptsLoading || isResourcesLoading;
-
-  // Toasting straight from the render body fired a fresh toast on every
-  // re-render and mutated external state during render. Keep it in an effect,
-  // with a fixed id so repeated renders update one toast instead of stacking.
-  useEffect(() => {
-    if (isDashboardError) {
-      toast.error("Failed to load dashboard data", { id: "dashboard-load-error" });
-    }
-  }, [isDashboardError]);
 
   const pdfResources = allResources.filter((r: any) => r.resource_type === 'pdf' || r.type === 'pdf').slice(0, 3);
 
