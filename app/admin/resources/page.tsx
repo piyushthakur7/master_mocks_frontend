@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { resourceService } from "@/services/resource.service";
 import { toast } from "sonner";
 import { useAdminResourceManager } from "@/hooks/queries/use-admin-queries";
+import { useCategories } from "@/hooks/queries/use-public-queries";
 import { Loader2, Plus, Trash2, FileText, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -11,8 +12,8 @@ export default function AdminResourcesUploadPage() {
   const { data, isLoading, refetch } = useAdminResourceManager();
   const resources = data?.resources ?? [];
   const courses = data?.courses ?? [];
-  const categories = data?.categories ?? [];
-  const categoriesFailed = data?.categoriesFailed ?? false;
+  // Shared 6h-cached query — usually served from cache, costing no request.
+  const { data: categories = [], isError: categoriesFailed } = useCategories();
 
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,13 +146,13 @@ export default function AdminResourcesUploadPage() {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-[#D00113]"
                 >
                   <option value="">None</option>
-                  {categories.map(c => (
+                  {categories.map((c: any) => (
                     <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
                 {categoriesFailed ? (
                   <p className="text-[10px] font-bold text-red-600">
-                    Couldn&apos;t load categories (the server may be rate limiting). Reload to retry.
+                    Couldn&apos;t load categories — the server is rate limiting. This retries on its own; give it a moment.
                   </p>
                 ) : categories.length === 0 ? (
                   <p className="text-[10px] font-bold text-slate-400">

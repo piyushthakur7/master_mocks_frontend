@@ -134,14 +134,14 @@ export const useAdminResourceManager = () => {
       // Each request fails independently: one rejection (a 429 from the
       // shared-IP bucket is routine here) must not blank out the whole form.
       // Previously an unguarded reject left BOTH dropdowns silently empty.
-      const [coursesRes, catsRes, allResourcesRes] = await Promise.all([
+      // Categories deliberately are NOT fetched here — the page reads them
+      // from useCategories(), whose 6h cache usually costs zero requests.
+      const [coursesRes, allResourcesRes] = await Promise.all([
         courseService.getAll().catch(() => null),
-        categoryService.getAll().catch(() => null),
         resourceService.getAll().catch(() => null),
       ]);
 
       const courses = coursesRes?.success ? toArray(coursesRes.data) : [];
-      const categories = catsRes?.success ? toArray(catsRes.data) : [];
 
       const resourceMap = new Map<string, any>();
       if (allResourcesRes?.success) {
@@ -164,11 +164,16 @@ export const useAdminResourceManager = () => {
       return {
         resources: Array.from(resourceMap.values()),
         courses,
-        categories,
         // Let the UI distinguish "fetch failed" from "genuinely empty".
-        categoriesFailed: !catsRes?.success,
         coursesFailed: !coursesRes?.success,
       };
     },
+    // This page is navigated back to often; refetching the whole fan-out on
+    // every mount is what pushes the shared-IP bucket into a 429 lockout.
+    staleTime: 5 * 60 * 1000,
+    // A cooldown rejection is transient — back off past it instead of
+    // stranding the admin on an error until they manually reload.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(4000 * 2 ** attempt, 30000),
   });
 };
