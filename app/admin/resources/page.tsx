@@ -44,8 +44,17 @@ export default function AdminResourcesUploadPage() {
       const formData = new FormData();
       formData.append("title", newResource.title);
       if (newResource.course) formData.append("course", newResource.course);
+      if (newResource.category) formData.append("category", newResource.category);
       formData.append("file", newResource.file);
       formData.append("resource_type", "pdf");
+
+      if (!newResource.course) {
+        formData.append("access_type", newResource.access_type);
+        if (newResource.access_type === "paid") {
+          formData.append("price", String(newResource.price));
+          formData.append("discount_price", String(newResource.discount_price));
+        }
+      }
 
       await resourceService.create(formData);
       toast.success("Resource uploaded successfully");
@@ -101,11 +110,11 @@ export default function AdminResourcesUploadPage() {
 
           <form onSubmit={handleUploadSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 md:col-span-2">
                 <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Document Title</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g., Union Budget 2026 Critical Takeaways Capsule" 
+                <input
+                  type="text"
+                  placeholder="e.g., Union Budget 2026 Critical Takeaways Capsule"
                   value={newResource.title}
                   onChange={e => setNewResource({...newResource, title: e.target.value})}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#D00113]"
@@ -115,7 +124,7 @@ export default function AdminResourcesUploadPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Target Course Link</label>
-                <select 
+                <select
                   value={newResource.course}
                   onChange={e => setNewResource({...newResource, course: e.target.value})}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-[#D00113]"
@@ -126,6 +135,20 @@ export default function AdminResourcesUploadPage() {
                   ))}
                 </select>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Category</label>
+                <select
+                  value={newResource.category}
+                  onChange={e => setNewResource({...newResource, category: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-[#D00113]"
+                >
+                  <option value="">None</option>
+                  {categories.map(c => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {!newResource.course && (
@@ -133,20 +156,6 @@ export default function AdminResourcesUploadPage() {
                 <div className="md:col-span-3 pb-2 border-b border-red-100">
                   <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Standalone Configuration</h3>
                   <p className="text-xs text-slate-500 font-medium">Configure this independent resource to be sold individually.</p>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Category</label>
-                  <select 
-                    value={newResource.category}
-                    onChange={e => setNewResource({...newResource, category: e.target.value})}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D00113]"
-                  >
-                    <option value="">None</option>
-                    {categories.map(c => (
-                      <option key={c._id} value={c._id}>{c.name}</option>
-                    ))}
-                  </select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -231,6 +240,7 @@ export default function AdminResourcesUploadPage() {
                 <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                   <th className="py-3 px-6">Document Details</th>
                   <th className="py-3 px-6">Linked Course</th>
+                  <th className="py-3 px-6">Category</th>
                   <th className="py-3 px-6">Upload Date</th>
                   <th className="py-3 px-6 text-right">Actions</th>
                 </tr>
@@ -250,6 +260,15 @@ export default function AdminResourcesUploadPage() {
                       <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
                         {res.course?.title || "Unknown Course"}
                       </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      {res.category?.name ? (
+                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                          {res.category.name}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">Uncategorized</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-slate-500">{formatDate(res.createdAt)}</td>
                     <td className="py-4 px-6 text-right">

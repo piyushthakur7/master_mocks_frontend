@@ -131,25 +131,33 @@ export const useAdminResourceManager = () => {
   return useQuery({
     queryKey: ["admin-resource-manager"],
     queryFn: async () => {
-      const [coursesRes, catsRes] = await Promise.all([
+      const [coursesRes, catsRes, allResourcesRes] = await Promise.all([
         courseService.getAll(),
         categoryService.getAll(),
+        resourceService.getAll().catch(() => null),
       ]);
 
       const courses = coursesRes.success ? toArray(coursesRes.data) : [];
       const categories = catsRes.success ? toArray(catsRes.data) : [];
 
-      const resources: any[] = [];
+      // Merge by _id: getAll() covers standalone (course-less) resources,
+      // getForCourse covers ones the "all" listing may not expose per-course.
+      const resourceMap = new Map<string, any>();
+      if (allResourcesRes?.success) {
+        toArray(allResourcesRes.data).forEach((r: any) => resourceMap.set(r._id, r));
+      }
       if (courses.length > 0) {
         const responses = await Promise.all(
           courses.map((c: any) => resourceService.getForCourse(c._id).catch(() => null))
         );
         responses.forEach((res: any) => {
-          if (res && res.success) resources.push(...toArray(res.data));
+          if (res && res.success) {
+            toArray(res.data).forEach((r: any) => resourceMap.set(r._id, r));
+          }
         });
       }
 
-      return { resources, courses, categories };
+      return { resources: Array.from(resourceMap.values()), courses, categories };
     },
   });
 };
