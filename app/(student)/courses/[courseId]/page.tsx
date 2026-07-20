@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { courseService } from "@/services/course.service";
+import { paymentService } from "@/services/payment.service";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle2, Shield } from "lucide-react";
@@ -17,11 +19,13 @@ interface PageProps {
 export default function CourseDetailsPage({ params }: PageProps) {
   const unwrappedParams = use(params);
   const router = useRouter();
-  const { user } = useAuth();
-  
+  const queryClient = useQueryClient();
+  const { user, refreshUser } = useAuth();
+
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const isCheckoutOpen = useRef(false);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -59,11 +63,161 @@ export default function CourseDetailsPage({ params }: PageProps) {
         router.push("/dashboard");
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to enroll. Insufficient balance?");
+      toast.error(error.message || "Failed to enroll.");
     } finally {
       setIsEnrolling(false);
     }
   };
+
+  // Paid courses can't go through /courses/:id/enroll - the backend rejects
+  // that outright ("Paid courses require purchase to enroll"). This mirrors
+  // the mock-test Razorpay flow in app/(student)/tests/[testId]/page.tsx;
+  // the backend's payment service already fully supports item_type "Course"
+  // (price lookup, Purchase + Enrollment creation on verify), only the
+  // checkout UI was missing.
+  const handlePurchase = async () => {
+    if (!course || !user) {
+      toast.error("Please login to purchase");
+      return;
+    }
+    if (isCheckoutOpen.current) return;
+    isCheckoutOpen.current = true;
+    setIsEnrolling(true);
+
+    try {
+      const orderRes = await paymentService.createOrder({
+        item_id: course._id!,
+        item_type: "Course",
+      });
+
+      if (!orderRes.success || !orderRes.data) {
+        throw new Error(orderRes.message || "Failed to create order");
+      }
+
+      const orderId = orderRes.data.orderId || orderRes.data.order_id;
+      const key = orderRes.data.key || orderRes.data.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const amount = orderRes.data.amount;
+      const currency = orderRes.data.currency;
+
+      if (!(window as any).Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          let elapsed = 0;
+          const interval = setInterval(() => {
+            if ((window as any).Razorpay) {
+              clearInterval(interval);
+              resolve();
+            }
+            elapsed += 200;
+            if (elapsed >= 5000) {
+              clearInterval(interval);
+              reject(new Error("Payment system failed to load. Please refresh the page."));
+            }
+          }, 200);
+        });
+      }
+
+      let rzp: any = null;
+
+      const finishSuccess = async (message?: string) => {
+        toast.dismiss("processing-toast");
+        toast.success(message || "Payment verified! You're enrolled.");
+        queryClient.invalidateQueries({ queryKey: ["my-purchases"] });
+        queryClient.invalidateQueries({ queryKey: ["payment-history"] });
+        queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
+        await refreshUser();
+        isCheckoutOpen.current = false;
+        setIsEnrolling(false);
+        if (rzp && typeof rzp.close === "function") {
+          try { rzp.close(); } catch {}
+        }
+        router.push("/dashboard");
+      };
+
+      const options = {
+        key,
+        amount,
+        currency,
+        name: "MasterMock",
+        description: `Purchase: ${course.title}`,
+        order_id: orderId,
+        handler: function (response: any) {
+          (async () => {
+            try {
+              toast.loading("Verifying payment...", { id: "processing-toast" });
+              const verifyRes = await paymentService.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+
+              if (verifyRes.success) {
+                await finishSuccess(verifyRes.message);
+              } else {
+                toast.dismiss("processing-toast");
+                toast.error(
+                  verifyRes.message ||
+                    "We could not confirm your payment. If money was debited it will be reconciled — please check Purchases before paying again."
+                );
+                isCheckoutOpen.current = false;
+                setIsEnrolling(false);
+              }
+            } catch (err: any) {
+              toast.dismiss("processing-toast");
+              toast.error(err?.message || "Payment verification failed");
+              isCheckoutOpen.current = false;
+              setIsEnrolling(false);
+            }
+          })();
+        },
+        prefill: {
+          name: user.full_name || "Student",
+          email: user.email || "",
+          contact: (user as any).phone || "9999999999",
+        },
+        theme: { color: "#D00113" },
+        modal: {
+          ondismiss: function () {
+            toast.loading("Verifying payment status...", { id: "processing-toast" });
+            paymentService.getPaymentStatus(orderId as string)
+              .then(async (res) => {
+                if (res.data?.status === "SUCCESS") {
+                  await finishSuccess("Payment verified! Redirecting...");
+                } else {
+                  isCheckoutOpen.current = false;
+                  setIsEnrolling(false);
+                  toast.dismiss("processing-toast");
+                }
+              })
+              .catch(() => {
+                isCheckoutOpen.current = false;
+                setIsEnrolling(false);
+                toast.dismiss("processing-toast");
+              });
+          },
+        },
+      };
+
+      rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function (response: any) {
+        toast.error(response.error?.description || "Payment failed");
+        isCheckoutOpen.current = false;
+        setIsEnrolling(false);
+      });
+      rzp.open();
+    } catch (error: any) {
+      if (error?.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment and try again.");
+      } else if (error?.message?.includes("Network") || error?.code === "ERR_NETWORK") {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(error.message || "Something went wrong during checkout");
+      }
+      isCheckoutOpen.current = false;
+      setIsEnrolling(false);
+    }
+  };
+
+  const handleEnrollOrPurchase = course?.access_type === "free" ? handleEnroll : handlePurchase;
 
   if (isLoading) {
     return (
@@ -189,8 +343,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <button 
-                    onClick={handleEnroll}
+                  <button
+                    onClick={handleEnrollOrPurchase}
                     disabled={isEnrolling}
                     className="w-full py-3.5 bg-[#D00113] hover:bg-[#b0010f] disabled:opacity-50 text-white text-center text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-red-600/10 transition-all flex items-center justify-center gap-2"
                   >
@@ -198,7 +352,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
                     {course.access_type === "free" ? "Enroll for Free" : "Purchase Course"}
                   </button>
                   <p className="text-[10px] text-center font-medium text-slate-400 px-4">
-                    {course.access_type === "free" ? "No credit card required for free courses." : "Amount will be deducted from your wallet balance."}
+                    {course.access_type === "free" ? "No credit card required for free courses." : "Secure checkout via Razorpay."}
                   </p>
                 </div>
               )}
