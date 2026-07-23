@@ -18,7 +18,10 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .min(1, { message: "Mobile number is required." })
+    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number."),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   terms: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions.",
@@ -130,7 +133,7 @@ export default function StudentRegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone" className="text-sm font-bold uppercase tracking-wider text-slate-400">Phone Number (Optional)</Label>
+          <Label htmlFor="phone" className="text-sm font-bold uppercase tracking-wider text-slate-400">Mobile Number</Label>
           <Input 
             id="phone"
             type="tel" 
