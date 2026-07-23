@@ -178,9 +178,25 @@ export default function AdminCreateTestPage() {
         // Bulk insert questions
         await mockTestService.addQuestionsBulk(testId!, { questions: questionsPayload });
 
-        // Button says "Save and Publish" — actually publish it, otherwise
-        // the test sits as an invisible Draft until someone toggles it later.
-        await mockTestService.publish(testId!);
+        // Button says "Save and Publish" — actually publish it, otherwise the
+        // test sits as an invisible Draft (is_active:false) that users never
+        // see. The dedicated /publish endpoint's result was previously ignored,
+        // so a silent failure there left the mock unpublished while still
+        // reporting success. Verify it, and fall back to the same is_active
+        // flip the admin list's publish toggle uses if /publish didn't take.
+        let published = false;
+        try {
+          const pubRes = await mockTestService.publish(testId!);
+          published = pubRes?.success !== false && (pubRes?.data as any)?.is_active !== false;
+        } catch {
+          published = false;
+        }
+        if (!published) {
+          const activateRes = await mockTestService.update(testId!, { is_active: true });
+          if (activateRes?.success === false) {
+            throw new Error("Test was created but could not be published. Open it in the Tests list and click Publish.");
+          }
+        }
 
         toast.success("Mock test created and published!");
         router.push("/admin/tests");
