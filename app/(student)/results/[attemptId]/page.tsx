@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { attemptService } from "@/services/attempt.service";
+import { mockTestService } from "@/services/mock-test.service";
 import { TestAttempt } from "@/types/attempt";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, Clock, Target, Trophy } from "lucide-react";
@@ -17,6 +18,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
   const unwrappedParams = use(params);
   
   const [attempt, setAttempt] = useState<TestAttempt | null>(null);
+  const [testDetail, setTestDetail] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lbEntries, setLbEntries] = useState<LeaderboardEntry[]>([]);
   const [isLbLoading, setIsLbLoading] = useState(false);
@@ -32,6 +34,15 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           const testObj: any = response.data.test || response.data.mock_test;
           const testId = testObj?._id || testObj;
           if (testId) {
+             // The attempt's embedded test object often omits total_marks (and
+             // the questions array), which made the score read "Out of 0".
+             // Pull the full test so the denominator and marking scheme are real.
+             mockTestService.getById(testId)
+               .then(tRes => {
+                 if (tRes.success && tRes.data) setTestDetail(tRes.data);
+               })
+               .catch(() => {});
+
              setIsLbLoading(true);
              leaderboardService.getLeaderboard(testId, { page: 1, limit: 10 })
                .then(lbRes => {
@@ -86,17 +97,34 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
   // deduct `negativeMarks`), so the ceiling is the test's total marks — not
   // the number of questions. Falling back to the question count only works
   // for 1-mark tests and understated the maximum everywhere else.
-  const testObj = (attempt.test || attempt.mock_test) as any;
+  // Prefer the separately-fetched full test (testDetail) — the attempt's
+  // embedded test object frequently omits total_marks and the questions array.
+  const testObj = testDetail || (attempt.test || attempt.mock_test) as any;
+  const questionsList = testObj?.questions;
   const totalMarks =
     testObj?.total_marks ||
     testObj?.totalMarks ||
-    testObj?.questions?.length ||
+    // Sum per-question marks when the count isn't precomputed…
+    (Array.isArray(questionsList)
+      ? questionsList.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 1), 0)
+      : 0) ||
+    testObj?.total_questions ||
     attempt.totalQuestions ||
     0;
 
-  const accuracy = totalAttempted > 0 
-    ? ((correctAnswers / totalAttempted) * 100).toFixed(1) 
+  const accuracy = totalAttempted > 0
+    ? ((correctAnswers / totalAttempted) * 100).toFixed(1)
     : "0.0";
+
+  // Make the score self-explanatory: with negative marking a student can get
+  // most answers right yet score below their correct count, which reads as a
+  // "wrong" calculation. Surface the wrong count and the penalty that was
+  // applied so the compiled score is transparent.
+  const wrongAnswers = attempt.wrongAnswers ?? Math.max(0, totalAttempted - correctAnswers);
+  const hasNegativeMarking = testObj?.negative_marking ?? testObj?.negativeMarking ?? false;
+  const negPerWrong = hasNegativeMarking
+    ? (testObj?.negative_marks_per_wrong ?? testObj?.negativeMarksPerWrong ?? 0)
+    : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -128,6 +156,11 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Your Compiled Score</p>
           <p className="text-3xl font-black text-[#D00113] relative z-10">{score.toFixed(2)}</p>
           <p className="text-xs text-slate-400 font-medium relative z-10">Out of {totalMarks}</p>
+          {hasNegativeMarking && (
+            <p className="text-[10px] text-slate-400 font-medium relative z-10">
+              {correctAnswers} correct − {wrongAnswers} wrong × {negPerWrong} penalty
+            </p>
+          )}
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><CheckCircle className="w-24 h-24" /></div>

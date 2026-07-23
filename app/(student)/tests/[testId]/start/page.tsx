@@ -199,6 +199,15 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
   const currentQObj = test.questions[currentQuestion];
 
+  // Negative marking is configured at the TEST level (negative_marks_per_wrong),
+  // not per question — the questions carry no negativeMarks field. Reading it
+  // off the question showed "-0" during the exam while the backend still
+  // deducted the test's penalty on evaluation, making correct scores look
+  // miscalculated. Derive the real per-wrong penalty from the test.
+  const negPerWrong = (test.negative_marking ?? test.negativeMarking)
+    ? (test.negative_marks_per_wrong ?? test.negativeMarksPerWrong ?? currentQObj.negativeMarks ?? 0)
+    : 0;
+
   return (
     <div className="fixed inset-0 bg-slate-100 flex flex-col z-50 animate-in fade-in duration-200 select-none">
       
@@ -237,7 +246,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             {/* Question Identity Indicator */}
             <div className="border-b border-slate-100 pb-4 flex justify-between items-center">
               <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Question Reference {currentQuestion + 1} of {test.questions.length}</h2>
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Marks: +{currentQObj.marks || 1} / -{currentQObj.negativeMarks || 0}</span>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Marks: +{currentQObj.marks || 1} / -{negPerWrong}</span>
             </div>
 
             {/* Prompt String Description */}
