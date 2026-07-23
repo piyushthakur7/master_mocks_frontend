@@ -123,6 +123,25 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     }
   };
 
+  const handleClearResponse = async (questionId: string) => {
+    if (!attempt || isSubmitting) return;
+    // Nothing selected — nothing to clear.
+    if (selectedAnswers[questionId] === undefined) return;
+
+    // Optimistically drop the selection from local state.
+    const next = { ...selectedAnswers };
+    delete next[questionId];
+    setSelectedAnswers(next);
+
+    try {
+      // Clear it on the server too, otherwise the stale choice is still
+      // stored and gets counted when the attempt is evaluated.
+      await attemptService.clearAnswer(attempt._id, questionId);
+    } catch (error) {
+      toast.error("Failed to clear answer. Please check your connection.");
+    }
+  };
+
   const handleFinalSubmit = async () => {
     if (!attempt || isSubmitting) return;
     setIsSubmitting(true);
@@ -261,7 +280,15 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             >
               ← Previous MCQ
             </button>
-            
+
+            <button
+              onClick={() => handleClearResponse(currentQObj._id!)}
+              disabled={selectedAnswers[currentQObj._id!] === undefined}
+              className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl transition-all"
+            >
+              Clear Response
+            </button>
+
             {currentQuestion < (test.questions?.length || 1) - 1 ? (
               <button
                 onClick={() => setCurrentQuestion((prev) => Math.min((test.questions?.length || 1) - 1, prev + 1))}

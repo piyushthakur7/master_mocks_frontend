@@ -82,6 +82,18 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
   const correctAnswers = attempt.correctAnswers || 0;
   const score = attempt.score || 0;
 
+  // The score is marks-based (each question carries `marks`, wrong answers
+  // deduct `negativeMarks`), so the ceiling is the test's total marks — not
+  // the number of questions. Falling back to the question count only works
+  // for 1-mark tests and understated the maximum everywhere else.
+  const testObj = (attempt.test || attempt.mock_test) as any;
+  const totalMarks =
+    testObj?.total_marks ||
+    testObj?.totalMarks ||
+    testObj?.questions?.length ||
+    attempt.totalQuestions ||
+    0;
+
   const accuracy = totalAttempted > 0 
     ? ((correctAnswers / totalAttempted) * 100).toFixed(1) 
     : "0.0";
@@ -115,7 +127,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><Target className="w-24 h-24" /></div>
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Your Compiled Score</p>
           <p className="text-3xl font-black text-[#D00113] relative z-10">{score.toFixed(2)}</p>
-          <p className="text-xs text-slate-400 font-medium relative z-10">Out of {(attempt.test || attempt.mock_test as any)?.questions?.length || attempt.totalQuestions || 0}</p>
+          <p className="text-xs text-slate-400 font-medium relative z-10">Out of {totalMarks}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><CheckCircle className="w-24 h-24" /></div>

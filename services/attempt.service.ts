@@ -13,7 +13,16 @@ export const attemptService = {
     selected_option_id: string;
     is_marked_for_review?: boolean;
   }) => apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, data),
-  
+
+  // Clear a previously saved answer so the question counts as unattempted.
+  // The answer endpoint upserts on question_id; sending an empty
+  // selected_option_id unsets the stored choice server-side.
+  clearAnswer: (attemptId: string, questionId: string) =>
+    apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, {
+      question_id: questionId,
+      selected_option_id: "",
+    }),
+
   submit: (attemptId: string) =>
     apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/submit`),
   

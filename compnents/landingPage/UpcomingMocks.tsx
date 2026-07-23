@@ -101,7 +101,7 @@ export default function UpcomingMocks() {
                 
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50 rounded-xl p-4 mb-6 flex items-center justify-between shadow-inner">
                   <span className="text-xs font-bold text-slate-600 uppercase">Reward Pool</span>
-                  <span className="text-sm font-black text-green-600 drop-shadow-sm">₹50 Max Cashback</span>
+                  <span className="text-sm font-black text-green-600 drop-shadow-sm">Upto ₹25 Cashback</span>
                 </div>
 
                 <Link 
