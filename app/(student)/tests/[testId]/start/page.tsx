@@ -137,8 +137,11 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       // Clear it on the server too, otherwise the stale choice is still
       // stored and gets counted when the attempt is evaluated.
       await attemptService.clearAnswer(attempt._id, questionId);
-    } catch (error) {
-      toast.error("Failed to clear answer. Please check your connection.");
+    } catch (error: any) {
+      // Surface the real backend reason instead of a generic "connection"
+      // message — helps distinguish a rejected clear payload from an actual
+      // network fault. Local state stays cleared regardless.
+      toast.error(error?.message || "Couldn't clear the saved answer on the server.");
     }
   };
 

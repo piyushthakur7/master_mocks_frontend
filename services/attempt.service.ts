@@ -15,12 +15,13 @@ export const attemptService = {
   }) => apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, data),
 
   // Clear a previously saved answer so the question counts as unattempted.
-  // The answer endpoint upserts on question_id; sending an empty
-  // selected_option_id unsets the stored choice server-side.
+  // The answer endpoint upserts on question_id; sending null unsets the stored
+  // choice. (An empty string "" is NOT valid here — it fails the ObjectId cast
+  // on the selected_option_id field and the whole request is rejected.)
   clearAnswer: (attemptId: string, questionId: string) =>
     apiClient.put<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/answer`, {
       question_id: questionId,
-      selected_option_id: "",
+      selected_option_id: null,
     }),
 
   submit: (attemptId: string) =>
