@@ -126,6 +126,32 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
     ? (testObj?.negative_marks_per_wrong ?? testObj?.negativeMarksPerWrong ?? 0)
     : 0;
 
+  // ─── Solution review model ───
+  // The attempt only stores what the student picked (selected_option_id /
+  // selected_option_text) — it carries no option list and no correct option.
+  // The full test (testDetail) is what supplies every option, so drive the
+  // review off the question list and attach each saved answer to it. That also
+  // surfaces questions the student never touched, which the answers array omits.
+  const answersByQuestion = new Map<string, any>();
+  (attempt.answers || []).forEach((a: any) => {
+    const qid = String(a.question_id || a.question?._id || a.question || "");
+    if (qid) answersByQuestion.set(qid, a);
+  });
+
+  const hasPopulatedQuestions =
+    Array.isArray(questionsList) &&
+    questionsList.length > 0 &&
+    typeof questionsList[0] === "object";
+
+  const reviewItems: { question: any; answer: any }[] = hasPopulatedQuestions
+    ? questionsList.map((q: any) => ({ question: q, answer: answersByQuestion.get(String(q._id)) }))
+    : (attempt.answers || []).map((a: any) => ({
+        question: typeof a.question === "object" ? a.question : null,
+        answer: a,
+      }));
+
+  const optionIdOf = (v: any) => (v && typeof v === "object" ? String(v._id ?? "") : v ? String(v) : "");
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       
@@ -185,46 +211,150 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
       </div>
 
       {/* ─── REVIEW SECTION ─── */}
-      {attempt.answers && attempt.answers.length > 0 && (
+      {reviewItems.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-8">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight">Question Analysis</h2>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Review your answers and identify knowledge gaps.</p>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Every option with the correct answer and your response.</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-4 text-[10px] font-black uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> Correct</span>
+              <span className="flex items-center gap-1.5 text-red-600"><span className="w-3 h-3 rounded bg-red-500 inline-block" /> Your Answer</span>
             </div>
           </div>
           <div className="divide-y divide-slate-100">
-            {attempt.answers.map((ans, idx) => (
-              <div key={idx} className="p-6 hover:bg-slate-50/50 transition-colors">
-                <div className="flex gap-4">
-                  <div className="shrink-0 flex flex-col items-center gap-2">
-                    <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 font-bold rounded-lg text-sm">
-                      {idx + 1}
-                    </span>
-                    {(ans.isCorrect ?? ans.is_correct) ? (
-                      <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs font-bold">X</div>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="text-sm font-medium text-slate-800" dangerouslySetInnerHTML={{ __html: (ans.question as any)?.questionText || ans.question_text || "Question text not available" }} />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className={`p-3 rounded-lg border ${(ans.isCorrect ?? ans.is_correct) ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
-                        <span className="font-bold block mb-1">Your Answer:</span>
-                        <span dangerouslySetInnerHTML={{ __html: (ans.selectedOption as any)?.text || ans.selected_option_text || "Selected option text" }} />
+            {reviewItems.map(({ question, answer }, idx) => {
+              const questionText =
+                question?.text || question?.questionText || answer?.question_text || "Question text not available";
+              const options: any[] = Array.isArray(question?.options) ? question.options : [];
+
+              const selectedId = optionIdOf(answer?.selected_option_id ?? answer?.selectedOption);
+              const isAttempted = Boolean(selectedId || answer?.selected_option_text);
+              const isCorrect = Boolean(answer?.is_correct ?? answer?.isCorrect);
+
+              // The correct option can come from three places, in order of
+              // reliability: an option flagged is_correct (admins, and students
+              // once the backend stops stripping the flag after submission), an
+              // explicit correct_option_id on the evaluated answer, or — when
+              // the student got it right — their own selection.
+              const flagged = options.find((o) => o.is_correct === true || o.isCorrect === true);
+              const correctId =
+                optionIdOf(flagged?._id) ||
+                optionIdOf(answer?.correct_option_id ?? answer?.correctOption) ||
+                (isCorrect ? selectedId : "");
+              const correctText =
+                flagged?.text ||
+                answer?.correct_option_text ||
+                (isCorrect ? answer?.selected_option_text : "");
+              const correctKnown = Boolean(correctId || correctText);
+
+              return (
+                <div key={question?._id || idx} className="p-6 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex gap-4">
+                    <div className="shrink-0 flex flex-col items-center gap-2">
+                      <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 font-bold rounded-lg text-sm">
+                        {idx + 1}
+                      </span>
+                      {!isAttempted ? (
+                        <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold">–</div>
+                      ) : isCorrect ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs font-bold">X</div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-3 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                          !isAttempted ? 'bg-slate-100 text-slate-500' : isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {!isAttempted ? 'Unattempted' : isCorrect ? 'Correct' : 'Incorrect'}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Marks: +{question?.marks ?? 1}{hasNegativeMarking ? ` / -${question?.negativeMarks ?? negPerWrong}` : ''}
+                        </span>
                       </div>
-                      {!(ans.isCorrect ?? ans.is_correct) && (
-                        <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
-                          <span className="font-bold block mb-1">Correct Answer:</span>
-                          <span>Please check solution logic</span>
+
+                      <div className="text-sm font-medium text-slate-800" dangerouslySetInnerHTML={{ __html: questionText }} />
+
+                      {options.length > 0 ? (
+                        <div className="space-y-2">
+                          {options.map((option, oIdx) => {
+                            const oid = optionIdOf(option?._id);
+                            const isTheCorrectOne = correctId ? oid === correctId : false;
+                            const isTheSelectedOne = selectedId ? oid === selectedId : false;
+
+                            const tone = isTheCorrectOne
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                              : isTheSelectedOne
+                                ? 'border-red-300 bg-red-50 text-red-900'
+                                : 'border-slate-200 bg-white text-slate-600';
+
+                            return (
+                              <div key={oid || oIdx} className={`flex items-start gap-3 px-4 py-3 rounded-xl border text-xs font-semibold ${tone}`}>
+                                <span className={`w-6 h-6 shrink-0 rounded-md flex items-center justify-center text-[11px] font-black border ${
+                                  isTheCorrectOne
+                                    ? 'bg-emerald-500 text-white border-emerald-500'
+                                    : isTheSelectedOne
+                                      ? 'bg-red-500 text-white border-red-500'
+                                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                                }`}>
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="flex-1 min-w-0 leading-relaxed" dangerouslySetInnerHTML={{ __html: option?.text ?? "" }} />
+                                <span className="shrink-0 flex flex-wrap justify-end gap-1.5">
+                                  {isTheSelectedOne && (
+                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                      isTheCorrectOne ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                                    }`}>
+                                      Your Answer
+                                    </span>
+                                  )}
+                                  {isTheCorrectOne && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500 text-white">
+                                      Correct Answer
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        // No option list available (the full test failed to load,
+                        // or the attempt was rendered from answers alone).
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div className={`p-3 rounded-lg border ${isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
+                            <span className="font-bold block mb-1">Your Answer:</span>
+                            <span dangerouslySetInnerHTML={{ __html: answer?.selected_option_text || (answer?.selectedOption as any)?.text || "Not attempted" }} />
+                          </div>
+                          {correctKnown && (
+                            <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
+                              <span className="font-bold block mb-1">Correct Answer:</span>
+                              <span dangerouslySetInnerHTML={{ __html: correctText || "" }} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!correctKnown && (
+                        <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                          The correct answer for this question is not available yet.
+                        </p>
+                      )}
+
+                      {question?.explanation && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Solution</span>
+                          <div className="text-xs font-medium text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: question.explanation }} />
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

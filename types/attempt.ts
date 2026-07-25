@@ -10,6 +10,10 @@ export interface Answer {
   selected_option_text?: string;         // v2.0: included in evaluation
   is_correct?: boolean;                  // v2.0: included in evaluation
   is_marked_for_review?: boolean;        // v2.0: new field
+  // Not sent by the API today — the results page reads these so the answer key
+  // renders the moment the backend exposes it on a completed attempt.
+  correct_option_id?: string;
+  correct_option_text?: string;
   // Legacy camelCase aliases
   selectedOption?: string;
   isCorrect?: boolean;

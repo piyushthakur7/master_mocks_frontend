@@ -5,7 +5,11 @@ import { Course } from "./course";
 export interface Option {
   _id?: string;
   text: string;
-  is_correct: boolean;
+  // Optional on the wire: the API strips this flag for STUDENT users so the
+  // answer key can't be read out of the network response. Only admins (and,
+  // if the backend ever exposes a post-submission review payload, students
+  // looking at a completed attempt) receive it.
+  is_correct?: boolean;
 }
 
 export interface Question {
