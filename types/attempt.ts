@@ -10,10 +10,13 @@ export interface Answer {
   selected_option_text?: string;         // v2.0: included in evaluation
   is_correct?: boolean;                  // v2.0: included in evaluation
   is_marked_for_review?: boolean;        // v2.0: new field
-  // Not sent by the API today — the results page reads these so the answer key
-  // renders the moment the backend exposes it on a completed attempt.
+  // Answer key, denormalised onto each answer. Only present once the attempt
+  // is COMPLETED — during the test the key is stripped everywhere.
   correct_option_id?: string;
   correct_option_text?: string;
+  explanation?: string;
+  // Signed contribution of this answer to the score.
+  marks_awarded?: number;
   // Legacy camelCase aliases
   selectedOption?: string;
   isCorrect?: boolean;
@@ -42,6 +45,12 @@ export interface TestAttempt {
   wrongAnswers?: number;
   timeSpent?: number;
   test?: MockTest | string;
+  // Full question set with the answer key, returned by GET /attempts/:id for a
+  // COMPLETED attempt only. Drives the solution review on the results page.
+  questions?: (Question & {
+    correct_option_id?: string;
+    correct_option_text?: string;
+  })[];
   rewardEarned?: number;
   fraudFlags?: number;
   createdAt: string;

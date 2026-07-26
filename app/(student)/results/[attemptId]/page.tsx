@@ -100,7 +100,16 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
   // Prefer the separately-fetched full test (testDetail) — the attempt's
   // embedded test object frequently omits total_marks and the questions array.
   const testObj = testDetail || (attempt.test || attempt.mock_test) as any;
-  const questionsList = testObj?.questions;
+
+  // A COMPLETED attempt returns the full question set with the answer key
+  // attached (GET /attempts/:id). Prefer it over the copy on the test object:
+  // /hacks/:id strips options.is_correct for students, so that copy can never
+  // say which option was right.
+  const solutionQuestions = (attempt as any).questions;
+  const questionsList =
+    Array.isArray(solutionQuestions) && solutionQuestions.length > 0
+      ? solutionQuestions
+      : testObj?.questions;
   const totalMarks =
     testObj?.total_marks ||
     testObj?.totalMarks ||
@@ -233,21 +242,23 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
               const isAttempted = Boolean(selectedId || answer?.selected_option_text);
               const isCorrect = Boolean(answer?.is_correct ?? answer?.isCorrect);
 
-              // The correct option can come from three places, in order of
-              // reliability: an option flagged is_correct (admins, and students
-              // once the backend stops stripping the flag after submission), an
-              // explicit correct_option_id on the evaluated answer, or — when
-              // the student got it right — their own selection.
+              // The correct option can come from four places, in order of
+              // reliability: correct_option_id on the question, an option
+              // flagged is_correct, correct_option_id denormalised onto the
+              // answer, or — when the student got it right — their own pick.
               const flagged = options.find((o) => o.is_correct === true || o.isCorrect === true);
               const correctId =
+                optionIdOf(question?.correct_option_id) ||
                 optionIdOf(flagged?._id) ||
                 optionIdOf(answer?.correct_option_id ?? answer?.correctOption) ||
                 (isCorrect ? selectedId : "");
               const correctText =
+                question?.correct_option_text ||
                 flagged?.text ||
                 answer?.correct_option_text ||
                 (isCorrect ? answer?.selected_option_text : "");
               const correctKnown = Boolean(correctId || correctText);
+              const explanation = question?.explanation || answer?.explanation;
 
               return (
                 <div key={question?._id || idx} className="p-6 hover:bg-slate-50/50 transition-colors">
@@ -282,7 +293,11 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                         <div className="space-y-2">
                           {options.map((option, oIdx) => {
                             const oid = optionIdOf(option?._id);
-                            const isTheCorrectOne = correctId ? oid === correctId : false;
+                            // Fall back to a text match when only the correct
+                            // option's text came back without its id.
+                            const isTheCorrectOne = correctId
+                              ? oid === correctId
+                              : Boolean(correctText) && option?.text === correctText;
                             const isTheSelectedOne = selectedId ? oid === selectedId : false;
 
                             const tone = isTheCorrectOne
@@ -344,10 +359,10 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                         </p>
                       )}
 
-                      {question?.explanation && (
+                      {explanation && (
                         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Solution</span>
-                          <div className="text-xs font-medium text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: question.explanation }} />
+                          <div className="text-xs font-medium text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: explanation }} />
                         </div>
                       )}
                     </div>
