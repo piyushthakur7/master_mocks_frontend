@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
-import { Loader2, Clock, CheckCircle2, CalendarClock, X } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, CalendarClock, X, Users } from "lucide-react";
 import { formatCurrency, getTestScheduleStatus, formatScheduleTime } from "@/lib/utils";
 import { useAllMocks, useCompletedAttempts } from "@/hooks/queries/use-dashboard-queries";
 import { useCategories } from "@/hooks/queries/use-public-queries";
@@ -175,8 +175,23 @@ function StudentTestsContent() {
                 )}
               </div>
 
+              {/* Social proof: how many students have actually sat this mock.
+                  A zero reads as "nobody wants this", so a fresh mock gets an
+                  invitation instead of a count. */}
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs">
+                <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                {(test.students_appeared ?? 0) > 0 ? (
+                  <span className="text-slate-500 font-medium">
+                    <span className="font-black text-slate-800">{test.students_appeared!.toLocaleString("en-IN")}</span>
+                    {" "}student{test.students_appeared === 1 ? " has" : "s have"} given this mock
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-medium">Be the first to attempt this mock</span>
+                )}
+              </div>
+
               {/* Launch trigger action wire route */}
-              <div className="mt-6 pt-4 border-t border-slate-100">
+              <div className="mt-4">
                 {scheduleStatusOf(test) === "upcoming" ? (
                   // Free test before its window: visible but not attemptable.
                   <div className="w-full py-2.5 bg-slate-100 text-slate-400 text-center text-xs font-black uppercase tracking-wider rounded-xl cursor-not-allowed select-none">
