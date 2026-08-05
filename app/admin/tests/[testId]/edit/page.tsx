@@ -68,6 +68,8 @@ export default function AdminEditTestPage({ params }: PageProps) {
     if (!test) return;
     setIsSubmitting(true);
     try {
+      const isFree = test.access_type === 'free';
+
       const payload: any = {
         title: test.title,
         description: test.description,
@@ -77,16 +79,23 @@ export default function AdminEditTestPage({ params }: PageProps) {
         negative_marks_per_wrong: Number(test.negative_marks_per_wrong),
         difficulty: test.difficulty,
         access_type: test.access_type,
-        price: Number(test.price || 0),
+        // Converting paid → free must actually zero the price. Sending the old
+        // value left a "free" test still carrying ₹499, which showed up as a
+        // price tag on the student's card.
+        price: isFree ? 0 : Number(test.price || 0),
       };
 
       const categoryId = typeof test.category === "string" ? test.category : test.category?._id;
       if (categoryId) payload.category = categoryId;
 
-      if (test.access_type === 'paid') {
-        if (test.start_time) payload.start_time = new Date(test.start_time).toISOString();
-        if (test.end_time) payload.end_time = new Date(test.end_time).toISOString();
-      }
+      // Always send the window, including nulls. These used to be sent only for
+      // paid tests, which made a schedule impossible to clear: a paid mock
+      // converted to free kept its old start/end times, and because the backend
+      // enforces the window on EVERY test regardless of access type, that stale
+      // (usually already-expired) window hid the test from the free list and
+      // made starting it fail with 403 "the scheduled time window has ended".
+      payload.start_time = test.start_time ? new Date(test.start_time).toISOString() : null;
+      payload.end_time = test.end_time ? new Date(test.end_time).toISOString() : null;
 
       await mockTestService.update(test._id!, payload);
       toast.success("Test configuration updated");
@@ -229,11 +238,10 @@ export default function AdminEditTestPage({ params }: PageProps) {
               </div>
 
               {test.access_type === 'paid' && (
-                <>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Price (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={test.price === 0 ? "" : test.price}
                     onChange={e => setTest({...test, price: e.target.value ? Number(e.target.value) : 0})}
                     placeholder="0"
@@ -241,32 +249,49 @@ export default function AdminEditTestPage({ params }: PageProps) {
                     min={0}
                   />
                 </div>
-                
-                <div className="space-y-1.5 md:col-span-2 pt-2">
-                  <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Schedule Time Window (Optional)</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500">Start Time</label>
-                      <input 
-                        type="datetime-local" 
-                        value={test.start_time ? new Date(new Date(test.start_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
-                        onChange={e => setTest({...test, start_time: e.target.value})}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500">End Time</label>
-                      <input 
-                        type="datetime-local" 
-                        value={test.end_time ? new Date(new Date(test.end_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
-                        onChange={e => setTest({...test, end_time: e.target.value})}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
-                      />
-                    </div>
+              )}
+
+              {/* Shown for free tests too — the backend enforces this window on
+                  every test regardless of access type, so hiding it on free
+                  tests left an expired window stuck on converted mocks with no
+                  way to clear it. */}
+              <div className="space-y-1.5 md:col-span-2 pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Schedule Time Window (Optional)</h4>
+                  {(test.start_time || test.end_time) && (
+                    <button
+                      type="button"
+                      onClick={() => setTest({ ...test, start_time: undefined, end_time: undefined })}
+                      className="text-[10px] font-black uppercase tracking-wider text-[#D00113] hover:underline"
+                    >
+                      Clear schedule
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium mb-3">
+                  Leave both empty to make the test available at all times. A window in the past hides the test from students and blocks new attempts.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500">Start Time</label>
+                    <input
+                      type="datetime-local"
+                      value={test.start_time ? new Date(new Date(test.start_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                      onChange={e => setTest({...test, start_time: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500">End Time</label>
+                    <input
+                      type="datetime-local"
+                      value={test.end_time ? new Date(new Date(test.end_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                      onChange={e => setTest({...test, end_time: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                    />
                   </div>
                 </div>
-                </>
-              )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:col-span-2">

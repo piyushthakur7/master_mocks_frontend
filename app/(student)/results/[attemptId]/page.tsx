@@ -135,6 +135,27 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
     ? (testObj?.negative_marks_per_wrong ?? testObj?.negativeMarksPerWrong ?? 0)
     : 0;
 
+  // Derive the two halves of the score from what the server actually awarded
+  // per answer (marks_awarded is signed: +marks when right, -penalty when
+  // wrong). Summing those is exact even when questions carry different marks;
+  // the count × marks estimate below is only a fallback for older attempts
+  // saved before marks_awarded existed.
+  const awarded = (attempt.answers || []).map((a: any) => Number(a?.marks_awarded));
+  const hasAwarded = awarded.some((n: number) => Number.isFinite(n) && n !== 0);
+  const marksGained = hasAwarded
+    ? awarded.filter((n: number) => Number.isFinite(n) && n > 0).reduce((s: number, n: number) => s + n, 0)
+    : correctAnswers * (Number(questionsList?.[0]?.marks) || 1);
+  const marksLost = hasAwarded
+    ? Math.abs(awarded.filter((n: number) => Number.isFinite(n) && n < 0).reduce((s: number, n: number) => s + n, 0))
+    : wrongAnswers * negPerWrong;
+
+  const totalQuestions =
+    (Array.isArray(questionsList) ? questionsList.length : 0) ||
+    testObj?.total_questions ||
+    attempt.totalQuestions ||
+    0;
+  const unattempted = Math.max(0, totalQuestions - totalAttempted);
+
   // ─── Solution review model ───
   // The attempt only stores what the student picked (selected_option_id /
   // selected_option_text) — it carries no option list and no correct option.
@@ -191,11 +212,6 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Your Compiled Score</p>
           <p className="text-3xl font-black text-[#D00113] relative z-10">{score.toFixed(2)}</p>
           <p className="text-xs text-slate-400 font-medium relative z-10">Out of {totalMarks}</p>
-          {hasNegativeMarking && (
-            <p className="text-[10px] text-slate-400 font-medium relative z-10">
-              {correctAnswers} correct − {wrongAnswers} wrong × {negPerWrong} penalty
-            </p>
-          )}
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-1 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform"><CheckCircle className="w-24 h-24" /></div>
@@ -216,6 +232,63 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider relative z-10">Reward Earned</p>
           <p className={`text-3xl font-black relative z-10 ${hasReward ? 'text-emerald-600' : 'text-slate-900'}`}>{formatCurrency(rewardEarned)}</p>
           <p className="text-xs text-slate-400 font-medium relative z-10">Added to wallet</p>
+        </div>
+      </div>
+
+      {/* ─── HOW THE SCORE WAS CALCULATED ─── */}
+      {/* With negative marking a student can answer most questions correctly
+          and still score below their correct count, which reads as a broken
+          calculation. Show the arithmetic line by line so the total is
+          obviously right. */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="text-base font-black text-slate-900 tracking-tight">How Your Score Was Calculated</h2>
+          <p className="text-xs text-slate-400 font-medium mt-0.5">
+            {hasNegativeMarking
+              ? `Each correct answer adds its marks. Each wrong answer costs ${negPerWrong} mark${negPerWrong === 1 ? '' : 's'}. Skipped questions cost nothing.`
+              : 'Each correct answer adds its marks. There is no penalty for a wrong or skipped answer.'}
+          </p>
+        </div>
+
+        <div className="divide-y divide-slate-100 text-sm">
+          <div className="flex items-center justify-between gap-4 px-6 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="font-bold text-slate-700">Correct answers</span>
+              <span className="text-xs font-medium text-slate-400">{correctAnswers} question{correctAnswers === 1 ? '' : 's'}</span>
+            </div>
+            <span className="font-black text-emerald-600 shrink-0">+{marksGained.toFixed(2)}</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 px-6 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+              <span className="font-bold text-slate-700">Wrong answers</span>
+              <span className="text-xs font-medium text-slate-400">
+                {wrongAnswers} question{wrongAnswers === 1 ? '' : 's'}
+                {hasNegativeMarking ? ` × ${negPerWrong}` : ' — no penalty on this test'}
+              </span>
+            </div>
+            <span className={`font-black shrink-0 ${marksLost > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+              {marksLost > 0 ? `−${marksLost.toFixed(2)}` : '0.00'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 px-6 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0" />
+              <span className="font-bold text-slate-700">Not attempted</span>
+              <span className="text-xs font-medium text-slate-400">{unattempted} question{unattempted === 1 ? '' : 's'} — never penalised</span>
+            </div>
+            <span className="font-black text-slate-400 shrink-0">0.00</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 px-6 py-5 bg-slate-50">
+            <span className="font-black text-slate-900 uppercase text-xs tracking-wider">Final score</span>
+            <span className="font-black text-lg text-[#D00113] shrink-0">
+              {score.toFixed(2)} <span className="text-slate-400 font-bold text-sm">/ {totalMarks}</span>
+            </span>
+          </div>
         </div>
       </div>
 

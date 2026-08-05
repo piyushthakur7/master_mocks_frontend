@@ -151,14 +151,16 @@ export default function AdminCreateTestPage() {
         total_marks: testForm.total_marks,
         duration_minutes: Number(testForm.duration_minutes),
         access_type: testForm.access_type,
-        price: Number(testForm.price),
-        discount_price: Number(testForm.discount_price),
+        // A free test must never carry a price — see the same guard in the edit
+        // page, where a leftover price survived a paid → free conversion.
+        price: testForm.access_type === 'free' ? 0 : Number(testForm.price),
+        discount_price: testForm.access_type === 'free' ? 0 : Number(testForm.discount_price),
       };
 
-      if (testForm.access_type === 'paid') {
-        if (testForm.start_time) payload.start_time = new Date(testForm.start_time).toISOString();
-        if (testForm.end_time) payload.end_time = new Date(testForm.end_time).toISOString();
-      }
+      // The schedule window applies to free tests too — the backend enforces it
+      // on every test regardless of access type.
+      if (testForm.start_time) payload.start_time = new Date(testForm.start_time).toISOString();
+      if (testForm.end_time) payload.end_time = new Date(testForm.end_time).toISOString();
 
       if (testForm.category) payload.category = testForm.category;
 
@@ -314,31 +316,37 @@ export default function AdminCreateTestPage() {
                       min={0}
                     />
                   </div>
-                  <div className="space-y-1.5 md:col-span-3 pt-2">
-                    <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Schedule Time Window (Optional)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500">Start Time</label>
-                        <input 
-                          type="datetime-local" 
-                          value={testForm.start_time}
-                          onChange={e => setTestForm({...testForm, start_time: e.target.value})}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500">End Time</label>
-                        <input 
-                          type="datetime-local" 
-                          value={testForm.end_time}
-                          onChange={e => setTestForm({...testForm, end_time: e.target.value})}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
+
+              {/* Applies to free tests as well — the backend gates every test on
+                  this window, not just paid ones. */}
+              <div className="space-y-1.5 md:col-span-3 pt-2">
+                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Schedule Time Window (Optional)</h4>
+                <p className="text-[11px] text-slate-500 font-medium mb-3">
+                  Leave both empty to make the test available at all times.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500">Start Time</label>
+                    <input
+                      type="datetime-local"
+                      value={testForm.start_time}
+                      onChange={e => setTestForm({...testForm, start_time: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500">End Time</label>
+                    <input
+                      type="datetime-local"
+                      value={testForm.end_time}
+                      onChange={e => setTestForm({...testForm, end_time: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#D00113]"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:col-span-2">

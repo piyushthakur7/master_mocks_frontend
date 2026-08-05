@@ -5,7 +5,7 @@ import { mockTestService } from "@/services/mock-test.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { useAdminTests } from "@/hooks/queries/use-admin-queries";
-import { Loader2, Plus, Edit, Trash2, CheckCircle2, Clock, Eye, EyeOff, BookOpen } from "lucide-react";
+import { Loader2, Plus, Edit, Trash2, CheckCircle2, Clock, Eye, EyeOff, BookOpen, Users } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminTestsManagementPage() {
@@ -63,6 +63,7 @@ export default function AdminTestsManagementPage() {
                   <th className="py-3.5 px-6">Test Configuration Metadata</th>
                   <th className="py-3.5 px-6">Category</th>
                   <th className="py-3.5 px-6">Boundaries Matrix</th>
+                  <th className="py-3.5 px-6">Participation</th>
                   <th className="py-3.5 px-6">Environment Status</th>
                   <th className="py-3.5 px-6 text-right">Actions Panel</th>
                 </tr>
@@ -85,10 +86,23 @@ export default function AdminTestsManagementPage() {
                         <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {test.questions?.length || 0} Qs</span>
                       </div>
                     </td>
+                    {/* How many students have given this mock. unique_students
+                        counts people, not attempts — free tests can be retaken,
+                        so attempts alone double-counts the same student. */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="font-black text-white text-sm">{test.unique_students ?? 0}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-slate-500">students</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {test.total_attempts ?? 0} attempts · {test.completed_attempts ?? 0} completed
+                      </p>
+                    </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
-                        test.is_active 
-                          ? "bg-emerald-900/20 text-emerald-400 border-emerald-900" 
+                        test.is_active
+                          ? "bg-emerald-900/20 text-emerald-400 border-emerald-900"
                           : "bg-slate-800 text-slate-400 border-slate-700"
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${test.is_active ? "bg-emerald-500" : "bg-slate-500"}`} />

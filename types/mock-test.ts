@@ -48,6 +48,10 @@ export interface MockTest {
   end_time?: string;                   // v2.0: ISO timestamp
   schedule_status?: "unscheduled" | "upcoming" | "live" | "ended"; // server-computed
   server_time?: string;                // server clock at fetch time
+  // Participation counts, attached for ADMIN requests only.
+  unique_students?: number;            // distinct students who took the test
+  total_attempts?: number;
+  completed_attempts?: number;
   // Legacy camelCase aliases (still used in some UI code)
   durationMinutes?: number;
   totalMarks?: number;
