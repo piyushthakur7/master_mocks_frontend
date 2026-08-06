@@ -2,7 +2,7 @@
 
 import React from "react";
 import { TestAttempt } from "@/types/attempt";
-import { useAdminAttempts } from "@/hooks/queries/use-admin-queries";
+import { useAdminAttempts, useAdminTests } from "@/hooks/queries/use-admin-queries";
 import { Loader2, FileBarChart, Activity, Award, UserCheck } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -11,10 +11,62 @@ export default function AdminReportsPage() {
     data: TestAttempt[];
     isLoading: boolean;
   };
+  // The test object embedded on an attempt is only partially populated (title,
+  // _id) — it omits total_marks, which is why every score used to read "/ 100"
+  // off the hardcoded fallback. Pull the full test list (shared ["admin-tests"]
+  // cache) and look the real maximum up by id.
+  const { data: tests = [] } = useAdminTests() as { data: any[] };
 
-  const completedAttempts = attempts.filter(a => a.status === 'COMPLETED').length;
-  const avgScore = attempts.length > 0 
-    ? attempts.reduce((acc, a) => acc + (a.score || 0), 0) / attempts.length 
+  const marksByTestId = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of tests) {
+      const marks = Number(t?.total_marks ?? t?.totalMarks);
+      if (t?._id && Number.isFinite(marks) && marks > 0) map.set(String(t._id), marks);
+    }
+    return map;
+  }, [tests]);
+
+  const testOf = (attempt: TestAttempt): any => attempt.mock_test || attempt.test;
+
+  // Resolve the score ceiling: whatever the attempt happens to carry, then the
+  // full test by id, then the sum of per-question marks. 0 means "unknown" —
+  // better to show a bare score than to invent a denominator.
+  const totalMarksOf = (attempt: TestAttempt): number => {
+    const t: any = testOf(attempt);
+    const embedded = Number(t?.total_marks ?? t?.totalMarks);
+    if (Number.isFinite(embedded) && embedded > 0) return embedded;
+
+    const id = String(t?._id || t || "");
+    const fromTest = marksByTestId.get(id);
+    if (fromTest) return fromTest;
+
+    if (Array.isArray(t?.questions) && t.questions.length > 0) {
+      return t.questions.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 1), 0);
+    }
+    return 0;
+  };
+
+  // Percentage of the test's own maximum — the server sends it on evaluation;
+  // derive it only when it's missing.
+  const percentageOf = (attempt: TestAttempt): number | null => {
+    const pct = Number(attempt.percentage);
+    if (Number.isFinite(pct)) return pct;
+    const max = totalMarksOf(attempt);
+    if (max <= 0) return null;
+    return ((attempt.score || 0) / max) * 100;
+  };
+
+  const completed = attempts.filter(a => a.status === "COMPLETED");
+  const completedAttempts = completed.length;
+
+  // Averaging raw marks across tests with different maximums is meaningless,
+  // and dividing by *all* attempts counted unscored in-progress ones as zeros.
+  // Average the percentages of completed attempts instead.
+  const scoredPercentages = completed
+    .map(percentageOf)
+    .filter((p): p is number => p !== null);
+  const avgPercentage = scoredPercentages.length > 0
+    ? scoredPercentages.reduce((acc, p) => acc + p, 0) / scoredPercentages.length
     : 0;
 
   return (
@@ -50,8 +102,9 @@ export default function AdminReportsPage() {
         </div>
         <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Average System Score</p>
-            <p className="text-2xl font-black text-amber-600 mt-1">{avgScore.toFixed(1)} Points</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Average Score</p>
+            <p className="text-2xl font-black text-amber-600 mt-1">{avgPercentage.toFixed(1)}%</p>
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">across {scoredPercentages.length} completed</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
             <Award className="w-5 h-5 text-amber-500" />
@@ -78,19 +131,24 @@ export default function AdminReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                {attempts.map((attempt) => (
+                {attempts.map((attempt) => {
+                  const maxMarks = totalMarksOf(attempt);
+                  const pct = percentageOf(attempt);
+                  return (
                   <tr key={attempt._id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="py-4 px-6">
                       <p className="font-mono font-bold text-slate-900">{attempt._id?.substring(0, 8)}...</p>
                       <p className="text-[10px] text-slate-400 font-mono mt-0.5">{formatDate(attempt.createdAt!)}</p>
                     </td>
                     <td className="py-4 px-6 text-slate-900 font-bold">
-                      {(attempt.user as any)?.fullName || "Unknown"}
+                      {/* The API field is full_name; fullName was always undefined,
+                          which is why every row read "Unknown". */}
+                      {(attempt.user as any)?.full_name || (attempt.user as any)?.fullName || "Unknown"}
                       <p className="font-mono text-slate-400 text-[10px] mt-0.5">{(attempt.user as any)?.email}</p>
                     </td>
                     <td className="py-4 px-6">
                       <span className="font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded text-[10px]">
-                        {(attempt.test as any)?.title || "Unknown Test"}
+                        {testOf(attempt)?.title || "Unknown Test"}
                       </span>
                     </td>
                     <td className="py-4 px-6">
@@ -104,9 +162,19 @@ export default function AdminReportsPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       {attempt.status === "COMPLETED" ? (
-                        <span className="font-black text-slate-900 text-sm">
-                          {attempt.score?.toFixed(1)} / {(attempt.test as any)?.totalMarks || 100}
-                        </span>
+                        <>
+                          <span className="font-black text-slate-900 text-sm">
+                            {(attempt.score || 0).toFixed(1)}
+                            {maxMarks > 0 && (
+                              <span className="text-slate-400"> / {maxMarks}</span>
+                            )}
+                          </span>
+                          {pct !== null && (
+                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                              {pct.toFixed(1)}%
+                            </p>
+                          )}
+                        </>
                       ) : (
                         <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                           Pending
@@ -114,7 +182,8 @@ export default function AdminReportsPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
