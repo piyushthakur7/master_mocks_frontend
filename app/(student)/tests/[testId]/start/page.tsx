@@ -28,6 +28,11 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
   const [timeLeft, setTimeLeft] = useState(0); 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Why the test couldn't be started, plus a counter the Retry button bumps to
+  // re-run initialisation. Previously any failure here redirected to /tests,
+  // so a transient 401/429 looked like "the test just won't open".
+  const [startError, setStartError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   // The timer's auto-submit must fire at most once. Without this, a failed
   // auto-submit set isSubmitting back to false, which re-ran the timer effect
   // with timeLeft still <= 0 and submitted again — an endless retry loop
@@ -36,6 +41,8 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
   useEffect(() => {
     const initializeTest = async () => {
+      setIsLoading(true);
+      setStartError(null);
       try {
         // Fetch test details to get questions
         const testRes = await mockTestService.getById(unwrappedParams.testId);
@@ -44,48 +51,59 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
           router.push("/tests");
           return;
         }
-        
+
         setTest(testRes.data);
 
         // Start attempt
         const attemptRes = await attemptService.start(unwrappedParams.testId);
-        if (attemptRes.success && attemptRes.data) {
-          setAttempt(attemptRes.data);
+        if (!attemptRes.success || !attemptRes.data) {
+          // A 2xx that carries no usable attempt (window closed, attempts
+          // exhausted, …). The server's own message is the useful thing to
+          // show — the old code fell through silently to "Error loading test".
+          setStartError(attemptRes.message || "The server did not return a usable attempt.");
+          return;
+        }
 
-          // Pre-fill any existing answers if the attempt was already started and resumed
-          if (attemptRes.data.answers) {
-            const answersMap: Record<string, string> = {};
-            attemptRes.data.answers.forEach((ans: any) => {
-              answersMap[(ans.question_id || ans.question).toString()] = (ans.selected_option_id || ans.selectedOption).toString();
-            });
-            setSelectedAnswers(answersMap);
-          }
+        setAttempt(attemptRes.data);
 
-          // The server clamps a scheduled test's real deadline (expires_at)
-          // below the test's nominal duration_minutes once the window is
-          // closing, and that clamped value — not the nominal duration — is
-          // what it actually enforces on every answer save. Always derive
-          // the countdown from expires_at so a student who starts late in
-          // the window isn't shown time the server has already cut off.
-          const expiresAt = attemptRes.data.expires_at;
-          if (expiresAt) {
-            const remaining = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
-            setTimeLeft(remaining > 0 ? remaining : 0);
-          } else {
-            const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
-            setTimeLeft(duration * 60);
-          }
+        // Pre-fill any existing answers if the attempt was already started and resumed
+        if (attemptRes.data.answers) {
+          const answersMap: Record<string, string> = {};
+          attemptRes.data.answers.forEach((ans: any) => {
+            answersMap[(ans.question_id || ans.question).toString()] = (ans.selected_option_id || ans.selectedOption).toString();
+          });
+          setSelectedAnswers(answersMap);
+        }
+
+        // The server clamps a scheduled test's real deadline (expires_at)
+        // below the test's nominal duration_minutes once the window is
+        // closing, and that clamped value — not the nominal duration — is
+        // what it actually enforces on every answer save. Always derive
+        // the countdown from expires_at so a student who starts late in
+        // the window isn't shown time the server has already cut off.
+        const expiresAt = attemptRes.data.expires_at;
+        if (expiresAt) {
+          const remaining = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
+          setTimeLeft(remaining > 0 ? remaining : 0);
+        } else {
+          const duration = testRes.data.duration_minutes || testRes.data.durationMinutes || 60;
+          setTimeLeft(duration * 60);
         }
       } catch (error: any) {
-        toast.error(error.message || "Failed to start test");
-        router.push("/tests");
+        // Do NOT bounce back to /tests here. A transient 401/429/network blip
+        // used to redirect with a raw error toast, which is what students saw
+        // as "the test sometimes doesn't open" — with no way forward except
+        // clicking in again and hoping. Stay on the page and offer a retry; a
+        // genuinely dead session is already redirected to /login by the API
+        // client's interceptor.
+        setStartError(error?.message || "Failed to start test");
       } finally {
         setIsLoading(false);
       }
     };
 
     initializeTest();
-  }, [unwrappedParams.testId, router]);
+  }, [unwrappedParams.testId, router, retryCount]);
 
   // Live timer simulation effect
   useEffect(() => {
@@ -190,9 +208,28 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
   if (!test || !attempt || !test.questions || test.questions.length === 0) {
     return (
-      <div className="fixed inset-0 bg-slate-100 flex flex-col items-center justify-center z-50">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Error loading test</h2>
-        <Link href="/tests" className="px-6 py-2.5 bg-[#D00113] text-white rounded-xl text-sm font-bold">Return to Dashboard</Link>
+      <div className="fixed inset-0 bg-slate-100 flex flex-col items-center justify-center z-50 px-6 text-center">
+        <h2 className="text-xl font-bold text-slate-800 mb-2">Couldn&apos;t start this test</h2>
+        <p className="text-sm text-slate-500 max-w-md mb-6">
+          {startError ||
+            (test && (!test.questions || test.questions.length === 0)
+              ? "This test has no questions yet. Please contact support."
+              : "Something interrupted the connection. Your attempt has not been affected.")}
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="px-6 py-2.5 bg-[#D00113] text-white rounded-xl text-sm font-bold"
+          >
+            Try Again
+          </button>
+          <Link
+            href="/tests"
+            className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold"
+          >
+            Back to Mocks
+          </Link>
+        </div>
       </div>
     );
   }

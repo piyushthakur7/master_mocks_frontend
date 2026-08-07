@@ -112,6 +112,15 @@ export const getAccessToken = (): string | null => {
 // /auth/refresh-token can ever be in flight at a time.
 let refreshPromise: Promise<string> | null = null;
 
+// A refresh that fails *transiently* (429/5xx/network — not a dead session)
+// leaves the expired token in place, so every subsequent request 401s and,
+// with no gate here, each one started its own /auth/refresh-token POST. On
+// this rate-limited host that storm is self-sustaining: the refreshes get
+// throttled, nothing heals, and the student sees random failures. Back off
+// for a beat instead so one refresh is attempted per window.
+let refreshBlockedUntil = 0;
+const REFRESH_COOLDOWN_MS = 5000;
+
 // Prevent redirect storms — only redirect once
 let isRedirecting = false;
 
@@ -254,12 +263,22 @@ apiClient.interceptors.response.use(
     // expired sessions, and must surface to the caller unchanged.
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !isAuthEndpoint(originalRequest.url)
+      !originalRequest?._retry &&
+      !isAuthEndpoint(originalRequest?.url)
     ) {
       // If already redirecting to login, don't bother refreshing
       if (isRedirecting) {
         return Promise.reject({ message: "Session expired", status: 401, _silent: true });
+      }
+
+      // A refresh failed transiently moments ago and no retry is in flight —
+      // piling more refresh POSTs on now only deepens the throttling.
+      if (!refreshPromise && Date.now() < refreshBlockedUntil) {
+        return Promise.reject({
+          message: "Reconnecting your session. Please try again in a moment.",
+          status: 401,
+          route: originalRequest?.url,
+        });
       }
 
       // Each request retries at most once, no matter how the refresh goes.
@@ -271,14 +290,9 @@ apiClient.interceptors.response.use(
         });
       }
 
+      let freshToken: string;
       try {
-        const token = await refreshPromise;
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-        }
-        // Retried outside performTokenRefresh so a failing retry (404/500)
-        // can never be mistaken for a refresh failure and trigger a logout.
-        return apiClient(originalRequest);
+        freshToken = await refreshPromise;
       } catch (refreshError: any) {
         const refreshStatus =
           refreshError?.response?.status ?? refreshError?.status;
@@ -292,12 +306,23 @@ apiClient.interceptors.response.use(
           return Promise.reject({ message: "Session expired", status: 401, _silent: true });
         }
 
+        refreshBlockedUntil = Date.now() + REFRESH_COOLDOWN_MS;
         return Promise.reject({
           message: "Could not reach the server. Please try again.",
           status: refreshStatus,
           route: originalRequest?.url,
         });
       }
+
+      // The refresh worked — clear any earlier backoff.
+      refreshBlockedUntil = 0;
+      if (originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+      }
+      // Retried OUTSIDE the catch above (it used to sit inside the same try):
+      // a retry that fails for its own reasons — 404, 500, a second 401 — was
+      // being caught as a "refresh failure" and could log the student out.
+      return apiClient(originalRequest);
     }
 
     // Handle 429 Too Many Requests. Honor Retry-After for a single gentle
