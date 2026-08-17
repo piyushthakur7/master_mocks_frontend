@@ -5,8 +5,21 @@ import { userService } from "@/services/user.service";
 import { User } from "@/types/user";
 import { toast } from "sonner";
 import { useAdminUsers } from "@/hooks/queries/use-admin-queries";
-import { Loader2, UserX, UserCheck, ShieldAlert, IndianRupee } from "lucide-react";
+import { Loader2, UserX, UserCheck, ShieldAlert, IndianRupee, Download, Phone } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { CsvColumn, buildCsv, downloadCsv, datedFilename } from "@/lib/csv";
+
+// The registration roster export. phone_number is forced to text so Excel
+// cannot turn it into scientific notation.
+const STUDENT_COLUMNS: CsvColumn<any>[] = [
+  { key: "full_name", label: "Student Name" },
+  { key: "phone_number", label: "Phone Number", text: true },
+  { key: "email", label: "Email" },
+  { key: "status", label: "Account Status" },
+  { key: "role", label: "Role" },
+  { key: "createdAt", label: "Registered On", format: (r) => formatDate(r.createdAt) },
+  { key: "_id", label: "User ID" },
+];
 
 export default function AdminStudentsRosterPage() {
   const { data: students = [], isLoading, refetch } = useAdminUsers({ role: "STUDENT" }) as {
@@ -26,6 +39,15 @@ export default function AdminStudentsRosterPage() {
     }
   };
 
+  const exportCsv = () => {
+    if (students.length === 0) {
+      toast.error("Nothing to export");
+      return;
+    }
+    downloadCsv(datedFilename("registered-students"), buildCsv(students, STUDENT_COLUMNS));
+    toast.success(`Exported ${students.length} students`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -38,6 +60,7 @@ export default function AdminStudentsRosterPage() {
   // Use either walletBalance or wallet_balance depending on backend
   const totalWalletBalance = students.reduce((sum, s) => sum + ((s as any).wallet_balance || s.walletBalance || 0), 0);
   const inactiveStudents = students.filter(s => s.status !== "active").length;
+  const withPhone = students.filter(s => (s as any).phone_number).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -87,6 +110,7 @@ export default function AdminStudentsRosterPage() {
               <thead>
                 <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200">
                   <th className="py-3.5 px-6">Candidate Profile</th>
+                  <th className="py-3.5 px-6">Phone Number</th>
                   <th className="py-3.5 px-6">Registration Date</th>
                   <th className="py-3.5 px-6">Wallet Balance</th>
                   <th className="py-3.5 px-6">Status</th>
@@ -98,7 +122,7 @@ export default function AdminStudentsRosterPage() {
                   <tr key={student._id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-4 px-6 flex items-center gap-3">
                       <img 
-                        src={student.avatar || `https://ui-avatars.com/api/?name=${student.full_name}&background=random`} 
+                        src={(student as any).profile_picture || student.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.full_name)}&background=random`} 
                         alt={student.full_name} 
                         className="w-8 h-8 rounded-full border border-slate-200 object-cover"
                       />
@@ -106,6 +130,15 @@ export default function AdminStudentsRosterPage() {
                         <p className="font-bold text-slate-900 text-sm leading-tight">{student.full_name}</p>
                         <p className="text-[11px] text-slate-400 font-mono mt-0.5">{student.email}</p>
                       </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      {(student as any).phone_number ? (
+                        <a href={`tel:${(student as any).phone_number}`} className="font-bold text-slate-900 font-mono hover:text-[#D00113] transition-colors">
+                          {(student as any).phone_number}
+                        </a>
+                      ) : (
+                        <span className="text-slate-300 font-bold">Not provided</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-slate-500">{formatDate(student.createdAt)}</td>
                     <td className="py-4 px-6 font-bold text-emerald-600">{formatCurrency((student as any).wallet_balance || student.walletBalance || 0)}</td>

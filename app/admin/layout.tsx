@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, FileEdit, Users, FolderOpen, FileText, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileEdit, Users, FolderOpen, FileText, Settings, LogOut, Menu, X, GraduationCap } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
 export default function AdminWorkspaceLayout({ children }: { children: React.ReactNode }) {
@@ -38,6 +38,7 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
     { name: "Manage Categories", href: "/admin/categories", icon: <FolderOpen size={18} /> },
     { name: "Manage Mock Tests", href: "/admin/tests", icon: <FileEdit size={18} /> },
     { name: "Student Management", href: "/admin/students", icon: <Users size={18} /> },
+    { name: "Enrollments", href: "/admin/enrollments", icon: <GraduationCap size={18} /> },
     { name: "Study Resources", href: "/admin/resources", icon: <FileText size={18} /> },
     { name: "Payments & Reports", href: "/admin/reports", icon: <FileText size={18} /> },
     { name: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },

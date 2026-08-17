@@ -9,6 +9,7 @@ import { paymentService } from "@/services/payment.service";
 import { inquiryService } from "@/services/inquiry.service";
 import { attemptService } from "@/services/attempt.service";
 import { AdminDashboard } from "@/types/dashboard";
+import { EnrollmentRow } from "@/types/enrollment";
 
 // Normalizes the various backend envelope shapes into a plain array.
 const toArray = (data: any): any[] => {
@@ -34,6 +35,17 @@ export const useAdminUsers = (params?: any) => {
       const res = await userService.getAllUsers(params);
       if (!res.success) throw new Error(res.message);
       return toArray(res.data);
+    },
+  });
+};
+
+export const useAdminEnrollments = (params?: any) => {
+  return useQuery<EnrollmentRow[]>({
+    queryKey: ["admin-enrollments", params],
+    queryFn: async () => {
+      const res = await courseService.getAllEnrollments(params);
+      if (!res.success) throw new Error(res.message);
+      return toArray(res.data) as EnrollmentRow[];
     },
   });
 };
