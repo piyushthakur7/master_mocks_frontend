@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle2, Shield } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import RichText from "@/components/shared/RichText";
 
 interface PageProps {
   params: Promise<{ courseId: string }>;
@@ -276,7 +277,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
               <div className="prose prose-sm md:prose-base prose-slate max-w-none">
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2 mb-4">Course Description</h3>
-                <div dangerouslySetInnerHTML={{ __html: course.description || "<p>No description provided.</p>" }} />
+                <RichText content={course.description || "No description provided."} />
               </div>
             </div>
           </div>

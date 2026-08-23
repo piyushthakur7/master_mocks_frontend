@@ -10,6 +10,7 @@ import { Loader2, CheckCircle, Clock, Target, Trophy } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { LeaderboardEntry } from "@/types/leaderboard";
+import RichText from "@/components/shared/RichText";
 interface PageProps {
   params: Promise<{ attemptId: string }>;
 }
@@ -360,7 +361,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                         </span>
                       </div>
 
-                      <div className="text-sm font-medium text-slate-800" dangerouslySetInnerHTML={{ __html: questionText }} />
+                      <RichText content={questionText} className="text-sm font-medium text-slate-800" />
 
                       {options.length > 0 ? (
                         <div className="space-y-2">
@@ -390,7 +391,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                                 }`}>
                                   {String.fromCharCode(65 + oIdx)}
                                 </span>
-                                <span className="flex-1 min-w-0 leading-relaxed" dangerouslySetInnerHTML={{ __html: option?.text ?? "" }} />
+                                <RichText inline content={option?.text} className="flex-1 min-w-0 leading-relaxed" />
                                 <span className="shrink-0 flex flex-wrap justify-end gap-1.5">
                                   {isTheSelectedOne && (
                                     <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
@@ -415,12 +416,12 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                           <div className={`p-3 rounded-lg border ${isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
                             <span className="font-bold block mb-1">Your Answer:</span>
-                            <span dangerouslySetInnerHTML={{ __html: answer?.selected_option_text || (answer?.selectedOption as any)?.text || "Not attempted" }} />
+                            <RichText inline content={answer?.selected_option_text || (answer?.selectedOption as any)?.text || "Not attempted"} />
                           </div>
                           {correctKnown && (
                             <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
                               <span className="font-bold block mb-1">Correct Answer:</span>
-                              <span dangerouslySetInnerHTML={{ __html: correctText || "" }} />
+                              <RichText inline content={correctText} />
                             </div>
                           )}
                         </div>
@@ -435,7 +436,7 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
                       {explanation && (
                         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Solution</span>
-                          <div className="text-xs font-medium text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: explanation }} />
+                          <RichText content={explanation} className="text-xs font-medium text-slate-700 leading-relaxed" />
                         </div>
                       )}
                     </div>

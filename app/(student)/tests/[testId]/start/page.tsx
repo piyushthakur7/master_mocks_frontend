@@ -10,6 +10,7 @@ import { MockTest } from "@/types/mock-test";
 import { TestAttempt } from "@/types/attempt";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import RichText from "@/components/shared/RichText";
 
 interface PageProps {
   params: Promise<{ testId: string }>;
@@ -287,7 +288,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             </div>
 
             {/* Prompt String Description */}
-            <div className="text-slate-800 font-semibold text-base leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentQObj.text || "" }} />
+            <RichText content={currentQObj.text} className="text-slate-800 font-semibold text-base leading-relaxed" />
 
             {/* Multiple Choice Radio List */}
             <div className="space-y-3 pt-2">
@@ -309,7 +310,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
                       }`}>
                         {String.fromCharCode(65 + idx)}
                       </span>
-                      <span dangerouslySetInnerHTML={{ __html: option.text }} />
+                      <RichText inline content={option.text} />
                     </div>
                     <div className={`shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? "border-[#D00113]" : "border-slate-300"}`}>
                       {isSelected && <div className="w-2 h-2 rounded-full bg-[#D00113]" />}

@@ -428,8 +428,9 @@ export default function AdminEditTestPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-3 space-y-1.5">
               <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Question Text</label>
+                      <p className="text-[10px] font-medium text-slate-400">Line breaks are preserved — put each numbered item (1., 2., …) on its own line.</p>
               <textarea
-                rows={2}
+                rows={5}
                 placeholder="Enter the question text here..."
                 value={newQuestion.text}
                 onChange={e => setNewQuestion({...newQuestion, text: e.target.value})}
@@ -482,7 +483,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
           <div className="space-y-1.5">
             <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Explanation (Optional)</label>
             <textarea
-              rows={1}
+              rows={3}
               placeholder="Explanation for the correct answer..."
               value={newQuestion.explanation}
               onChange={e => setNewQuestion({...newQuestion, explanation: e.target.value})}
