@@ -30,10 +30,25 @@ export default function GlobalError({
           System Interruption
         </h2>
         
-        <p className="text-sm text-slate-500 font-medium mb-8">
+        <p className="text-sm text-slate-500 font-medium mb-5">
           A critical exception occurred while processing this request. Our telemetry systems have logged the failure.
         </p>
         
+        {(error.digest || error.message) && (
+          <div className="mb-8 text-left bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+            {error.digest && (
+              <p className="text-[11px] font-mono text-slate-500 break-all">
+                Reference: {error.digest}
+              </p>
+            )}
+            {error.message && (
+              <p className="text-[11px] font-mono text-slate-400 break-all line-clamp-4">
+                {error.message}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3">
           <button
             onClick={() => reset()}
