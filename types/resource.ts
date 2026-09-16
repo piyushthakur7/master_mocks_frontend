@@ -11,6 +11,7 @@ export interface Resource {
   course?: Course | string;              // v2.0: now optional (decoupled from courses)
   category?: Category | string;          // v2.0: new field for standalone organization
   file_url?: string;
+  file_available?: boolean;
   is_active: boolean;
   createdAt: string;
   updatedAt?: string;

@@ -26,6 +26,12 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({}); // questionId -> optionId
+  // Latest answers for the submit, which can fire from the timer effect's
+  // closure rather than a fresh render.
+  const selectedAnswersRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    selectedAnswersRef.current = selectedAnswers;
+  }, [selectedAnswers]);
   const [timeLeft, setTimeLeft] = useState(0); 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,9 +53,12 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
       try {
         // Fetch test details to get questions
         const testRes = await mockTestService.getById(unwrappedParams.testId);
-        if (!testRes.success || !testRes.data) {
-          toast.error("Test not found");
-          router.push("/tests");
+        if (!testRes?.success || !testRes?.data) {
+          // Stay here with a retry. This used to toast "Test not found" and
+          // push to /tests — the FREE mocks list — so a student who had just
+          // paid for a mock and hit one bad response landed on the free list
+          // with no way back to what they bought.
+          setStartError("We couldn't load this test. Please try again.");
           return;
         }
 
@@ -71,8 +80,16 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
         if (attemptRes.data.answers) {
           const answersMap: Record<string, string> = {};
           attemptRes.data.answers.forEach((ans: any) => {
-            answersMap[(ans.question_id || ans.question).toString()] = (ans.selected_option_id || ans.selectedOption).toString();
+            // A cleared answer is stored with a null selection. Calling
+            // toString() on it threw, so a student who had cleared any answer
+            // and then reloaded could not get back into their test at all.
+            const questionId = ans.question_id || ans.question;
+            const optionId = ans.selected_option_id || ans.selectedOption;
+            if (questionId && optionId) {
+              answersMap[questionId.toString()] = optionId.toString();
+            }
           });
+          selectedAnswersRef.current = answersMap;
           setSelectedAnswers(answersMap);
         }
 
@@ -108,7 +125,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
 
   // Live timer simulation effect
   useEffect(() => {
-    if (isLoading || isSubmitting || !test) return;
+    if (isLoading || isSubmitting || startError || !test || !attempt) return;
     
     if (timeLeft <= 0) {
       if (!hasAutoSubmitted.current) {
@@ -120,7 +137,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     
     const interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(interval);
-  }, [timeLeft, isLoading, isSubmitting, test]);
+  }, [timeLeft, isLoading, isSubmitting, test, attempt, startError]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -132,7 +149,8 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     if (!attempt || isSubmitting) return;
 
     // Optimistic UI update
-    setSelectedAnswers({ ...selectedAnswers, [questionId]: optionId });
+    selectedAnswersRef.current = { ...selectedAnswersRef.current, [questionId]: optionId };
+    setSelectedAnswers(selectedAnswersRef.current);
 
     try {
       // Sync with server
@@ -148,8 +166,9 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     if (selectedAnswers[questionId] === undefined) return;
 
     // Optimistically drop the selection from local state.
-    const next = { ...selectedAnswers };
+    const next = { ...selectedAnswersRef.current };
     delete next[questionId];
+    selectedAnswersRef.current = next;
     setSelectedAnswers(next);
 
     try {
@@ -169,22 +188,17 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     setIsSubmitting(true);
     
     try {
-      // A 400 here means the attempt was already submitted/evaluated (e.g. the
-      // answer-sync race, or a retry after a flaky network) — that is a success
-      // from the student's point of view, so swallow it and move on. The
-      // rejection shape from api-client is { message, status }, NOT statusCode:
-      // reading the wrong field made every 400 rethrow and stranded students on
-      // the exam screen with "Failed to submit" after a successful submit.
-      try {
-        await attemptService.submit(attempt._id);
-      } catch (e: any) {
-        if (e?.status !== 400) throw e;
-      }
-      try {
-        await attemptService.evaluate(attempt._id);
-      } catch (e: any) {
-        if (e?.status !== 400) throw e;
-      }
+      // Send every question with what is on screen (null = unanswered) so the
+      // score reflects exactly what the student saw, even when some of the
+      // per-click answer saves never reached the server.
+      const onScreen = selectedAnswersRef.current;
+      const answerSheet = (test?.questions || [])
+        .filter((q) => q._id)
+        .map((q) => ({
+          question_id: q._id as string,
+          selected_option_id: onScreen[q._id as string] ?? null,
+        }));
+      await attemptService.submit(attempt._id, answerSheet);
       // The attempt list and dashboard stats just changed — mark their cached
       // queries stale so the next visit refetches instead of serving the
       // 15-minute-fresh cache without this submission.
@@ -207,7 +221,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
     );
   }
 
-  if (!test || !attempt || !test.questions || test.questions.length === 0) {
+  if (startError || !test || !attempt || !test.questions || test.questions.length === 0) {
     return (
       <div className="fixed inset-0 bg-slate-100 flex flex-col items-center justify-center z-50 px-6 text-center">
         <h2 className="text-xl font-bold text-slate-800 mb-2">Couldn&apos;t start this test</h2>
@@ -225,7 +239,7 @@ export default function InteractiveTestEnginePage({ params }: PageProps) {
             Try Again
           </button>
           <Link
-            href="/tests"
+            href={`/tests/${unwrappedParams.testId}`}
             className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold"
           >
             Back to Mocks

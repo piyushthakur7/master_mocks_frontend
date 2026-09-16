@@ -20,5 +20,10 @@ export const resourceService = {
     headers: { "Content-Type": "multipart/form-data" }
   }),
   
+  replaceFile: (id: string, data: FormData) =>
+    apiClient.put<any, ApiResponse<Resource>>(`/resources/${id}/file`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
   delete: (id: string) => apiClient.delete<any, ApiResponse<null>>(`/resources/${id}`),
 };

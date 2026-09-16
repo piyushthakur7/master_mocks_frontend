@@ -163,7 +163,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   // through the same shared React Query cache; no layout prefetch needed.
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
     }
   }, [isLoading, isAuthenticated, router]);
 

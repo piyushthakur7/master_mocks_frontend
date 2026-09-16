@@ -52,6 +52,10 @@ function StudentResourcesVaultContent() {
   const resources = allResources.filter(matchesCategory);
 
   const handleDownload = async (item: Resource) => {
+    if (item.file_available === false) {
+      toast.error("This PDF is temporarily unavailable. Please check back soon.");
+      return;
+    }
     try {
       // 1. Handle external HTTP links if they exist
       const directUrl = item.file_url || item.fileUrl;
@@ -188,10 +192,11 @@ function StudentResourcesVaultContent() {
 
                   <div className="pt-4 mt-5">
                     <button
+                      disabled={item.file_available === false}
                       onClick={() => handleDownload(item)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 group-hover:bg-[#1A1A1A] group-hover:text-white text-slate-700 rounded-xl transition-all text-xs font-black uppercase tracking-wider"
                     >
-                      <Download className="w-3.5 h-3.5" /> Download / View
+                      <Download className="w-3.5 h-3.5" /> {item.file_available === false ? "Temporarily unavailable" : "Download / View"}
                     </button>
                   </div>
                 </div>

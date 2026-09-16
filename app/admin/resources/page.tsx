@@ -15,6 +15,23 @@ export default function AdminResourcesUploadPage() {
   // Shared 6h-cached query — usually served from cache, costing no request.
   const { data: categories = [], isError: categoriesFailed } = useCategories();
 
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+  const replaceFile = async (id: string, file?: File) => {
+    if (!file) return;
+    setReplacingId(id);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      await resourceService.replaceFile(id, data);
+      toast.success("PDF restored successfully");
+      await refetch();
+    } catch (error: unknown) {
+      toast.error((error as { message?: string })?.message || "Could not replace PDF");
+    } finally {
+      setReplacingId(null);
+    }
+  };
+
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -265,6 +282,7 @@ export default function AdminResourcesUploadPage() {
                       </div>
                       <div>
                         <p className="font-bold text-slate-900 text-sm leading-tight">{res.title}</p>
+                        {res.file_available === false && <p className="text-red-600 mt-1">File missing — upload a replacement</p>}
                       </div>
                     </td>
                     <td className="py-4 px-6">
@@ -284,6 +302,10 @@ export default function AdminResourcesUploadPage() {
                     <td className="py-4 px-6 text-slate-500">{formatDate(res.createdAt)}</td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <label className="text-xs font-bold cursor-pointer">
+                          {replacingId === res._id ? "Uploading…" : "Replace PDF"}
+                          <input type="file" accept=".pdf" className="block max-w-48" aria-label={`Replace PDF for ${res.title}`} disabled={replacingId !== null} onChange={e => { void replaceFile(res._id, e.target.files?.[0]); e.target.value = ""; }} />
+                        </label>
                         <button 
                           onClick={() => deleteResource(res._id)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"

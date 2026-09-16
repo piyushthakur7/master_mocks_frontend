@@ -24,8 +24,18 @@ export const attemptService = {
       selected_option_id: null,
     }),
 
-  submit: (attemptId: string) =>
-    apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/submit`),
+  // Carries the full answer sheet as shown on screen. Each click is also saved
+  // on its own, but a save that fails (dropped connection, throttling, or the
+  // last answer still in flight when Submit is pressed) used to be lost and
+  // scored as unattempted. The server scores from this sheet instead.
+  submit: (
+    attemptId: string,
+    answers?: { question_id: string; selected_option_id: string | null }[]
+  ) =>
+    apiClient.post<any, ApiResponse<TestAttempt>>(
+      `/attempts/${attemptId}/submit`,
+      answers ? { answers } : {}
+    ),
   
   evaluate: (attemptId: string) =>
     apiClient.post<any, ApiResponse<TestAttempt>>(`/attempts/${attemptId}/evaluate`),

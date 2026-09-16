@@ -35,13 +35,14 @@ export const useCategories = () => {
 export const useCategoryItems = (
   accessType: "free" | "paid",
   resourceType: "mock" | "pdf",
-  categoryId: string | undefined
+  categoryId: string | undefined,
+  enabled = true
 ) => {
   return useQuery<any[]>({
     queryKey: ["category-items", accessType, resourceType, categoryId],
     // Dependent query: waits for the category id from useCategories, so the
     // two never race and a missing category fires no request at all.
-    enabled: !!categoryId,
+    enabled: !!categoryId && enabled,
     queryFn: async () => {
       if (resourceType === "mock") {
         const res: any = await mockTestService.getAll({
