@@ -5,7 +5,8 @@ import { userService } from "@/services/user.service";
 import { User } from "@/types/user";
 import { toast } from "sonner";
 import { useAdminUsers } from "@/hooks/queries/use-admin-queries";
-import { Loader2, UserX, UserCheck, ShieldAlert, IndianRupee, Download, Phone } from "lucide-react";
+import { UserX, UserCheck, ShieldAlert, IndianRupee, Download, Phone } from "lucide-react";
+import { SkeletonTableBodyLight } from "@/components/admin/admin-skeletons";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { CsvColumn, buildCsv, downloadCsv, datedFilename } from "@/lib/csv";
 
@@ -48,14 +49,9 @@ export default function AdminStudentsRosterPage() {
     toast.success(`Exported ${students.length} students`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
-      </div>
-    );
-  }
-
+  // Stats below derive from `students`, which defaults to [] — they render as
+  // zeroes during the fetch and fill in on arrival, so the page frame and
+  // headings paint immediately instead of hiding behind a full-screen spinner.
   const activeStudents = students.filter(s => s.status === "active").length;
   // Use either walletBalance or wallet_balance depending on backend
   const totalWalletBalance = students.reduce((sum, s) => sum + ((s as any).wallet_balance || s.walletBalance || 0), 0);
@@ -103,7 +99,25 @@ export default function AdminStudentsRosterPage() {
       </div>
 
       {/* Main Roster Matrix Grid Table Layout */}
-      {students.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200">
+                  <th className="py-3.5 px-6">Candidate Profile</th>
+                  <th className="py-3.5 px-6">Phone Number</th>
+                  <th className="py-3.5 px-6">Registration Date</th>
+                  <th className="py-3.5 px-6">Wallet Balance</th>
+                  <th className="py-3.5 px-6">Status</th>
+                  <th className="py-3.5 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <SkeletonTableBodyLight columns={6} rows={8} />
+            </table>
+          </div>
+        </div>
+      ) : students.length > 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse min-w-[800px]">

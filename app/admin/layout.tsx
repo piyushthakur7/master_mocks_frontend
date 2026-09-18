@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { LayoutDashboard, FileEdit, Users, FolderOpen, FileText, Settings, LogOut, Menu, X, GraduationCap } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminWorkspaceLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,13 +25,15 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
     }
   }, [isLoading, isAuthenticated, isAdmin, router]);
 
-  if (isLoading || !isAuthenticated || !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="w-8 h-8 border-4 border-[#D00113] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  // Only a genuinely unresolved session blocks. Once auth has resolved but the
+  // user is not an admin, the redirect above is already in flight — rendering
+  // the shell rather than a full-screen spinner keeps the frame stable.
+  const isAuthResolving = isLoading;
+  // The chrome (sidebar, nav) needs no data, so it renders immediately; only
+  // the content area waits on the session. Previously the whole admin tree sat
+  // behind one spinner, so every navigation blanked the screen before the page
+  // could even begin its own load.
+  const canRenderContent = !isLoading && isAuthenticated && isAdmin;
 
   // All URL paths explicitly target the clear /admin sub-directory tree
   const adminNavItems = [
@@ -157,7 +160,25 @@ export default function AdminWorkspaceLayout({ children }: { children: React.Rea
       {/* ─── MAIN ADMIN CONTENT VIEWPORT ─── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto text-slate-900">
         <div className="p-4 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto space-y-8">
-          {children}
+          {canRenderContent ? (
+            children
+          ) : isAuthResolving ? (
+            // Session still resolving: a quiet placeholder inside the real
+            // chrome, not a full-screen takeover.
+            <div className="space-y-6">
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-2xl" />
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Auth resolved and denied — the redirect is already running.
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-4 border-[#D00113] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
         </div>
       </main>
 

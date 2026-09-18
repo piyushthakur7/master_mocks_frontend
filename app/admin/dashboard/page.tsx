@@ -2,20 +2,13 @@
 
 import Link from "next/link";
 import { useAdminDashboard } from "@/hooks/queries/use-admin-queries";
-import { Loader2, Users, BookOpen, Flag, IndianRupee } from "lucide-react";
+import { Users, BookOpen, Flag, IndianRupee } from "lucide-react";
+import { SkeletonStatCards, SkeletonChartCard } from "@/components/admin/admin-skeletons";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function AdminDashboardOverviewPage() {
   const { data, isLoading } = useAdminDashboard();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
-      </div>
-    );
-  }
 
   // Coerce every field defensively: a non-null response that is missing a key
   // (or uses snake_case) must not crash .toLocaleString()/.toString() below.
@@ -71,6 +64,9 @@ export default function AdminDashboardOverviewPage() {
       </div>
 
       {/* Aggregated Analytics Scoreboard Cards */}
+      {isLoading ? (
+        <SkeletonStatCards count={4} />
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {corporateMetrics.map((card, i) => (
           <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative group hover:border-slate-300 transition-all">
@@ -89,7 +85,14 @@ export default function AdminDashboardOverviewPage() {
           </div>
         ))}
       </div>
+      )}
 
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonChartCard title="Revenue Growth" />
+          <SkeletonChartCard title="Enrollment Activity" />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between text-center min-h-[350px]">
           <div>
@@ -143,6 +146,7 @@ export default function AdminDashboardOverviewPage() {
           </div>
         </div>
       </div>
+      )}
 
     </div>
   );

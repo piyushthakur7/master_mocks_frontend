@@ -31,7 +31,9 @@ apiClient.get = async function (url: string, config?: any) {
   const key = url + JSON.stringify(config?.params || {});
   
   if (inFlightRequests.has(key)) {
-    console.log(`[Deduplicated In-Flight] Reuse GET: ${url}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[Deduplicated In-Flight] Reuse GET: ${url}`);
+    }
     return inFlightRequests.get(key);
   }
   
@@ -46,19 +48,43 @@ apiClient.get = async function (url: string, config?: any) {
   }
 };
 
-// -- Global Request Pacing --
-// The Hostinger/LiteSpeed host punishes bursts: probing showed connection
-// resets after just a few rapid requests. Space every outgoing request so a
-// page's parallel queries drip onto the wire instead of arriving together.
+// -- Global Request Pacing (token bucket) --
+// The Hostinger/LiteSpeed host punishes sustained bursts: probing showed
+// connection resets after several rapid requests. The previous implementation
+// enforced a flat 250ms gap between ALL requests, which also serialized the
+// small, legitimate bursts every screen opens with — an admin page firing 3
+// queries paid 500ms of pure idle wait before the slowest one even started.
+//
+// A token bucket keeps the sustained rate identical (one request per
+// REQUEST_GAP_MS) while letting a page's initial handful go out together.
+// Tokens refill continuously; a burst drains them, and once empty requests
+// queue at exactly the old steady-state pace.
 const REQUEST_GAP_MS = 250;
-let nextSlotAt = 0;
-const waitForSlot = (): Promise<void> => {
+const BURST_SIZE = 4;
+let tokens = BURST_SIZE;
+let lastRefillAt = Date.now();
+
+const refillTokens = () => {
   const now = Date.now();
-  const slot = Math.max(now, nextSlotAt);
-  nextSlotAt = slot + REQUEST_GAP_MS;
-  return slot > now
-    ? new Promise((resolve) => setTimeout(resolve, slot - now))
-    : Promise.resolve();
+  const gained = (now - lastRefillAt) / REQUEST_GAP_MS;
+  if (gained > 0) {
+    tokens = Math.min(BURST_SIZE, tokens + gained);
+    lastRefillAt = now;
+  }
+};
+
+const waitForSlot = (): Promise<void> => {
+  refillTokens();
+  if (tokens >= 1) {
+    tokens -= 1;
+    return Promise.resolve();
+  }
+  // Bucket is empty: wait for the next whole token, then take it. Reserving
+  // the token up front (going negative) keeps concurrent waiters from all
+  // claiming the same slot.
+  const waitMs = Math.ceil((1 - tokens) * REQUEST_GAP_MS);
+  tokens -= 1;
+  return new Promise((resolve) => setTimeout(resolve, waitMs));
 };
 
 // -- 429 Circuit Breaker --
@@ -74,8 +100,14 @@ const enterCooldown = (ms: number) => {
   blockedUntil = Math.max(blockedUntil, Date.now() + Math.min(ms, COOLDOWN_CAP_MS));
 };
 
+// Debug instrumentation below is development-only. Capturing a stack trace
+// costs real time, and it was being paid on EVERY request in production
+// purely to print a name into a console nobody reads there.
+const IS_DEV = process.env.NODE_ENV !== "production";
+
 // Utility to extract the caller component from the stack trace
 const getCallerComponent = () => {
+  if (!IS_DEV) return "";
   try {
     throw new Error();
   } catch (e: any) {
@@ -193,12 +225,14 @@ apiClient.interceptors.request.use(
     }
 
     config.metadata = { startTime: new Date().getTime(), caller: getCallerComponent() };
-    
-    console.log(
-      `[API Request] ${config.method?.toUpperCase()} ${config.url}\n` +
-      `  Caller: ${config.metadata.caller}`
-    );
-    
+
+    if (IS_DEV) {
+      console.log(
+        `[API Request] ${config.method?.toUpperCase()} ${config.url}\n` +
+        `  Caller: ${config.metadata.caller}`
+      );
+    }
+
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -214,14 +248,16 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     const originalRequest = response.config as InternalAxiosRequestConfig & { metadata?: any };
-    const duration = originalRequest?.metadata?.startTime
-      ? new Date().getTime() - originalRequest.metadata.startTime
-      : 0;
-      
-    console.log(
-      `[API Response] ${response.status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\n` +
-      `  Duration: ${duration}ms`
-    );
+    if (IS_DEV) {
+      const duration = originalRequest?.metadata?.startTime
+        ? new Date().getTime() - originalRequest.metadata.startTime
+        : 0;
+
+      console.log(
+        `[API Response] ${response.status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}\n` +
+        `  Duration: ${duration}ms`
+      );
+    }
 
     const body = response.data;
     // Normalize backend response: backend returns { statusCode, data, message }

@@ -5,7 +5,8 @@ import { useAdminEnrollments } from "@/hooks/queries/use-admin-queries";
 import { EnrollmentRow } from "@/types/enrollment";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { CsvColumn, buildCsv, downloadCsv, datedFilename } from "@/lib/csv";
-import { Loader2, Download, Search, Users, Phone, GraduationCap, Copy, Check } from "lucide-react";
+import { Download, Search, Users, Phone, GraduationCap, Copy, Check } from "lucide-react";
+import { SkeletonTableBodyLight } from "@/components/admin/admin-skeletons";
 import { toast } from "sonner";
 
 const COLUMNS: CsvColumn<EnrollmentRow>[] = [
@@ -83,14 +84,8 @@ export default function AdminEnrollmentsPage() {
     toast.success(`Exported ${filtered.length} enrollments`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
-      </div>
-    );
-  }
-
+  // No blocking early return: the header, filters and summary tiles are static
+  // chrome and paint immediately, with only the table body waiting on data.
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -186,7 +181,26 @@ export default function AdminEnrollmentsPage() {
         </span>
       </div>
 
-      {filtered.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse min-w-[1100px]">
+              <thead>
+                <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200">
+                  <th className="py-3.5 px-6">Student</th>
+                  <th className="py-3.5 px-6">Phone Number</th>
+                  <th className="py-3.5 px-6">Course</th>
+                  <th className="py-3.5 px-6">Access</th>
+                  <th className="py-3.5 px-6">Enrolled On</th>
+                  <th className="py-3.5 px-6">Expires</th>
+                  <th className="py-3.5 px-6">Status</th>
+                </tr>
+              </thead>
+              <SkeletonTableBodyLight columns={7} rows={8} />
+            </table>
+          </div>
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse min-w-[1100px]">

@@ -5,7 +5,8 @@ import { mockTestService } from "@/services/mock-test.service";
 import { MockTest } from "@/types/mock-test";
 import { toast } from "sonner";
 import { useAdminTests } from "@/hooks/queries/use-admin-queries";
-import { Loader2, Plus, Edit, Trash2, CheckCircle2, Clock, Eye, EyeOff, BookOpen, Users } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle2, Clock, Eye, EyeOff, BookOpen, Users } from "lucide-react";
+import { SkeletonTableBody } from "@/components/admin/admin-skeletons";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminTestsManagementPage() {
@@ -51,8 +52,24 @@ export default function AdminTestsManagementPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+        // Render the real table chrome with placeholder rows, so the column
+        // headers and card frame appear instantly instead of after the fetch.
+        <div className="bg-[#141414] border border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse min-w-[900px]">
+              <thead>
+                <tr className="bg-slate-900/50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <th className="py-3.5 px-6">Test Configuration Metadata</th>
+                  <th className="py-3.5 px-6">Category</th>
+                  <th className="py-3.5 px-6">Boundaries Matrix</th>
+                  <th className="py-3.5 px-6">Participation</th>
+                  <th className="py-3.5 px-6">Environment Status</th>
+                  <th className="py-3.5 px-6 text-right">Actions Panel</th>
+                </tr>
+              </thead>
+              <SkeletonTableBody columns={6} rows={6} />
+            </table>
+          </div>
         </div>
       ) : tests.length > 0 ? (
         <div className="bg-[#141414] border border-slate-800 rounded-2xl shadow-sm overflow-hidden">

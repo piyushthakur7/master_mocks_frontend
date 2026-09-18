@@ -6,6 +6,7 @@ import { Inquiry } from "@/types/inquiry";
 import { toast } from "sonner";
 import { useAdminInquiries } from "@/hooks/queries/use-admin-queries";
 import { Loader2, MessageSquare, CheckCircle, Clock, Search, Send, User } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminInquiriesPage() {
@@ -49,14 +50,8 @@ export default function AdminInquiriesPage() {
     return i.status === statusFilter;
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
-      </div>
-    );
-  }
-
+  // The header, status filters and inbox frame are static chrome — they paint
+  // immediately while only the ticket list itself waits on the fetch.
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -91,7 +86,21 @@ export default function AdminInquiriesPage() {
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-900">Ticket Inbox</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {filteredInquiries.length > 0 ? (
+            {isLoading ? (
+              <div className="divide-y divide-slate-100">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-4 border-l-4 border-transparent space-y-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <Skeleton className="h-3 w-16 rounded-md" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-24 mt-2" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredInquiries.length > 0 ? (
               <div className="divide-y divide-slate-100">
                 {filteredInquiries.map(inq => (
                   <div 
