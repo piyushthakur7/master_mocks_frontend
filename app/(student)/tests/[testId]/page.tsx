@@ -39,7 +39,10 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isActivatingAccess, setIsActivatingAccess] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const isCheckoutOpen = useRef(false);
+  const isCompletingPayment = useRef(false);
 
   // Server-clock-corrected countdown state for scheduled tests. The offset is
   // captured from check-access's server_time so a wrong device clock can't
@@ -97,16 +100,6 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
     return "live";
   })();
 
-  // The moment the window opens, re-ask the server for access so the Start
-  // button appears without a manual refresh.
-  useEffect(() => {
-    if (scheduleStatus === "live" && !hasAccess && !isAttemptExhausted && !didAutoFlipLive.current) {
-      didAutoFlipLive.current = true;
-      recheckAccess();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleStatus]);
-
   const formatCountdown = (targetIso: string) => {
     let totalSeconds = Math.max(0, Math.floor((new Date(targetIso).getTime() - correctedNow) / 1000));
     const days = Math.floor(totalSeconds / 86400);
@@ -137,20 +130,88 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
     try {
       const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
       if (accessResponse.success && accessResponse.data) {
-        setHasPurchased(accessResponse.data.has_purchased || false);
+        const access = accessResponse.data;
+        setHasAccess(access.has_access);
+        setAccessReason(access.reason || "");
+        setIsAttemptExhausted(access.attempt_exhausted || false);
+        setHasPurchased(access.has_purchased || false);
         if (accessResponse.data.server_time) {
           setClockOffsetMs(new Date(accessResponse.data.server_time).getTime() - Date.now());
         }
-        if (accessResponse.data.has_access) {
-          setHasAccess(true);
-          setAccessReason(accessResponse.data.reason || "");
-          setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
-          return true;
-        }
+        return access.has_access;
       }
     } catch {}
     return false;
   };
+
+  // Payment verification and access creation can complete a moment apart
+  // (especially when the webhook wins the race on mobile). Never announce a
+  // usable purchase or send the student away until check-access sees it.
+  const waitForAccess = async (): Promise<boolean> => {
+    const retryDelays = [0, 500, 1000, 2000, 3000];
+    for (const delayMs of retryDelays) {
+      if (delayMs) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      if (await recheckAccess()) return true;
+    }
+    return false;
+  };
+
+  const finishSuccessfulPayment = async (message?: string) => {
+    // Razorpay may call the success handler and then ondismiss when we close
+    // its modal. Collapse both callbacks into one completion flow.
+    if (isCompletingPayment.current) return;
+    isCompletingPayment.current = true;
+    setPaymentConfirmed(true);
+    setHasPurchased(true);
+    setIsActivatingAccess(true);
+    invalidatePurchaseCaches();
+    toast.loading("Payment confirmed. Activating your mock...", { id: "processing-toast" });
+
+    const accessReady = await waitForAccess();
+    isCheckoutOpen.current = false;
+    setIsProcessingPayment(false);
+    setIsActivatingAccess(false);
+
+    if (accessReady) {
+      toast.success(message || "Payment verified. Starting your mock...", { id: "processing-toast" });
+      router.replace(`/tests/${unwrappedParams.testId}/start`);
+      return;
+    }
+
+    isCompletingPayment.current = false;
+    toast.error(
+      "Payment is confirmed, but access is still being activated. Do not pay again; use Check Access below.",
+      { id: "processing-toast", duration: 8000 }
+    );
+  };
+
+  const handleAccessRetry = async () => {
+    setIsActivatingAccess(true);
+    toast.loading("Checking your purchase...", { id: "processing-toast" });
+    const accessReady = await waitForAccess();
+    setIsActivatingAccess(false);
+    if (accessReady) {
+      toast.success("Access activated. Starting your mock...", { id: "processing-toast" });
+      router.replace(`/tests/${unwrappedParams.testId}/start`);
+    } else {
+      toast.error("Payment is recorded but access is not active yet. Please contact support; do not pay again.", {
+        id: "processing-toast",
+        duration: 8000,
+      });
+    }
+  };
+
+  // The moment the window opens, re-ask the server for access so the Start
+  // button appears without a manual refresh.
+  useEffect(() => {
+    if (scheduleStatus === "live" && !hasAccess && !isAttemptExhausted && !didAutoFlipLive.current) {
+      didAutoFlipLive.current = true;
+      void recheckAccess();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleStatus]);
 
   const handlePurchase = async () => {
     if (!test || !user) {
@@ -222,18 +283,7 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
               });
 
               if (verifyRes.success) {
-                toast.dismiss('processing-toast');
-                toast.success(verifyRes.message || "Payment verified. Redirecting...");
-                setHasAccess(true);
-                invalidatePurchaseCaches();
-                isCheckoutOpen.current = false;
-                setIsProcessingPayment(false);
-
-                if (rzp && typeof rzp.close === 'function') {
-                  try { rzp.close(); } catch (e) {}
-                }
-
-                router.push("/payment-success");
+                await finishSuccessfulPayment(verifyRes.message);
               } else {
                 // A 2xx that reports success:false still means the payment did
                 // not verify. Without this branch the spinner and the checkout
@@ -265,16 +315,14 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
         },
         modal: {
           ondismiss: function () {
+            if (isCompletingPayment.current) return;
             toast.loading("Verifying payment status...", { id: 'processing-toast' });
             
             // On mobile or when modal is closed, verify actual status from our backend
             paymentService.getPaymentStatus(orderId as string)
               .then((res) => {
                 if (res.data?.status === 'SUCCESS') {
-                  toast.success("Payment verified! Redirecting...");
-                  setHasAccess(true);
-                  invalidatePurchaseCaches();
-                  router.push("/payment-success");
+                  void finishSuccessfulPayment("Payment verified. Starting your mock...");
                 } else {
                   isCheckoutOpen.current = false;
                   setIsProcessingPayment(false);
@@ -515,6 +563,37 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
                 >
                   Return to Tests
                 </Link>
+              </div>
+            );
+          }
+
+          if (hasPurchased || paymentConfirmed) {
+            return (
+              <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                  {isActivatingAccess ? (
+                    <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-amber-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Payment Confirmed</h3>
+                  <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
+                    Your purchase is recorded, but access is still being activated. Please do not pay again.
+                  </p>
+                </div>
+                <button
+                  onClick={handleAccessRetry}
+                  disabled={isActivatingAccess}
+                  className="px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white flex items-center justify-center gap-2 text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all w-full sm:w-auto"
+                >
+                  {isActivatingAccess ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Activating...</>
+                  ) : (
+                    "Check Access"
+                  )}
+                </button>
               </div>
             );
           }
