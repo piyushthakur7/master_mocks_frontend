@@ -42,14 +42,15 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start gap-1">
             <p>&copy; {new Date().getFullYear()} MASTER MOCKS. All rights reserved.</p>
             <p>
-              Made by{" "}
-              <a 
-                href="https://www.webtotalsolution.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              Developed by Web Total Solution &middot;{" "}
+              <a
+                href="https://www.webtotalsolution.com"
+                target="_blank"
+                rel="noopener"
+                title="Web Total Solution - Website Development"
                 className="text-brand hover:underline transition-colors font-medium"
               >
-                Web Total Solution
+                webtotalsolution.com
               </a>
             </p>
           </div>
