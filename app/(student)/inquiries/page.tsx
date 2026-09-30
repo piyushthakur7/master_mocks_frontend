@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { inquiryService } from "@/services/inquiry.service";
 import { toast } from "sonner";
+import { withRetry } from "@/lib/api-errors";
 import { Loader2, MessageSquare, Plus, Clock, CheckCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import * as z from "zod";
@@ -32,7 +33,7 @@ export default function StudentInquiriesPage() {
 
   const fetchInquiries = async () => {
     try {
-      const response = await inquiryService.getMyInquiries();
+      const response = await withRetry(() => inquiryService.getMyInquiries());
       if (response.success && response.data) {
         setInquiries(response.data.data || response.data);
       }

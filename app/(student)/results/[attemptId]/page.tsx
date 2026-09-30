@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { use } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { attemptService } from "@/services/attempt.service";
 import { mockTestService } from "@/services/mock-test.service";
 import { TestAttempt } from "@/types/attempt";
-import { toast } from "sonner";
 import { Loader2, CheckCircle, Clock, Target, Trophy } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { isNotFoundError, isTransientError } from "@/lib/api-errors";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { LeaderboardEntry } from "@/types/leaderboard";
 import RichText from "@/components/shared/RichText";
@@ -17,71 +18,107 @@ interface PageProps {
 
 export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) {
   const unwrappedParams = use(params);
-  
-  const [attempt, setAttempt] = useState<TestAttempt | null>(null);
-  const [testDetail, setTestDetail] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lbEntries, setLbEntries] = useState<LeaderboardEntry[]>([]);
-  const [isLbLoading, setIsLbLoading] = useState(false);
+  const attemptId = unwrappedParams.attemptId;
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        const response = await attemptService.getById(unwrappedParams.attemptId);
-        if (response.success && response.data) {
-          setAttempt(response.data);
-          
-          // Fetch leaderboard
-          const testObj: any = response.data.test || response.data.mock_test;
-          const testId = testObj?._id || testObj;
-          if (testId) {
-             // The attempt's embedded test object often omits total_marks (and
-             // the questions array), which made the score read "Out of 0".
-             // Pull the full test so the denominator and marking scheme are real.
-             mockTestService.getById(testId)
-               .then(tRes => {
-                 if (tRes.success && tRes.data) setTestDetail(tRes.data);
-               })
-               .catch(() => {});
-
-             setIsLbLoading(true);
-             leaderboardService.getLeaderboard(testId, { page: 1, limit: 10 })
-               .then(lbRes => {
-                 if (lbRes.success && lbRes.data) {
-                   setLbEntries(lbRes.data.entries || []);
-                 }
-               })
-               .finally(() => setIsLbLoading(false));
-          }
-        } else {
-          toast.error("Failed to load attempt details");
-        }
-      } catch (error) {
-        toast.error("Error loading attempt report");
-      } finally {
-        setIsLoading(false);
+  // This page used to make ONE request and, on any failure, throw the reason
+  // away and render "Report Not Found". Right after submitting (or on a phone
+  // coming back from sleep) that request routinely lands on an expired token
+  // mid-refresh, a throttled host, or a dropped connection — all temporary.
+  // Retry those with backoff and only call it "not found" when the server
+  // actually says so.
+  const attemptQuery = useQuery<TestAttempt>({
+    queryKey: ["attempt-report", attemptId],
+    queryFn: async () => {
+      const res = await attemptService.getById(attemptId);
+      if (!res?.success || !res.data) {
+        throw { status: 404, message: res?.message || "Attempt not found" };
       }
-    };
+      return res.data;
+    },
+    // A finished attempt never changes; an in-progress one can, so keep it
+    // fresh until it completes.
+    staleTime: (q) => ((q.state.data as any)?.status === "COMPLETED" ? Infinity : 0),
+    retry: (failureCount, error) => isTransientError(error) && failureCount < 3,
+    retryDelay: (n) => Math.min(1500 * 2 ** n, 8000),
+  });
+  const attempt = attemptQuery.data ?? null;
 
-    fetchReport();
-  }, [unwrappedParams.attemptId]);
+  const embeddedTest: any = attempt ? attempt.test || attempt.mock_test : null;
+  const testId: string | undefined = embeddedTest?._id || (typeof embeddedTest === "string" ? embeddedTest : undefined);
 
-  if (isLoading) {
+  // The attempt's embedded test object often omits total_marks (and the
+  // questions array), which made the score read "Out of 0". Pull the full test
+  // so the denominator and marking scheme are real. Optional — the report
+  // renders without it.
+  const { data: testDetail = null } = useQuery<any>({
+    queryKey: ["mock-test", testId],
+    enabled: !!testId,
+    queryFn: async () => {
+      const res = await mockTestService.getById(testId!);
+      if (!res?.success || !res.data) throw new Error(res?.message || "Test not found");
+      return res.data;
+    },
+  });
+
+  const { data: lbEntries = [], isFetching: isLbLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ["leaderboard-top", testId],
+    enabled: !!testId,
+    queryFn: async () => {
+      const res = await leaderboardService.getLeaderboard(testId!, { page: 1, limit: 10 });
+      return res?.success && res.data ? res.data.entries || [] : [];
+    },
+  });
+
+  if (attemptQuery.isPending) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center gap-3 min-h-[60vh]">
         <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+        {attemptQuery.failureCount > 0 && (
+          <p className="text-xs font-medium text-slate-400">Still loading your report…</p>
+        )}
       </div>
     );
   }
 
   if (!attempt) {
+    const error: any = attemptQuery.error;
+    // 400 = malformed id, 403/404 = not this student's attempt or gone.
+    const isMissing = isNotFoundError(error);
+
     return (
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 mb-2">Report Not Found</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">We couldn't locate the performance analytics for this attempt.</p>
-        <Link href="/dashboard" className="inline-block px-6 py-2.5 bg-[#D00113] text-white text-xs font-bold rounded-lg transition-colors">
-          Return to Dashboard
-        </Link>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-8 sm:p-12 text-center shadow-sm">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">
+          {isMissing ? "Report Not Found" : "Couldn't Load Your Report"}
+        </h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+          {isMissing
+            ? "We couldn't locate the performance analytics for this attempt."
+            : "Your result is saved — we just couldn't reach the server. Please try again."}
+        </p>
+        {!isMissing && error?.message && (
+          <p className="text-[11px] text-slate-400 max-w-md mx-auto -mt-3 mb-6">{error.message}</p>
+        )}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {!isMissing && (
+            <button
+              type="button"
+              onClick={() => attemptQuery.refetch()}
+              disabled={attemptQuery.isFetching}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#D00113] disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors"
+            >
+              {attemptQuery.isFetching && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Try Again
+            </button>
+          )}
+          <Link
+            href={isMissing ? "/dashboard" : "/results"}
+            className={`inline-block px-6 py-2.5 text-xs font-bold rounded-lg transition-colors ${
+              isMissing ? "bg-[#D00113] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            {isMissing ? "Return to Dashboard" : "View All Results"}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -495,9 +532,11 @@ export default function PostExamPerformanceAnalyticsPage({ params }: PageProps) 
         <Link href="/dashboard" className="inline-block px-6 py-3 bg-[#1A1A1A] hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all">
           ← Return To Dashboard
         </Link>
-        <Link href={`/leaderboard/${(attempt.test || attempt.mock_test as any)?._id || attempt.test || attempt.mock_test}`} className="inline-block px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all">
-          View Full Leaderboard
-        </Link>
+        {testId && (
+          <Link href={`/leaderboard/${testId}`} className="inline-block px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all">
+            View Full Leaderboard
+          </Link>
+        )}
       </div>
 
     </div>

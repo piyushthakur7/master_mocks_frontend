@@ -7,6 +7,7 @@ import { mockTestService } from "@/services/mock-test.service";
 import { useCategories } from "@/hooks/queries/use-public-queries";
 import { MockTest, Question } from "@/types/mock-test";
 import { toast } from "sonner";
+import { withRetry } from "@/lib/api-errors";
 import { Loader2, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 
 interface PageProps {
@@ -46,7 +47,7 @@ export default function AdminEditTestPage({ params }: PageProps) {
 
   const fetchTest = async () => {
     try {
-      const response = await mockTestService.getById(unwrappedParams.testId);
+      const response = await withRetry(() => mockTestService.getById(unwrappedParams.testId));
       if (response.success && response.data) {
         setTest(response.data);
       } else {

@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { useState } from "react";
+import { isTransientError } from "./api-errors";
 
 // Bump this string on deploys that change API shapes — it discards any
 // previously persisted cache.
@@ -30,15 +31,15 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             // refetches on mount ONLY when data is older than staleTime.
             // A network reconnect must not burst-refetch every active query.
             refetchOnReconnect: false,
-            // Never retry client errors (4xx). Retrying a 429 just deepens the
-            // rate-limit hole; retrying other 4xx is pointless. Only retry once
-            // for transient network / 5xx failures.
+            // Never retry a 429 — that just deepens the rate-limit hole — or a
+            // real client error (400/403/404). Retry once for transient
+            // network / 5xx failures, and for a 401 the API client is still
+            // healing (token refresh backing off); a dead session's 401 is
+            // flagged _silent and never retried.
             retry: (failureCount, error: any) => {
               const status = error?.status ?? error?.response?.status;
-              if (typeof status === "number" && status >= 400 && status < 500) {
-                return false;
-              }
-              return failureCount < 1;
+              if (status === 429) return false;
+              return isTransientError(error) && failureCount < 1;
             },
           },
         },

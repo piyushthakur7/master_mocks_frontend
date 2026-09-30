@@ -12,6 +12,7 @@ import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle2, Shield } from "lucid
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import RichText from "@/components/shared/RichText";
+import { withRetry } from "@/lib/api-errors";
 
 interface PageProps {
   params: Promise<{ courseId: string }>;
@@ -31,7 +32,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
-        const response = await courseService.getById(unwrappedParams.courseId);
+        const response = await withRetry(() => courseService.getById(unwrappedParams.courseId));
         if (response.success && response.data) {
           if (response.data.description?.includes("Utility course automatically generated")) {
             toast.info("This is a standalone resource, not a course.");

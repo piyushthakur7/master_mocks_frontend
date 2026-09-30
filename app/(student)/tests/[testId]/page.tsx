@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, Clock, HelpCircle, Target, Lock, CalendarClock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { formatScheduleTime } from "@/lib/utils";
+import { isNotFoundError, withRetry } from "@/lib/api-errors";
 
 interface PageProps {
   params: Promise<{ testId: string }>;
@@ -51,38 +52,55 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
   const [nowTs, setNowTs] = useState(() => Date.now());
   const didAutoFlipLive = useRef(false);
 
+  // Why the page couldn't load, plus a counter the Try Again button bumps.
+  // Any failure used to toast and push to /tests (the FREE list), so a
+  // temporary blip kicked a student off a paid mock they'd just bought.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
+
   useEffect(() => {
     const fetchTestDetails = async () => {
+      setIsLoading(true);
+      setLoadError(null);
       try {
-        const response = await mockTestService.getById(unwrappedParams.testId);
-        if (response.success && response.data) {
-          setTest(response.data);
-
-          // Check access
-          const accessResponse = await mockTestService.checkAccess(unwrappedParams.testId);
-          if (accessResponse.success && accessResponse.data) {
-            setHasAccess(accessResponse.data.has_access);
-            setAccessReason(accessResponse.data.reason || "");
-            setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
-            setHasPurchased(accessResponse.data.has_purchased || false);
-            if (accessResponse.data.server_time) {
-              setClockOffsetMs(new Date(accessResponse.data.server_time).getTime() - Date.now());
-            }
-          }
-        } else {
+        const response = await withRetry(() => mockTestService.getById(unwrappedParams.testId));
+        if (!response.success || !response.data) {
           toast.error("Test not found");
           router.push("/tests");
+          return;
         }
-      } catch (error) {
-        toast.error("Failed to load test details");
-        router.push("/tests");
+        setTest(response.data);
+
+        // Access decides between "Start" and "Buy Now". If it can't be
+        // checked, say so — silently falling through left hasAccess false and
+        // showed a paying student the Buy Now button again.
+        const accessResponse = await withRetry(() => mockTestService.checkAccess(unwrappedParams.testId));
+        if (!accessResponse.success || !accessResponse.data) {
+          setLoadError(accessResponse.message || "We couldn't verify your access to this test.");
+          return;
+        }
+        setHasAccess(accessResponse.data.has_access);
+        setAccessReason(accessResponse.data.reason || "");
+        setIsAttemptExhausted(accessResponse.data.attempt_exhausted || false);
+        setHasPurchased(accessResponse.data.has_purchased || false);
+        if (accessResponse.data.server_time) {
+          setClockOffsetMs(new Date(accessResponse.data.server_time).getTime() - Date.now());
+        }
+      } catch (error: any) {
+        if (isNotFoundError(error)) {
+          toast.error("Test not found");
+          router.push("/tests");
+          return;
+        }
+        if (error?._silent) return; // session dead — already redirecting to /login
+        setLoadError(error?.message || "Failed to load test details");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTestDetails();
-  }, [unwrappedParams.testId, router]);
+  }, [unwrappedParams.testId, router, reloadCount]);
 
   // Tick every second while a schedule window exists, driving the countdown
   // and the automatic upcoming -> live / live -> ended transitions.
@@ -364,6 +382,27 @@ export default function StudentTestInstructionsPage({ params }: PageProps) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 text-[#D00113] animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center shadow-sm">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">Couldn&apos;t load this test</h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">{loadError}</p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setReloadCount((c) => c + 1)}
+            className="px-6 py-2.5 bg-[#D00113] text-white text-xs font-bold rounded-lg"
+          >
+            Try Again
+          </button>
+          <Link href="/purchases" className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">
+            My Purchases
+          </Link>
+        </div>
       </div>
     );
   }

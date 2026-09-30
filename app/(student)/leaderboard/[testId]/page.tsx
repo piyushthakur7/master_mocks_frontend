@@ -5,6 +5,7 @@ import Link from "next/link";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { LeaderboardEntry, MyRankResponse } from "@/types/leaderboard";
 import { toast } from "sonner";
+import { withRetry } from "@/lib/api-errors";
 import { Loader2, ArrowLeft, Trophy, Medal, RefreshCw } from "lucide-react";
 
 interface PageProps {
@@ -25,7 +26,7 @@ export default function LeaderboardPage({ params }: PageProps) {
     setHasError(false);
     try {
       const [lbRes, rankRes] = await Promise.all([
-        leaderboardService.getLeaderboard(unwrappedParams.testId, { page, limit: 100 }),
+        withRetry(() => leaderboardService.getLeaderboard(unwrappedParams.testId, { page, limit: 100 })),
         leaderboardService.getMyRank(unwrappedParams.testId).catch(() => null)
       ]);
 
